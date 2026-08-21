@@ -3,7 +3,8 @@
 一套纯前端的在线数学工具集，共 11 个独立 HTML 页面，无需安装、无需联网加载框架，双击即可在浏览器中使用。
 A collection of 11 pure front-end, single-file online math tools. No installation or build step required — just open in a browser.
 
-🌐 **在线访问 / Live Demo**: https://cyb430.github.io/cyb-math/guide.html
+🌐 **在线访问 / Live Demo**: https://cyb-math.pages.dev/guide.html （首选 / Primary）
+🔄 **备用地址 / Fallback**: https://cyb430.github.io/cyb-math/guide.html
 
 ---
 
@@ -29,8 +30,15 @@ A collection of 11 pure front-end, single-file online math tools. No installatio
 
 ### 在线使用 · Online
 
-直接访问 GitHub Pages 部署地址：
-Open the GitHub Pages deployment directly:
+首选访问 Cloudflare Pages 部署地址：
+Primary access via the Cloudflare Pages deployment:
+
+```
+https://cyb-math.pages.dev/guide.html
+```
+
+如果首选地址不可用，可访问 GitHub Pages 备用地址：
+If the primary address is unavailable, use the GitHub Pages fallback:
 
 ```
 https://cyb430.github.io/cyb-math/guide.html
@@ -40,7 +48,7 @@ https://cyb430.github.io/cyb-math/guide.html
 You can also replace `guide.html` with any tool's filename, e.g.:
 
 ```
-https://cyb430.github.io/cyb-math/math-plotter.html
+https://cyb-math.pages.dev/math-plotter.html
 ```
 
 ### 本地使用 · Local
@@ -62,8 +70,8 @@ cd cyb-math-repo
 
 - 每个工具均为**单文件 HTML**，样式与脚本全部内嵌，可离线运行。
   Each tool is a **single HTML file** with inline CSS/JS — works fully offline.
-- 纯静态站点，通过 GitHub Pages 托管，源文件即部署产物。
-  A purely static site hosted on GitHub Pages — the source files are the deployment.
+- 纯静态站点，源文件即部署产物；首选托管在 Cloudflare Pages，GitHub Pages 作为备用镜像。
+  A purely static site — the source files are the deployment; primarily hosted on Cloudflare Pages, with GitHub Pages as a fallback mirror.
 - 兼容现代浏览器（Chrome / Edge / Firefox / Safari），建议使用桌面端获得最佳体验。
   Compatible with modern browsers (Chrome / Edge / Firefox / Safari); desktop recommended for the best experience.
 
