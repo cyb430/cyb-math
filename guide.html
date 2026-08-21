@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="CYB 的数学工具箱：函数绘图、方程求解、几何画板、代数计算、三维绘图、数论与数列工具等 10 款免费在线数学工具。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="CYB 的数学工具箱">
+<meta property="og:description" content="绘图、求解、几何、实用工具——10 款免费在线数学工具。">
+<meta property="og:url" content="https://cyb-math.pages.dev/">
+<meta name="theme-color" content="#3b5bdb">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%233b5bdb'/%3E%3Ctext x='32' y='42' font-size='34' text-anchor='middle' fill='%23ffffff' font-family='Georgia,serif'%3E%C6%92%3C/text%3E%3C/svg%3E">
+<title>CYB 的数学工具箱</title>
+<style>
+  :root{
+    --blue:#3b5bdb;
+    --blue-light:#4c6ef5;
+    --blue-bg:#edf2ff;
+    --ink:#1a1e2e;
+    --ink-2:#5b6478;
+    --ink-3:#6a7180;
+    --card:#ffffff;
+    --line:#e3e8f4;
+    --bg:#f4f6fb;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    position:relative;
+    overflow-x:hidden;
+  }
+  /* 首屏：垂直居中 */
+  .hero{
+    min-height:100vh;
+    min-height:100svh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:48px 20px 24px;
+    position:relative;
+  }
+  /* 坐标网格背景 */
+  .grid-bg{
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:
+      linear-gradient(rgba(59,91,219,.055) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(59,91,219,.055) 1px,transparent 1px);
+    background-size:44px 44px;
+    mask-image:radial-gradient(ellipse 90% 80% at 50% 45%,#000 30%,transparent 78%);
+    -webkit-mask-image:radial-gradient(ellipse 90% 80% at 50% 45%,#000 30%,transparent 78%);
+  }
+  /* 背景装饰曲线 */
+  .curve{position:fixed;z-index:0;pointer-events:none;opacity:.5;}
+  .curve path{fill:none;stroke-width:2;}
+
+  .wrap{position:relative;z-index:1;width:100%;max-width:620px;display:flex;flex-direction:column;align-items:center;}
+
+  /* 头部 */
+  .logo{
+    width:64px;height:64px;border-radius:18px;
+    background:linear-gradient(135deg,var(--blue) 0%,var(--blue-light) 100%);
+    color:#fff;font-size:34px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 10px 26px rgba(59,91,219,.32);
+    font-family:Georgia,"Times New Roman",serif;
+    padding-bottom:4px;
+  }
+  h1{
+    margin-top:22px;
+    font-size:clamp(26px,5vw,36px);
+    font-weight:800;
+    letter-spacing:.02em;
+    text-align:center;
+  }
+  h1 .cyb{
+    background:linear-gradient(120deg,var(--blue),#748ffc);
+    -webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;
+  }
+  .subtitle{
+    margin-top:10px;
+    color:var(--ink-2);
+    font-size:15px;
+    letter-spacing:.14em;
+    text-align:center;
+  }
+  .formula-line{
+    margin-top:14px;
+    color:var(--ink-3);
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:14px;
+    letter-spacing:.06em;
+  }
+
+  /* 链接卡片 */
+  .links{
+    margin-top:40px;
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .link-card{
+    display:flex;align-items:center;gap:16px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px 22px;
+    text-decoration:none;color:inherit;
+    transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+    box-shadow:0 1px 3px rgba(26,30,46,.04);
+    position:relative;
+    overflow:hidden;
+  }
+  .link-card::before{
+    content:"";
+    position:absolute;left:0;top:0;bottom:0;width:4px;
+    background:linear-gradient(180deg,var(--blue),var(--blue-light));
+    transform:scaleY(0);transform-origin:top;
+    transition:transform .22s ease;
+  }
+  .link-card:hover{
+    transform:translateY(-3px);
+    border-color:#c7d2f7;
+    box-shadow:0 12px 30px rgba(59,91,219,.14);
+  }
+  .link-card:hover::before{transform:scaleY(1);}
+  .link-card:hover .sym{background:var(--blue);color:#fff;}
+  .link-card:hover .arrow{transform:translateX(4px);color:var(--blue);}
+
+  .sym{
+    flex:none;
+    width:48px;height:48px;border-radius:12px;
+    background:var(--blue-bg);
+    color:var(--blue);
+    font-size:24px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:Georgia,"Times New Roman",serif;
+    transition:background .18s ease,color .18s ease;
+  }
+  .meta{flex:1;min-width:0;}
+  .name{font-size:17px;font-weight:700;}
+  .desc{margin-top:3px;font-size:13px;color:var(--ink-2);}
+  .url{
+    margin-top:5px;
+    font-size:12px;color:var(--ink-3);
+    font-family:"SF Mono",Consolas,Menlo,monospace;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .arrow{
+    flex:none;color:var(--ink-3);font-size:18px;
+    transition:transform .18s ease,color .18s ease;
+  }
+
+  footer{
+    position:relative;z-index:1;
+    margin-top:44px;
+    color:var(--ink-3);
+    font-size:12.5px;
+    letter-spacing:.05em;
+    text-align:center;
+  }
+  footer .dot{margin:0 8px;color:#c3cbdd;}
+
+  /* 下滑提示 */
+  .scroll-hint{
+    position:relative;z-index:1;
+    margin-top:36px;
+    color:var(--ink-3);
+    font-size:12.5px;
+    letter-spacing:.18em;
+    text-decoration:none;
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    transition:color .18s ease;
+  }
+  .scroll-hint:hover{color:var(--blue);}
+  .scroll-hint .chev{
+    animation:bob 1.8s ease-in-out infinite;
+    font-size:14px;
+  }
+  @keyframes bob{
+    0%,100%{transform:translateY(0);opacity:.55;}
+    50%{transform:translateY(5px);opacity:1;}
+  }
+
+  /* About Us 区块 */
+  .about{
+    position:relative;z-index:1;
+    max-width:620px;
+    margin:0 auto;
+    padding:72px 20px 96px;
+  }
+  .about-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:36px 38px;
+    box-shadow:0 8px 30px rgba(26,30,46,.06);
+  }
+  .about-head{
+    display:flex;align-items:center;gap:14px;
+    padding-bottom:20px;
+    border-bottom:1px solid var(--line);
+  }
+  .about-badge{
+    flex:none;
+    width:46px;height:46px;border-radius:12px;
+    background:linear-gradient(135deg,var(--blue) 0%,var(--blue-light) 100%);
+    color:#fff;font-size:22px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+    font-family:Georgia,"Times New Roman",serif;
+    box-shadow:0 6px 16px rgba(59,91,219,.28);
+  }
+  .about-title{font-size:21px;font-weight:800;}
+  .about-title small{
+    display:block;margin-top:2px;
+    font-size:12px;font-weight:500;color:var(--ink-3);
+    letter-spacing:.22em;
+  }
+  .about-bio{
+    margin-top:20px;
+    font-size:15px;line-height:1.9;
+    color:var(--ink);
+  }
+  .about-bio strong{color:var(--blue);font-weight:700;}
+  .about-sec{
+    margin-top:22px;
+    font-size:13px;font-weight:700;color:var(--ink-2);
+    letter-spacing:.14em;
+    display:flex;align-items:center;gap:10px;
+  }
+  .about-sec::after{content:"";flex:1;height:1px;background:var(--line);}
+  .honors{list-style:none;margin-top:12px;}
+  .honors li{
+    position:relative;
+    padding:10px 0 10px 26px;
+    font-size:14.5px;line-height:1.75;
+    color:var(--ink);
+  }
+  .honors li::before{
+    content:"";
+    position:absolute;left:4px;top:19px;
+    width:7px;height:7px;border-radius:50%;
+    background:var(--blue-light);
+  }
+  .honors li + li{border-top:1px dashed var(--line);}
+  .honors .tag{
+    display:inline-block;
+    margin-left:6px;
+    padding:1px 8px;
+    border-radius:999px;
+    background:var(--blue-bg);
+    color:var(--blue);
+    font-size:12px;font-weight:600;
+    vertical-align:1px;
+  }
+  .contact{
+    margin-top:14px;
+    display:flex;align-items:center;gap:12px;
+    background:var(--blue-bg);
+    border-radius:12px;
+    padding:14px 18px;
+  }
+  .contact .mail-sym{
+    flex:none;color:var(--blue);font-size:18px;
+    font-family:Georgia,"Times New Roman",serif;
+  }
+  .contact a{
+    color:var(--blue);font-weight:700;font-size:15px;
+    text-decoration:none;
+    font-family:"SF Mono",Consolas,Menlo,monospace;
+    word-break:break-all;
+  }
+  .contact a:hover{text-decoration:underline;}
+  .contact .note{
+    margin-top:2px;
+    font-size:12px;color:var(--ink-2);
+  }
+  .contact .mail-text{min-width:0;}
+
+  @media (max-width:480px){
+    .about{padding:56px 16px 72px;}
+    .about-card{padding:26px 22px;}
+  }
+
+  @media (max-width:480px){
+    .link-card{padding:15px 16px;gap:13px;}
+    .sym{width:42px;height:42px;font-size:21px;}
+    .url{display:none;}
+  }
+
+  /* 减弱动态效果偏好：关闭平滑滚动、浮动动画与过渡 */
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto;}
+    .scroll-hint .chev{animation:none;}
+    .link-card,.link-card::before,.sym,.arrow,.scroll-hint{transition:none;}
+  }
+</style>
+</head>
+<body>
+  <div class="grid-bg" aria-hidden="true"></div>
+
+  <!-- 装饰曲线：正弦 -->
+  <svg class="curve" aria-hidden="true" style="left:-4%;top:12%;width:46vw;min-width:380px;" viewBox="0 0 600 160">
+    <path d="M0,80 C50,10 100,10 150,80 C200,150 250,150 300,80 C350,10 400,10 450,80 C500,150 550,150 600,80" stroke="#bac8f3"/>
+  </svg>
+  <!-- 装饰曲线：抛物线 -->
+  <svg class="curve" aria-hidden="true" style="right:-6%;bottom:8%;width:40vw;min-width:340px;" viewBox="0 0 400 240">
+    <path d="M20,20 Q200,320 380,20" stroke="#c9d6f8"/>
+    <line x1="0" y1="200" x2="400" y2="200" stroke="#dde4f5" stroke-dasharray="5 6"/>
+    <line x1="200" y1="0" x2="200" y2="240" stroke="#dde4f5" stroke-dasharray="5 6"/>
+  </svg>
+
+  <div class="hero">
+  <div class="wrap">
+    <div class="logo" aria-hidden="true">ƒ</div>
+    <h1><span class="cyb">CYB</span> 的数学工具箱</h1>
+    <div class="subtitle">绘 图 · 求 解 · 几 何 · 实 用 工 具</div>
+    <div class="formula-line" aria-hidden="true">∀x ∈ ℝ&nbsp;&nbsp;·&nbsp;&nbsp;∫ f(x) dx&nbsp;&nbsp;·&nbsp;&nbsp;Σ ∞</div>
+
+    <nav class="links">
+      <a class="link-card" href="https://math-tools-pro.pages.dev" target="_blank" rel="noopener">
+        <div class="sym" aria-hidden="true">∑</div>
+        <div class="meta">
+          <div class="name">数学实用工具</div>
+          <div class="desc">计算、统计、分形、物理模拟等一体化工具集</div>
+          <div class="url">math-tools-pro.pages.dev</div>
+        </div>
+        <div class="arrow" aria-hidden="true">→</div>
+      </a>
+
+      <a class="link-card" href="https://math-plotter.pages.dev" target="_blank" rel="noopener">
+        <div class="sym" aria-hidden="true">ƒ</div>
+        <div class="meta">
+          <div class="name">数学函数绘图</div>
+          <div class="desc">函数图像绘制，支持隐函数、不等式与求和求积</div>
+          <div class="url">math-plotter.pages.dev</div>
+        </div>
+        <div class="arrow" aria-hidden="true">→</div>
+      </a>
+
+      <a class="link-card" href="https://math-equation.pages.dev" target="_blank" rel="noopener">
+        <div class="sym" aria-hidden="true">√</div>
+        <div class="meta">
+          <div class="name">数学方程求解</div>
+          <div class="desc">方程与方程组求解，逐步展示计算过程</div>
+          <div class="url">math-equation.pages.dev</div>
+        </div>
+        <div class="arrow" aria-hidden="true">→</div>
+      </a>
+
+      <a class="link-card" href="https://math-geometry.pages.dev" target="_blank" rel="noopener">
+        <div class="sym" aria-hidden="true">△</div>
+        <div class="meta">
+          <div class="name">数学几何画板</div>
+          <div class="desc">动态几何作图，点线面圆自由拖拽探索</div>
+          <div class="url">math-geometry.pages.dev</div>
+        </div>
+        <div class="arrow" aria-hidden="true">→</div>
+      </a>
+
+      <a class="link-card" href="https://math-algebra.pages.dev" target="_blank" rel="noopener">
+        <div class="sym" aria-hidden="true">𝑥</div>
+        <div class="meta">
+          <div class="name">数学代数计算</div>
+          <div class="desc">代数运算与化简，因式分解、展开与多项式计算</div>
+          <div class="url">math-algebra.pages.dev</div>
+        </div>
+        <div class="arrow" aria-hidden="true">→</div>
+      </a>
+
+      <a class="link-card" href="https://math-3d.pages.dev" target="_blank" rel="noopener">
+        <div class="sym" aria-hidden="true">∰</div>
+        <div class="meta">
+          <div class="name">数学3D绘图</div>
+          <div class="desc">三维曲面与空间图形绘制，旋转缩放自由探索</div>
+          <div class="url">math-3d.pages.dev</div>
+        </div>
+        <div class="arrow" aria-hidden="true">→</div>
+      </a>
+
+      <a class="link-card" href="https://math-theory.pages.dev" target="_blank" rel="noopener">
+        <div class="sym" aria-hidden="true">ℤ</div>
+        <div class="meta">
+          <div class="name">数学数论工具</div>
+          <div class="desc">质数判定与分解、同余方程、中国剩余定理、佩尔方程等</div>
+          <div class="url">math-theory.pages.dev</div>
+        </div>
+        <div class="arrow" aria-hidden="true">→</div>
+      </a>
+
+      <a class="link-card" href="https://math-sequence.pages.dev" target="_blank" rel="noopener">
+        <div class="sym" aria-hidden="true" style="font-size:19px;">aₙ</div>
+        <div class="meta">
+          <div class="name">数学数列工具</div>
+          <div class="desc">数列计算与探索，通项、求和与递推分析</div>
+          <div class="url">math-sequence.pages.dev</div>
+        </div>
+        <div class="arrow" aria-hidden="true">→</div>
+      </a>
+
+      <a class="link-card" href="https://math-latex.pages.dev" target="_blank" rel="noopener">
+        <div class="sym" aria-hidden="true" style="font-size:16px;">TeX</div>
+        <div class="meta">
+          <div class="name">LaTeX 公式编辑器</div>
+          <div class="desc">所见即所得编辑数学公式，一键导出 PNG/SVG 图片</div>
+          <div class="url">math-latex.pages.dev</div>
+        </div>
+        <div class="arrow" aria-hidden="true">→</div>
+      </a>
+
+      <a class="link-card" href="https://math-fourier.pages.dev" target="_blank" rel="noopener">
+        <div class="sym" aria-hidden="true">∿</div>
+        <div class="meta">
+          <div class="name">傅里叶级数可视化</div>
+          <div class="desc">圆环动画绘制任意路径，吉布斯现象与波形合成演示</div>
+          <div class="url">math-fourier.pages.dev</div>
+        </div>
+        <div class="arrow" aria-hidden="true">→</div>
+      </a>
+    </nav>
+  </div>
+
+  <a class="scroll-hint" href="#about">
+    ABOUT US
+    <span class="chev" aria-hidden="true">﹀</span>
+  </a>
+  </div>
+
+  <section class="about" id="about">
+    <div class="about-card">
+      <div class="about-head">
+        <div class="about-badge" aria-hidden="true">π</div>
+        <div class="about-title">
+          关于我们
+          <small>ABOUT US</small>
+        </div>
+      </div>
+
+      <p class="about-bio">
+        <strong>CYB</strong>（2011— ），现就读于西北工业大学附属中学高2029届丘成桐少年班，目前主攻数学竞赛。
+      </p>
+
+      <div class="about-sec">获得荣誉 · HONORS</div>
+      <ul class="honors">
+        <li>AMC 10：141/150<span class="tag">全球前 1%</span>，AIME：8/15</li>
+        <li>受邀参加 2025 ICBS（国际基础科学大会）</li>
+      </ul>
+
+      <div class="about-sec">联系我们 · CONTACT</div>
+      <div class="contact">
+        <div class="mail-sym" aria-hidden="true">✉</div>
+        <div class="mail-text">
+          <a href="mailto:723112490@qq.com">723112490@qq.com</a>
+          <div class="note">回复不及时，敬请谅解</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    CYB 的数学工具箱<span class="dot">·</span>Math Toolbox<span class="dot">·</span>y = f(x)
+  </footer>
+</body>
+</html>

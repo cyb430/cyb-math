@@ -1,0 +1,2529 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>傅里叶级数可视化 — math-fourier</title>
+<script>
+/* 主题防闪烁：在绘制前从 localStorage / 系统偏好恢复主题与主色 */
+(function () {
+  try {
+    var t = null;
+    try { t = localStorage.getItem('mf-theme'); } catch (e) {}
+    if (t !== 'dark' && t !== 'light') {
+      t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+    var ac = null;
+    try { ac = localStorage.getItem('mf-accent'); } catch (e) {}
+    if (ac && /^#[0-9a-fA-F]{6}$/.test(ac)) {
+      document.documentElement.style.setProperty('--accent', ac);
+    }
+  } catch (e) { /* 主题恢复失败不影响使用 */ }
+})();
+</script>
+<style>
+:root{
+  --accent:#3b5bdb;
+  --bg:#f4f6fb;
+  --card:#ffffff;
+  --text:#1a1e2e;
+  --muted:#5b6478;
+  --faint:#9aa3b8;
+  --line:#e3e8f4;
+  --shadow:0 6px 24px rgba(30,40,80,.08);
+  --shadow-sm:0 2px 8px rgba(30,40,80,.06);
+  --danger:#e03131;
+  --ok:#2b8a3e;
+  --radius:14px;
+}
+[data-theme="dark"]{
+  --bg:#0f1420;
+  --card:#171e2e;
+  --text:#e6eaf4;
+  --muted:#9aa5bd;
+  --faint:#66718c;
+  --line:#263050;
+  --shadow:0 8px 28px rgba(0,0,0,.45);
+  --shadow-sm:0 2px 10px rgba(0,0,0,.35);
+  --danger:#ff8787;
+  --ok:#51cf66;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.6;
+  min-height:100vh;
+}
+/* ---------- 头部 ---------- */
+header{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:14px 22px;
+  background:var(--card);
+  border-bottom:1px solid var(--line);
+  box-shadow:var(--shadow-sm);
+  position:sticky;top:0;z-index:20;
+}
+.logo{
+  width:42px;height:42px;border-radius:12px;flex:none;
+  background:var(--accent);
+  background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#748ffc));
+  color:#fff;font-family:Georgia,"Times New Roman",serif;font-size:22px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 16px color-mix(in srgb,var(--accent) 40%,transparent);
+}
+h1{font-size:19px;font-weight:800;letter-spacing:.02em;white-space:nowrap;}
+.subtitle{font-size:12px;color:var(--muted);white-space:nowrap;}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.swatches{display:flex;gap:6px;align-items:center;margin-right:4px;}
+.swatch{
+  width:18px;height:18px;border-radius:50%;border:2px solid transparent;cursor:pointer;
+  outline:2px solid transparent;outline-offset:2px;padding:0;
+}
+.swatch.active{outline-color:var(--accent);}
+/* ---------- 按钮 ---------- */
+.btn{
+  appearance:none;border:1px solid var(--line);background:var(--card);color:var(--text);
+  border-radius:9px;padding:7px 14px;font-size:13px;cursor:pointer;
+  transition:background .15s,border-color .15s,transform .05s;
+  font-family:inherit;
+}
+.btn:hover{border-color:var(--accent);color:var(--accent);}
+.btn:active{transform:translateY(1px);}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn-primary:hover{filter:brightness(1.08);color:#fff;}
+.btn-danger{border-color:var(--danger);color:var(--danger);}
+.btn-sm{padding:4px 10px;font-size:12px;border-radius:7px;}
+.btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.icon-btn{
+  width:36px;height:36px;border-radius:9px;border:1px solid var(--line);background:var(--card);
+  color:var(--text);font-size:16px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
+}
+.icon-btn:hover{border-color:var(--accent);color:var(--accent);}
+/* ---------- 模式选项卡 ---------- */
+.tabs{display:flex;gap:8px;padding:14px 22px 0;}
+.tab{
+  border:1px solid var(--line);background:var(--card);color:var(--muted);
+  border-radius:10px 10px 0 0;border-bottom:none;
+  padding:9px 20px;font-size:14px;cursor:pointer;font-family:inherit;
+}
+.tab.active{color:var(--accent);font-weight:700;box-shadow:inset 0 2px 0 var(--accent);}
+/* ---------- 布局 ---------- */
+main{padding:16px 22px 40px;max-width:1720px;margin:0 auto;}
+.grid-a{
+  display:grid;grid-template-columns:300px minmax(0,1fr) 330px;gap:16px;align-items:start;
+}
+.grid-b{
+  display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;align-items:start;
+}
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:16px;margin-bottom:16px;
+}
+.card h2{font-size:14px;font-weight:700;margin-bottom:12px;color:var(--text);display:flex;align-items:center;gap:8px;}
+.card h2 .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none;}
+.hint{font-size:12px;color:var(--faint);margin-top:8px;line-height:1.5;}
+/* ---------- 画布 ---------- */
+.canvas-wrap{position:relative;}
+canvas{display:block;width:100%;border-radius:10px;touch-action:none;}
+#canvasA{aspect-ratio:4/3;cursor:default;}
+#canvasA.drawing{cursor:crosshair;}
+#canvasB{aspect-ratio:21/10;}
+#canvasSpec{height:140px;cursor:default;}
+#canvasGibbs{height:180px;cursor:default;}
+.draw-hint{
+  position:absolute;left:50%;bottom:12px;transform:translateX(-50%);
+  background:var(--accent);
+  background:color-mix(in srgb,var(--accent) 88%,#000);color:#fff;font-size:12px;
+  padding:5px 14px;border-radius:999px;pointer-events:none;opacity:0;transition:opacity .2s;
+  white-space:nowrap;
+}
+.draw-hint.show{opacity:1;}
+/* ---------- 控件 ---------- */
+.row{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+.row label{font-size:13px;color:var(--muted);min-width:64px;}
+.row .val{font-size:13px;color:var(--text);font-variant-numeric:tabular-nums;min-width:52px;text-align:right;}
+input[type=range]{flex:1;accent-color:var(--accent);height:22px;min-width:80px;}
+input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px;}
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;}
+.checks label{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text);cursor:pointer;}
+textarea{
+  width:100%;min-height:74px;resize:vertical;border:1px solid var(--line);border-radius:9px;
+  background:var(--bg);color:var(--text);padding:8px 10px;font-size:12px;font-family:ui-monospace,Consolas,monospace;
+}
+textarea:focus{outline:2px solid color-mix(in srgb,var(--accent) 45%,transparent);border-color:var(--accent);}
+.err-msg{font-size:12px;color:var(--danger);margin-top:6px;min-height:0;line-height:1.5;}
+.err-msg:empty{display:none;}
+.ok-msg{font-size:12px;color:var(--ok);margin-top:6px;}
+.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.preset-grid .btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.wave-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+/* ---------- 频谱/表格/公式 ---------- */
+.formula{
+  font-family:Georgia,"Times New Roman",serif;font-size:14.5px;color:var(--text);
+  background:var(--bg);border:1px solid var(--line);border-radius:9px;
+  padding:10px 12px;margin-bottom:10px;line-height:1.9;overflow-x:auto;white-space:nowrap;
+}
+.formula i{font-style:italic;}
+table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums;}
+th,td{padding:5px 6px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap;}
+th{color:var(--muted);font-weight:600;}
+th:first-child,td:first-child{text-align:left;}
+.stat{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.9;}
+.stat b{color:var(--text);font-variant-numeric:tabular-nums;}
+/* ---------- 弹窗 / 提示 ---------- */
+.modal-mask{
+  position:fixed;inset:0;background:rgba(10,14,26,.55);z-index:50;
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+.modal-mask.show{display:flex;}
+.modal{
+  background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);
+  max-width:640px;width:100%;max-height:86vh;overflow-y:auto;padding:26px 28px;
+}
+.modal h2{font-size:18px;margin-bottom:14px;display:flex;align-items:center;}
+.modal h2 span{margin-left:auto;}
+.modal h3{font-size:14px;margin:16px 0 6px;color:var(--accent);}
+.modal p,.modal li{font-size:13.5px;color:var(--muted);line-height:1.8;}
+.modal ul{padding-left:20px;}
+.modal-foot{margin-top:16px;padding-top:12px;border-top:1px solid var(--line);
+  display:flex;justify-content:flex-end;font-size:12.5px;color:var(--muted);}
+.modal-foot label{display:flex;align-items:center;gap:6px;cursor:pointer;}
+.modal kbd{
+  background:var(--bg);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;
+  padding:1px 7px;font-size:12px;font-family:ui-monospace,Consolas,monospace;color:var(--text);
+}
+#toast{
+  position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
+  background:var(--text);color:var(--bg);font-size:13px;padding:9px 20px;border-radius:999px;
+  opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:99;max-width:88vw;
+  text-align:center;
+}
+#toast.show{opacity:.96;transform:translateX(-50%) translateY(0);}
+.rec-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--danger);margin-right:6px;animation:blink 1s infinite;}
+@keyframes blink{50%{opacity:.25;}}
+/* ---------- 响应式 ---------- */
+@media (max-width:1240px){
+  .grid-a{grid-template-columns:280px minmax(0,1fr);}
+  .grid-a .col-right{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;}
+  .grid-a .col-right .card{margin-bottom:0;}
+}
+@media (max-width:900px){
+  .grid-a,.grid-b{grid-template-columns:1fr;}
+  main{padding:12px 12px 32px;}
+  header{padding:10px 12px;gap:8px;}
+  h1{font-size:16px;}
+  .subtitle{display:none;}
+  .tabs{padding:10px 12px 0;}
+  .tab{padding:8px 12px;font-size:13px;flex:1;text-align:center;}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">F</div>
+  <div>
+    <h1>傅里叶级数可视化</h1>
+    <div class="subtitle">math-fourier · 圆环动画画任意路径</div>
+  </div>
+  <div class="header-right">
+    <div class="swatches" id="swatches" title="主题主色"></div>
+    <button class="btn btn-sm" id="btnShare" type="button">分享链接</button>
+    <button class="icon-btn" id="btnTheme" type="button" title="切换浅色/深色（快捷键 D）">🌙</button>
+    <button class="icon-btn" id="btnHelp" type="button" title="帮助（快捷键 H）">?</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" id="tabA" type="button">模式 A · 任意路径 2D</button>
+  <button class="tab" id="tabB" type="button">模式 B · 经典波形 1D</button>
+</div>
+
+<main>
+<!-- ================= 模式 A ================= -->
+<section id="secA">
+  <div class="grid-a">
+    <div class="col-left">
+      <div class="card">
+        <h2><span class="dot"></span>输入路径</h2>
+        <button class="btn" id="btnDrawA" type="button" style="width:100%">✏️ 手绘输入（在右侧画布上拖动）</button>
+        <div class="hint">松手后自动按弧长重采样 → 求傅里叶系数 → 圆环链重新画出笔迹。</div>
+        <div style="height:12px"></div>
+        <div class="preset-grid" id="presetGridA"></div>
+        <div style="height:12px"></div>
+        <textarea id="svgInputA" placeholder="粘贴 SVG 路径 d 字符串，支持 M/L/H/V/C/S/Q/T/Z，例如：&#10;M0 0 L100 0 L100 100 L0 100 Z" spellcheck="false"></textarea>
+        <button class="btn btn-sm" id="btnLoadSvgA" type="button" style="margin-top:8px">加载 SVG 路径</button>
+        <div class="err-msg" id="svgErrA"></div>
+      </div>
+    </div>
+
+    <div class="col-center">
+      <div class="card">
+        <div class="canvas-wrap">
+          <canvas id="canvasA"></canvas>
+          <div class="draw-hint" id="drawHintA">按住拖动绘制闭合路径，松手完成</div>
+        </div>
+        <div class="row" style="margin-top:12px;margin-bottom:0">
+          <label for="rngTimeA">时间轴</label>
+          <input type="range" id="rngTimeA" min="0" max="999" value="0" step="1">
+          <span class="val" id="timeValA">t=0.000</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-right">
+      <div class="card">
+        <h2><span class="dot"></span>播放控制</h2>
+        <div class="row">
+          <button class="btn btn-primary" id="btnPlayA" type="button" style="min-width:92px">⏸ 暂停</button>
+          <label for="rngSpeedA">速度</label>
+          <input type="range" id="rngSpeedA" min="0.1" max="4" value="1" step="0.1">
+          <span class="val" id="speedValA">1.0×</span>
+        </div>
+        <div class="row">
+          <label for="rngNA">项数 N</label>
+          <input type="range" id="rngNA" min="1" max="500" value="60" step="1">
+          <span class="val" id="nValA">60</span>
+        </div>
+        <div class="checks">
+          <label><input type="checkbox" id="chkCirclesA" checked>圆环</label>
+          <label><input type="checkbox" id="chkVectorsA" checked>矢量（半径杆）</label>
+          <label><input type="checkbox" id="chkTraceA" checked>轨迹线</label>
+          <label><input type="checkbox" id="chkCenterA" checked>中心点</label>
+          <label><input type="checkbox" id="chkOutlineA" checked>原始轮廓参考线</label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>频谱 |cₙ|（按频率 n 排列）</h2>
+        <canvas id="canvasSpec"></canvas>
+        <div class="hint">高亮柱为当前参与求和的 N 个系数（按幅值从大到小选取）。</div>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>数学面板</h2>
+        <div class="formula">c<sub>n</sub> = (1/M)·Σ<sub>k</sub> z<sub>k</sub>·e<sup>−2πi·k·n/M</sup>　　z(t) = Σ<sub>n</sub> c<sub>n</sub>·e<sup>2πi·n·t</sup></div>
+        <table>
+          <thead><tr><th>#</th><th>频率 n</th><th>幅值 |cₙ|</th><th>相位</th></tr></thead>
+          <tbody id="coeffTbodyA"></tbody>
+        </table>
+        <button class="btn btn-sm" id="btnExpandA" type="button" style="margin-top:8px">展开更多</button>
+        <div class="stat" id="statNA"></div>
+        <div class="stat" id="statErrA"></div>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>导出</h2>
+        <div class="row">
+          <button class="btn btn-sm" id="btnPngA" type="button">保存当前帧 PNG</button>
+          <button class="btn btn-sm" id="btnSvgA" type="button">导出静态 SVG</button>
+        </div>
+        <div class="row">
+          <button class="btn btn-sm" id="btnRecA" type="button">⏺ 开始录像 WebM</button>
+          <span class="hint" id="recStatA" style="margin-top:0"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 模式 B ================= -->
+<section id="secB" hidden>
+  <div class="grid-b">
+    <div class="col-main">
+      <div class="card">
+        <h2><span class="dot"></span>选择波形</h2>
+        <div class="wave-grid" id="waveGridB"></div>
+      </div>
+      <div class="card">
+        <div class="canvas-wrap"><canvas id="canvasB"></canvas></div>
+        <div class="row" style="margin-top:12px;margin-bottom:0">
+          <label for="rngTimeB">时间轴</label>
+          <input type="range" id="rngTimeB" min="0" max="999" value="0" step="1">
+          <span class="val" id="timeValB">t=0.000</span>
+        </div>
+      </div>
+      <div class="card">
+        <h2><span class="dot"></span>吉布斯现象观察窗（间断点附近）</h2>
+        <div class="row">
+          <label>放大倍数</label>
+          <span id="zoomRowB">
+            <button class="btn btn-sm zoom-btn" type="button" data-zoom="1">1×</button>
+            <button class="btn btn-sm zoom-btn active" type="button" data-zoom="4">4×</button>
+            <button class="btn btn-sm zoom-btn" type="button" data-zoom="16">16×</button>
+          </span>
+        </div>
+        <canvas id="canvasGibbs"></canvas>
+        <div class="hint" id="gibbsInfoB"></div>
+      </div>
+    </div>
+
+    <div class="col-right">
+      <div class="card">
+        <h2><span class="dot"></span>播放控制</h2>
+        <div class="row">
+          <button class="btn btn-primary" id="btnPlayB" type="button" style="min-width:92px">⏸ 暂停</button>
+          <label for="rngSpeedB">速度</label>
+          <input type="range" id="rngSpeedB" min="0.1" max="4" value="1" step="0.1">
+          <span class="val" id="speedValB">1.0×</span>
+        </div>
+        <div class="row">
+          <label for="rngNB">谐波数 N</label>
+          <input type="range" id="rngNB" min="1" max="500" value="20" step="1">
+          <span class="val" id="nValB">20</span>
+        </div>
+        <div class="checks">
+          <label><input type="checkbox" id="chkCirclesB" checked>圆环</label>
+          <label><input type="checkbox" id="chkLinkB" checked>联动虚线</label>
+          <label><input type="checkbox" id="chkOriginalB" checked>原波形</label>
+          <label><input type="checkbox" id="chkPartialB" checked>部分和曲线</label>
+          <label><input type="checkbox" id="chkGridB" checked>网格</label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>数学面板</h2>
+        <div class="formula">f(t) ≈ a₀/2 + Σ<sub>k=1..N</sub> [a<sub>k</sub>cos 2πkt + b<sub>k</sub>sin 2πkt]</div>
+        <table>
+          <thead><tr><th>k</th><th>aₖ</th><th>bₖ</th><th>幅值</th></tr></thead>
+          <tbody id="coeffTbodyB"></tbody>
+        </table>
+        <button class="btn btn-sm" id="btnExpandB" type="button" style="margin-top:8px">展开更多</button>
+        <div class="stat" id="statNB"></div>
+        <div class="stat" id="statErrB"></div>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>导出</h2>
+        <div class="row">
+          <button class="btn btn-sm" id="btnPngB" type="button">保存当前帧 PNG</button>
+          <button class="btn btn-sm" id="btnSvgB" type="button">导出静态 SVG</button>
+        </div>
+        <div class="row">
+          <button class="btn btn-sm" id="btnRecB" type="button">⏺ 开始录像 WebM</button>
+          <span class="hint" id="recStatB" style="margin-top:0"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- ================= 帮助弹窗 ================= -->
+<div class="modal-mask" id="helpModal">
+  <div class="modal" role="dialog" aria-label="帮助">
+    <h2>使用帮助<span><button class="icon-btn" id="btnCloseHelp" type="button" title="关闭（Esc）">×</button></span></h2>
+    <h3>这是什么</h3>
+    <p>任意闭合路径都可以分解为一串旋转圆环（傅里叶级数）：每个圆环对应一个频率 n 的系数 cₙ，把 N 个圆环首尾相接，末端笔尖随时间走出原路径的 N 项部分和逼近。</p>
+    <h3>模式 A · 任意路径 2D</h3>
+    <ul>
+      <li><b>手绘</b>：点击「手绘输入」后在画布上按住拖动，松手自动完成采样与分解。</li>
+      <li><b>预设</b>：圆、椭圆、正方形、心形线、五角星、李萨如 3:2 / 5:4、双纽线 ∞，一键加载。</li>
+      <li><b>SVG 路径</b>：粘贴 d 字符串（支持 M/L/H/V/C/S/Q/T/Z），解析失败会给出中文原因。</li>
+      <li><b>项数 N</b>：拖动滑杆实时增减参与求和的系数个数（按幅值从大到小选取），观察部分和逼近过程；右侧频谱图按频率展示 |cₙ|。</li>
+    </ul>
+    <h3>模式 B · 经典波形 1D</h3>
+    <ul>
+      <li>方波 / 锯齿波 / 三角波 / 半波整流正弦；左侧旋转圆环、右侧随时间轴展开的波形，虚线实时联动。</li>
+      <li><b>吉布斯现象</b>：方波与锯齿波在间断点附近有约 8.95%（跳变量）的过冲；用 1×/4×/16× 观察窗放大查看，窗口同时标注理论峰值与当前 N 项实测过冲。</li>
+      <li>原波形与 N 项部分和叠加显示，并给出 RMS 误差。</li>
+    </ul>
+    <h3>通用</h3>
+    <ul>
+      <li>播放/暂停、速度 0.1×~4×、时间轴拖动；显示开关可分别控制圆环、矢量、轨迹线、中心点、原始轮廓。</li>
+      <li>导出：当前帧 PNG、当前构图静态 SVG、WebM 录像（开始/停止按钮；浏览器不支持时会提示）。</li>
+      <li>分享链接：把当前模式、路径数据与设置压缩编码进网址，打开链接即可还原。</li>
+    </ul>
+    <h3>快捷键</h3>
+    <ul>
+      <li><kbd>空格</kbd> 播放 / 暂停</li>
+      <li><kbd>←</kbd> / <kbd>→</kbd> 时间轴微调</li>
+      <li><kbd>↑</kbd> / <kbd>↓</kbd> 项数 N ±1</li>
+      <li><kbd>H</kbd> 打开 / 关闭帮助</li>
+      <li><kbd>D</kbd> 切换浅色 / 深色</li>
+      <li><kbd>Esc</kbd> 关闭帮助</li>
+    </ul>
+    <h3>数学说明</h3>
+    <p>对路径按弧长等距采样 M 个点（M 取 2 的幂），用基-2 FFT 计算 cₙ = (1/M)Σ zₖ·e^(−2πi·k·n/M)；动画中 t ∈ [0,1)，圆环链末端为部分和 Σ cₙ·e^(2πi·n·t)。N 取满全部系数时可在采样点上精确还原路径。</p>
+    <div class="modal-foot"><label><input type="checkbox" id="noAutoHelp"> 下次打开不再自动弹出</label></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ===== CORE-BEGIN ===== */
+/* ============================================================================
+ * core.js — 傅里叶级数可视化的纯逻辑核心（不含任何 DOM 依赖）
+ * 同时供浏览器页面与 node 单元测试使用。
+ * 数学约定：
+ *   采样点 z_k = x_k + i·y_k, k = 0..M-1（M 为 2 的幂）
+ *   傅里叶系数 c_n = (1/M) Σ_k z_k · e^(−2πi·k·n/M)，频率 n 取正负对称区间
+ *   部分和（圆环链）z(t) = Σ_n c_n · e^(+2πi·n·t)，t ∈ [0,1)
+ * ========================================================================== */
+'use strict';
+
+/* ---------------- 基础工具 ---------------- */
+
+function nextPow2(n) {
+  let p = 1;
+  while (p < n) p <<= 1;
+  return p;
+}
+
+function clampNum(v, lo, hi) {
+  return v < lo ? lo : (v > hi ? hi : v);
+}
+
+/**
+ * 迭代基-2 快速傅里叶变换（就地）。
+ * inverse=false：正变换 X[k] = Σ_j x[j]·e^(−2πi·j·k/n)
+ * inverse=true ：逆变换 x[j] = (1/n) Σ_k X[k]·e^(+2πi·j·k/n)
+ * 蝶形旋转因子直接取 cos/sin（避免递推累积误差）。
+ */
+function fft(re, im, inverse) {
+  const n = re.length;
+  if (n <= 1) return;
+  if ((n & (n - 1)) !== 0) throw new Error('FFT 长度必须是 2 的幂');
+  // 位逆序重排
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) {
+      let t = re[i]; re[i] = re[j]; re[j] = t;
+      t = im[i]; im[i] = im[j]; im[j] = t;
+    }
+  }
+  const sign = inverse ? 1 : -1;
+  for (let len = 2; len <= n; len <<= 1) {
+    const half = len >> 1;
+    const step = sign * 2 * Math.PI / len;
+    for (let i = 0; i < n; i += len) {
+      for (let j = 0; j < half; j++) {
+        const ang = step * j;
+        const wr = Math.cos(ang), wi = Math.sin(ang);
+        const a = i + j, b = i + j + half;
+        const vr = re[b] * wr - im[b] * wi;
+        const vi = re[b] * wi + im[b] * wr;
+        re[b] = re[a] - vr; im[b] = im[a] - vi;
+        re[a] += vr;        im[a] += vi;
+      }
+    }
+  }
+  if (inverse) {
+    for (let i = 0; i < n; i++) { re[i] /= n; im[i] /= n; }
+  }
+}
+
+/* ---------------- 路径采样与系数 ---------------- */
+
+/**
+ * 闭合折线按弧长等距重采样为 M 个点（自动把末点与首点相连闭合）。
+ * points: [{x,y}, ...]（至少 2 个点），返回长度 M 的数组。
+ */
+function resampleClosedPath(points, M) {
+  const n = points.length;
+  if (n < 2) throw new Error('路径点数不足');
+  const cum = new Float64Array(n + 1);
+  for (let i = 0; i < n; i++) {
+    const a = points[i], b = points[(i + 1) % n];
+    cum[i + 1] = cum[i] + Math.hypot(b.x - a.x, b.y - a.y);
+  }
+  const total = cum[n];
+  if (!(total > 0)) throw new Error('路径总长度为零，无法采样');
+  const out = new Array(M);
+  let seg = 0;
+  for (let m = 0; m < M; m++) {
+    const s = (m / M) * total;
+    while (seg < n - 1 && cum[seg + 1] < s) seg++;
+    const a = points[seg], b = points[(seg + 1) % n];
+    const segLen = cum[seg + 1] - cum[seg];
+    const r = segLen > 0 ? (s - cum[seg]) / segLen : 0;
+    out[m] = { x: a.x + (b.x - a.x) * r, y: a.y + (b.y - a.y) * r };
+  }
+  return out;
+}
+
+function pathBBox(points) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const p of points) {
+    if (p.x < x0) x0 = p.x;
+    if (p.x > x1) x1 = p.x;
+    if (p.y < y0) y0 = p.y;
+    if (p.y > y1) y1 = p.y;
+  }
+  return { x0, y0, x1, y1, w: x1 - x0, h: y1 - y0 };
+}
+
+/**
+ * 由闭合采样点计算全部傅里叶系数。
+ * samples: 长度必须为 2 的幂的 [{x,y}]
+ * 返回 coeffs: [{n, re, im, amp, phase}]，n ∈ (−M/2, M/2]
+ */
+function computePathCoeffs(samples) {
+  const M = samples.length;
+  const re = new Float64Array(M), im = new Float64Array(M);
+  for (let k = 0; k < M; k++) { re[k] = samples[k].x; im[k] = samples[k].y; }
+  fft(re, im, false); // X[n] = Σ z_k e^(−2πi·k·n/M)
+  const coeffs = new Array(M);
+  for (let k = 0; k < M; k++) {
+    const n = k <= M / 2 ? k : k - M; // 频率正负对称
+    const cr = re[k] / M, ci = im[k] / M;
+    coeffs[k] = {
+      n, re: cr, im: ci,
+      amp: Math.hypot(cr, ci),
+      phase: Math.atan2(ci, cr)
+    };
+  }
+  return coeffs;
+}
+
+/** 按幅值降序（同幅值时低频优先），返回新数组 */
+function rankByAmp(coeffs) {
+  return coeffs.slice().sort((a, b) => (b.amp - a.amp) || (Math.abs(a.n) - Math.abs(b.n)));
+}
+
+/** 部分和 z(t) = Σ c·e^(2πi·n·t)，list: [{n,re,im}] */
+function evalPartial(list, t) {
+  let x = 0, y = 0;
+  for (const c of list) {
+    const ang = 2 * Math.PI * c.n * t + c.phase;
+    x += c.amp * Math.cos(ang);
+    y += c.amp * Math.sin(ang);
+  }
+  return { x, y };
+}
+
+/** 路径重构 RMS 误差：sqrt((1/M)Σ|z_N(k/M) − z_k|²) */
+function pathRmsError(list, samples) {
+  const M = samples.length;
+  let acc = 0;
+  for (let k = 0; k < M; k++) {
+    const p = evalPartial(list, k / M);
+    const dx = p.x - samples[k].x, dy = p.y - samples[k].y;
+    acc += dx * dx + dy * dy;
+  }
+  return Math.sqrt(acc / M);
+}
+
+/* ---------------- 预设图形（生成稠密折线，之后统一弧长重采样） ---------------- */
+
+const PRESET_LIST = [
+  { id: 'circle',   name: '圆' },
+  { id: 'ellipse',  name: '椭圆' },
+  { id: 'square',   name: '正方形' },
+  { id: 'heart',    name: '心形线' },
+  { id: 'star',     name: '五角星' },
+  { id: 'liss32',   name: '李萨如 3:2' },
+  { id: 'liss54',   name: '李萨如 5:4' },
+  { id: 'lemniscate', name: '双纽线 ∞' }
+];
+
+function makePresetPoints(id, dense) {
+  const D = dense || 4096;
+  const pts = [];
+  const TAU = 2 * Math.PI;
+  if (id === 'circle') {
+    for (let i = 0; i < D; i++) {
+      const t = i / D;
+      pts.push({ x: Math.cos(TAU * t), y: Math.sin(TAU * t) });
+    }
+  } else if (id === 'ellipse') {
+    for (let i = 0; i < D; i++) {
+      const t = i / D;
+      pts.push({ x: 1.4 * Math.cos(TAU * t), y: 0.9 * Math.sin(TAU * t) });
+    }
+  } else if (id === 'square') {
+    // 周长匀速参数化（t 本身即弧长比例），边长 2、中心在原点
+    const per = 8;
+    for (let i = 0; i < D; i++) {
+      let s = (i / D) * per;
+      const side = Math.floor(s / 2) % 4;
+      const u = s % 2; // 边上的位置 0..2
+      let x, y;
+      if (side === 0) { x = -1 + u; y = -1; }
+      else if (side === 1) { x = 1; y = -1 + u; }
+      else if (side === 2) { x = 1 - u; y = 1; }
+      else { x = -1; y = 1 - u; }
+      pts.push({ x, y });
+    }
+  } else if (id === 'heart') {
+    // 经典心形线，画布 y 轴向下故取 −y 使尖端朝下
+    for (let i = 0; i < D; i++) {
+      const a = TAU * i / D;
+      const s = Math.sin(a);
+      const x = 16 * s * s * s;
+      const y = 13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a);
+      pts.push({ x: x / 17, y: -y / 17 });
+    }
+  } else if (id === 'star') {
+    // 五角星轮廓：外/内顶点交替，内半径 ≈ 0.382（正五边形星）
+    const verts = [];
+    for (let v = 0; v < 10; v++) {
+      const r = v % 2 === 0 ? 1 : 0.381966;
+      const a = -Math.PI / 2 + v * Math.PI / 5;
+      verts.push({ x: r * Math.cos(a), y: r * Math.sin(a) });
+    }
+    for (let i = 0; i < D; i++) {
+      const s = (i / D) * 10;
+      const seg = Math.floor(s) % 10;
+      const u = s - Math.floor(s);
+      const a = verts[seg], b = verts[(seg + 1) % 10];
+      pts.push({ x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u });
+    }
+  } else if (id === 'liss32') {
+    for (let i = 0; i < D; i++) {
+      const t = i / D;
+      pts.push({ x: Math.cos(3 * TAU * t), y: Math.sin(2 * TAU * t) });
+    }
+  } else if (id === 'liss54') {
+    for (let i = 0; i < D; i++) {
+      const t = i / D;
+      pts.push({ x: Math.cos(5 * TAU * t), y: Math.sin(4 * TAU * t) });
+    }
+  } else if (id === 'lemniscate') {
+    // 伯努利双纽线
+    for (let i = 0; i < D; i++) {
+      const a = TAU * i / D;
+      const den = 1 + Math.sin(a) * Math.sin(a);
+      pts.push({ x: Math.cos(a) / den, y: Math.sin(a) * Math.cos(a) / den });
+    }
+  } else {
+    throw new Error('未知预设图形: ' + id);
+  }
+  return pts;
+}
+
+/* ---------------- SVG path 解析（M/L/H/V/C/S/Q/T/Z） ---------------- */
+
+const SVG_MAX_LEN = 100000;   // 输入长度上限
+const SVG_CURVE_SUBDIV = 24;  // 每条贝塞尔曲线细分数
+
+function parseSVGPath(d) {
+  if (typeof d !== 'string') throw new Error('SVG 路径必须是字符串');
+  if (d.length === 0) throw new Error('SVG 路径为空');
+  if (d.length > SVG_MAX_LEN) throw new Error('SVG 路径过长（超过 ' + SVG_MAX_LEN + ' 字符）');
+
+  // 词法分析：命令字母 或 数字；其余字符（除空白/逗号）一律报错
+  const tokens = [];
+  const re = /([a-zA-Z])|([-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?)/gy;
+  let pos = 0;
+  while (pos < d.length) {
+    const ch = d[pos];
+    if (ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r' || ch === ',' || ch === '\f') { pos++; continue; }
+    re.lastIndex = pos;
+    const m = re.exec(d);
+    if (!m || m.index !== pos) {
+      throw new Error('无法识别的字符 “' + ch + '”（位置 ' + pos + '）');
+    }
+    tokens.push(m[1] ? m[1] : parseFloat(m[2]));
+    pos = re.lastIndex;
+  }
+  if (tokens.length === 0) throw new Error('SVG 路径为空');
+
+  const pts = [];
+  let i = 0;                 // 词法游标
+  let guard = 0;             // 防死循环保险：每轮必须消耗 token
+  let cmd = null;            // 当前命令
+  let cx = 0, cy = 0;        // 当前点
+  let sx = 0, sy = 0;        // 子路径起点（Z 用）
+  let pcx = 0, pcy = 0;      // 上一段贝塞尔的第二控制点（S/T 平滑用）
+  let prevCmd = '';
+  let started = false;
+
+  function need(num) {
+    if (i + num > tokens.length) throw new Error('命令 ' + cmd + ' 参数个数不足');
+    for (let k = 0; k < num; k++) {
+      if (typeof tokens[i + k] !== 'number') throw new Error('命令 ' + cmd + ' 缺少数字参数');
+    }
+    const v = tokens.slice(i, i + num);
+    i += num;
+    for (const x of v) if (!isFinite(x)) throw new Error('数字超出有效范围');
+    return v;
+  }
+  function lineTo(x, y) { pts.push({ x, y }); cx = x; cy = y; }
+  function cubicTo(x1, y1, x2, y2, x, y) {
+    const x0 = cx, y0 = cy;
+    for (let s = 1; s <= SVG_CURVE_SUBDIV; s++) {
+      const t = s / SVG_CURVE_SUBDIV, u = 1 - t;
+      pts.push({
+        x: u * u * u * x0 + 3 * u * u * t * x1 + 3 * u * t * t * x2 + t * t * t * x,
+        y: u * u * u * y0 + 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t * y
+      });
+    }
+    pcx = x2; pcy = y2;
+    cx = x; cy = y;
+  }
+  function quadTo(x1, y1, x, y) {
+    const x0 = cx, y0 = cy;
+    for (let s = 1; s <= SVG_CURVE_SUBDIV; s++) {
+      const t = s / SVG_CURVE_SUBDIV, u = 1 - t;
+      pts.push({
+        x: u * u * x0 + 2 * u * t * x1 + t * t * x,
+        y: u * u * y0 + 2 * u * t * y1 + t * t * y
+      });
+    }
+    pcx = x1; pcy = y1;
+    cx = x; cy = y;
+  }
+
+  while (i < tokens.length) {
+    const before = i;
+    if (typeof tokens[i] === 'string') { cmd = tokens[i]; i++; }
+    else if (cmd === null) throw new Error('路径必须以命令字母开始');
+    const rel = cmd === cmd.toLowerCase();
+    const C = cmd.toUpperCase();
+    if (!started && C !== 'M') throw new Error('路径必须以 M/m（移动）命令开始');
+    if (C === 'A') throw new Error('暂不支持圆弧命令 A/a，请先转换为折线或贝塞尔曲线');
+    if ('MLHVCSQTZ'.indexOf(C) < 0) {
+      throw new Error('不支持的命令 ' + cmd);
+    }
+    if (C === 'Z') {
+      if (cx !== sx || cy !== sy) pts.push({ x: sx, y: sy });
+      cx = sx; cy = sy;
+      cmd = null; prevCmd = 'Z';
+      continue;
+    }
+    // 各命令的参数组循环（如 L 可跟多组坐标）
+    let firstPair = true;
+    for (;;) {
+      if (i >= tokens.length || typeof tokens[i] === 'string') break;
+      if (C === 'M') {
+        const [x, y] = need(2);
+        const nx = rel ? cx + x : x, ny = rel ? cy + y : y;
+        if (firstPair) {
+          // 新子路径起点：与上一条子路径之间用直线衔接（傅里叶路径为单闭合环）
+          if (started && (cx !== nx || cy !== ny)) pts.push({ x: nx, y: ny });
+          else pts.push({ x: nx, y: ny });
+          cx = nx; cy = ny; sx = nx; sy = ny;
+          started = true; firstPair = false;
+        } else {
+          // M 后续坐标对按隐式 L 处理
+          lineTo(nx, ny);
+        }
+      } else if (C === 'L') {
+        const [x, y] = need(2);
+        lineTo(rel ? cx + x : x, rel ? cy + y : y);
+      } else if (C === 'H') {
+        const [x] = need(1);
+        lineTo(rel ? cx + x : x, cy);
+      } else if (C === 'V') {
+        const [y] = need(1);
+        lineTo(cx, rel ? cy + y : y);
+      } else if (C === 'C') {
+        const [x1, y1, x2, y2, x, y] = need(6);
+        cubicTo(rel ? cx + x1 : x1, rel ? cy + y1 : y1,
+                rel ? cx + x2 : x2, rel ? cy + y2 : y2,
+                rel ? cx + x : x, rel ? cy + y : y);
+      } else if (C === 'S') {
+        const [x2, y2, x, y] = need(4);
+        const x1 = (prevCmd === 'C' || prevCmd === 'S') ? 2 * cx - pcx : cx;
+        const y1 = (prevCmd === 'C' || prevCmd === 'S') ? 2 * cy - pcy : cy;
+        cubicTo(x1, y1, rel ? cx + x2 : x2, rel ? cy + y2 : y2,
+                rel ? cx + x : x, rel ? cy + y : y);
+      } else if (C === 'Q') {
+        const [x1, y1, x, y] = need(4);
+        quadTo(rel ? cx + x1 : x1, rel ? cy + y1 : y1,
+               rel ? cx + x : x, rel ? cy + y : y);
+      } else if (C === 'T') {
+        const [x, y] = need(2);
+        const x1 = (prevCmd === 'Q' || prevCmd === 'T') ? 2 * cx - pcx : cx;
+        const y1 = (prevCmd === 'Q' || prevCmd === 'T') ? 2 * cy - pcy : cy;
+        quadTo(x1, y1, rel ? cx + x : x, rel ? cy + y : y);
+      }
+      prevCmd = C;
+      if (C === 'M') { cmd = rel ? 'l' : 'L'; } // M 后续组按 L 处理
+    }
+    if (C !== 'Z') prevCmd = C;
+    if (i === before) {
+      if (++guard > 4) throw new Error('解析失败：命令 ' + cmd + ' 缺少参数');
+    } else guard = 0;
+  }
+
+  if (!started || pts.length < 3) throw new Error('有效点数不足（至少需要 3 个点）');
+  return pts;
+}
+
+/* ---------------- 经典波形（模式 B） ---------------- */
+
+const WAVE_LIST = [
+  { id: 'square', name: '方波' },
+  { id: 'saw',    name: '锯齿波' },
+  { id: 'tri',    name: '三角波' },
+  { id: 'half',   name: '半波整流正弦' }
+];
+
+/** 周期为 1 的波形真值函数，t ∈ [0,1) */
+function waveValue(id, t) {
+  t = t - Math.floor(t);
+  if (id === 'square') return t < 0.5 ? 1 : -1;
+  if (id === 'saw') return 2 * t - 1;
+  if (id === 'tri') return 1 - 4 * Math.abs(t - 0.5);
+  if (id === 'half') return Math.max(0, Math.sin(2 * Math.PI * t));
+  throw new Error('未知波形: ' + id);
+}
+
+/** 波形间断点位置（用于吉布斯观察窗）；连续波形返回空数组 */
+function waveJumps(id) {
+  if (id === 'square') return [0, 0.5];
+  if (id === 'saw') return [0];
+  return [];
+}
+
+/**
+ * 由 M 点采样计算单边幅相谐波：
+ * f(t) ≈ dc + Σ_k amp_k·sin(2π·k·t + phase_k)
+ * （由复系数 c_k 得 phasor P_k = 2i·c_k，取其虚部投影恰好还原实信号）
+ */
+function computeWaveCoeffs(id, M) {
+  const re = new Float64Array(M), im = new Float64Array(M);
+  for (let k = 0; k < M; k++) re[k] = waveValue(id, k / M);
+  fft(re, im, false);
+  const harmonics = [];
+  for (let k = 1; k < M / 2; k++) {
+    const pr = -2 * im[k] / M, pi = 2 * re[k] / M; // P_k = 2i·c_k
+    harmonics.push({
+      k,
+      amp: Math.hypot(pr, pi),
+      phase: Math.atan2(pi, pr),
+      a: 2 * re[k] / M,   // 余弦系数 a_k
+      b: -2 * im[k] / M   // 正弦系数 b_k
+    });
+  }
+  return { id, dc: re[0] / M, harmonics };
+}
+
+/** f_N(t) = dc + Σ_{前 count 项} amp·sin(2πkt+phase) */
+function evalWavePartial(wc, count, t) {
+  let v = wc.dc;
+  const n = Math.min(count, wc.harmonics.length);
+  for (let i = 0; i < n; i++) {
+    const h = wc.harmonics[i];
+    v += h.amp * Math.sin(2 * Math.PI * h.k * t + h.phase);
+  }
+  return v;
+}
+
+/** 波形 RMS 误差：sqrt((1/M)Σ(f_N − f)²) */
+function waveRmsError(wc, count, M) {
+  let acc = 0;
+  for (let k = 0; k < M; k++) {
+    const d = evalWavePartial(wc, count, k / M) - waveValue(wc.id, k / M);
+    acc += d * d;
+  }
+  return Math.sqrt(acc / M);
+}
+
+/** 吉布斯理论过冲比例（相对跳变量）：Si(π)/π − 1/2 ≈ 0.08949 */
+const GIBBS_RATIO = 0.089490;
+
+/* ---------------- 分享链接编解码 ---------------- */
+
+const SHARE_MAX_HASH = 400000; // hash 数据长度上限（字符）
+
+function bytesToB64url(bytes) {
+  let bin = '';
+  const CH = 0x8000;
+  for (let i = 0; i < bytes.length; i += CH) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+  }
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function b64urlToBytes(s) {
+  if (typeof s !== 'string' || s.length === 0) throw new Error('链接数据为空');
+  if (s.length > SHARE_MAX_HASH) throw new Error('链接数据过长');
+  if (!/^[A-Za-z0-9_-]+$/.test(s)) throw new Error('链接数据包含非法字符');
+  let b64 = s.replace(/-/g, '+').replace(/_/g, '/');
+  while (b64.length % 4) b64 += '=';
+  let bin;
+  try { bin = atob(b64); } catch (e) { throw new Error('链接数据无法解码'); }
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+async function pipeBytes(bytes, stream) {
+  // CompressionStream / DecompressionStream 通用管道
+  const cs = stream;
+  const writer = cs.writable.getWriter();
+  // 写入侧错误必须吞咽并尾随 await，否则会产生未处理的 Promise 拒绝
+  const writeP = writer.write(bytes).then(function () { return writer.close(); }, function () {});
+  const reader = cs.readable.getReader();
+  const chunks = [];
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      total += value.length;
+      if (total > SHARE_MAX_HASH * 8) throw new Error('解压数据过大');
+    }
+  } finally {
+    await writeP;
+  }
+  const out = new Uint8Array(total);
+  let off = 0;
+  for (const c of chunks) { out.set(c, off); off += c.length; }
+  return out;
+}
+
+/**
+ * 状态对象 → URL hash 字符串（含前导 #）。
+ * 优先 deflate-raw 压缩（#d=base64url），不支持时退化为未压缩（#j=base64url）。
+ */
+async function encodeState(state) {
+  const json = JSON.stringify(state);
+  const bytes = new TextEncoder().encode(json);
+  if (typeof CompressionStream !== 'undefined') {
+    try {
+      const packed = await pipeBytes(bytes, new CompressionStream('deflate-raw'));
+      return '#d=' + bytesToB64url(packed);
+    } catch (e) { /* 压缩失败则退化 */ }
+  }
+  return '#j=' + bytesToB64url(bytes);
+}
+
+/** URL hash → 校验后的状态对象；任何异常都抛出中文错误 */
+async function decodeState(hash) {
+  if (typeof hash !== 'string' || hash.length < 4 || hash[0] !== '#') {
+    throw new Error('链接格式无效');
+  }
+  if (hash.length > SHARE_MAX_HASH + 3) throw new Error('链接数据过长');
+  const tag = hash[1];
+  const body = hash.slice(3); // 格式：#d=... 或 #j=...
+  let bytes;
+  if (tag === 'd') {
+    bytes = b64urlToBytes(body);
+    if (typeof DecompressionStream === 'undefined') {
+      throw new Error('当前浏览器不支持解压该分享链接');
+    }
+    try {
+      bytes = await pipeBytes(bytes, new DecompressionStream('deflate-raw'));
+    } catch (e) {
+      throw new Error('链接数据解压失败（已损坏）');
+    }
+  } else if (tag === 'j') {
+    bytes = b64urlToBytes(body);
+  } else {
+    throw new Error('链接格式无效');
+  }
+  let obj;
+  try {
+    obj = JSON.parse(new TextDecoder().decode(bytes));
+  } catch (e) {
+    throw new Error('链接数据不是有效的 JSON');
+  }
+  return validateState(obj);
+}
+
+/** 严格校验并净化分享状态：类型/范围逐项检查，未知字段丢弃，越界值钳制 */
+function validateState(o) {
+  if (!o || typeof o !== 'object' || Array.isArray(o)) throw new Error('链接数据格式错误');
+  const out = { v: 1, m: 'a' };
+  if (o.m === 'a' || o.m === 'b') out.m = o.m;
+
+  const clampI = (v, lo, hi, dflt) => {
+    if (typeof v !== 'number' || !isFinite(v)) return dflt;
+    return Math.round(clampNum(v, lo, hi));
+  };
+  const clampF = (v, lo, hi, dflt) => {
+    if (typeof v !== 'number' || !isFinite(v)) return dflt;
+    return clampNum(v, lo, hi);
+  };
+  const bool = (v, dflt) => (typeof v === 'boolean' ? v : dflt);
+
+  // 模式 A
+  const a = (o.a && typeof o.a === 'object') ? o.a : {};
+  const aout = {
+    n: clampI(a.n, 1, 500, 100),
+    speed: clampF(a.speed, 0.1, 4, 1),
+    t: clampF(a.t, 0, 1, 0),
+    vis: {
+      circles: bool(a.vis && a.vis.circles, true),
+      vectors: bool(a.vis && a.vis.vectors, true),
+      trace: bool(a.vis && a.vis.trace, true),
+      center: bool(a.vis && a.vis.center, true),
+      outline: bool(a.vis && a.vis.outline, true)
+    }
+  };
+  if (typeof a.preset === 'string' && PRESET_LIST.some(p => p.id === a.preset)) {
+    aout.preset = a.preset;
+  }
+  if (Array.isArray(a.pts)) {
+    if (a.pts.length < 3) throw new Error('链接中的路径点数不足');
+    if (a.pts.length > 4096) throw new Error('链接中的路径点数过多');
+    const pts = [];
+    for (const p of a.pts) {
+      if (!Array.isArray(p) || p.length !== 2 ||
+          typeof p[0] !== 'number' || typeof p[1] !== 'number' ||
+          !isFinite(p[0]) || !isFinite(p[1]) ||
+          Math.abs(p[0]) > 1e6 || Math.abs(p[1]) > 1e6) {
+        throw new Error('链接中的路径坐标无效');
+      }
+      pts.push([p[0], p[1]]);
+    }
+    aout.pts = pts;
+  }
+  out.a = aout;
+
+  // 模式 B
+  const b = (o.b && typeof o.b === 'object') ? o.b : {};
+  out.b = {
+    w: (typeof b.w === 'string' && WAVE_LIST.some(w => w.id === b.w)) ? b.w : 'square',
+    n: clampI(b.n, 1, 500, 20),
+    speed: clampF(b.speed, 0.1, 4, 1),
+    t: clampF(b.t, 0, 1, 0),
+    vis: {
+      circles: bool(b.vis && b.vis.circles, true),
+      link: bool(b.vis && b.vis.link, true),
+      original: bool(b.vis && b.vis.original, true),
+      partial: bool(b.vis && b.vis.partial, true),
+      grid: bool(b.vis && b.vis.grid, true)
+    }
+  };
+  return out;
+}
+
+/** 把路径点压缩为可进分享链接的形式（保留 2 位小数） */
+function packPoints(samples, maxCount) {
+  const cap = Math.min(samples.length, maxCount || 1024);
+  const step = samples.length / cap;
+  const out = [];
+  for (let i = 0; i < cap; i++) {
+    const p = samples[Math.floor(i * step)];
+    out.push([Math.round(p.x * 100) / 100, Math.round(p.y * 100) / 100]);
+  }
+  return out;
+}
+
+/* ---------------- 导出（node 测试用） ---------------- */
+
+const FCore = {
+  nextPow2, clampNum, fft,
+  resampleClosedPath, pathBBox, computePathCoeffs, rankByAmp, evalPartial, pathRmsError,
+  PRESET_LIST, makePresetPoints,
+  parseSVGPath, SVG_MAX_LEN,
+  WAVE_LIST, waveValue, waveJumps, computeWaveCoeffs, evalWavePartial, waveRmsError,
+  GIBBS_RATIO,
+  bytesToB64url, b64urlToBytes, encodeState, decodeState, validateState, packPoints,
+  SHARE_MAX_HASH
+};
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = FCore;
+}
+if (typeof window !== 'undefined') {
+  window.FCore = FCore; // 浏览器全局导出
+}
+
+/* ===== CORE-END ===== */
+</script>
+<script>
+/* ============================================================================
+ * app.js — math-fourier 页面逻辑（依赖同页 core.js 中的 FCore）
+ * ========================================================================== */
+(function () {
+'use strict';
+
+/* ---------------- 常量 ---------------- */
+var C = window.FCore;
+var PATH_M = 1024;          // 模式 A 路径采样数（2 的幂）
+var WAVE_M = 2048;          // 模式 B 波形采样数
+var N_MAX = 500;            // 项数上限
+var DRAW_MAX = 4096;        // 手绘原始点上限
+var TRACE_MAX = 20000;      // 轨迹点上限
+var BASE_PERIOD = 10;       // 1× 速度下转一圈的秒数
+
+/* ---------------- DOM 工具 ---------------- */
+function $(id) { return document.getElementById(id); }
+function on(id, ev, fn) { $(id).addEventListener(ev, fn); }
+var toastTimer = null;
+function toast(msg, isErr) {
+  var t = $('toast');
+  t.textContent = msg;
+  t.style.background = isErr ? 'var(--danger)' : 'var(--text)';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.classList.remove('show'); }, 3200);
+}
+function saveBlob(blob, name) {
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 200);
+}
+function fmt(v, digits) {
+  if (!isFinite(v)) return '—';
+  if (v !== 0 && (Math.abs(v) < 1e-3 || Math.abs(v) >= 1e5)) return v.toExponential(2);
+  return v.toFixed(digits === undefined ? 4 : digits);
+}
+
+/* ---------------- 主题与配色 ---------------- */
+var PAL = {
+  light: {
+    bg: '#ffffff', grid: '#e8ecf5', outline: '#b9c4dd', circle: '#9db1ea',
+    trace: '#e8590c', tip: '#e03131', center: '#adb5bd', text: '#5b6478',
+    barOff: '#d4dcf3', axis: '#c6cede', spoke: '#748ffc'
+  },
+  dark: {
+    bg: '#171e2e', grid: '#222b42', outline: '#3d4a6e', circle: '#3d4d80',
+    trace: '#ffa94d', tip: '#ff8787', center: '#5b6478', text: '#9aa5bd',
+    barOff: '#2c3a5e', axis: '#33405f', spoke: '#5f7aea'
+  }
+};
+var palette = PAL.light;
+var accent = '#3b5bdb';
+function currentTheme() {
+  return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+}
+function refreshPalette() {
+  palette = PAL[currentTheme()];
+  try {
+    var v = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) accent = v;
+  } catch (e) {}
+}
+function applyTheme(t, save) {
+  document.documentElement.setAttribute('data-theme', t);
+  if (save) { try { localStorage.setItem('mf-theme', t); } catch (e) {} }
+  refreshPalette();
+  $('btnTheme').textContent = t === 'dark' ? '☀️' : '🌙';
+  renderStatics();
+}
+function toggleTheme() {
+  applyTheme(currentTheme() === 'dark' ? 'light' : 'dark', true);
+}
+var ACCENTS = ['#3b5bdb', '#7048e8', '#0ca678', '#e8590c', '#e64980'];
+function buildSwatches() {
+  var box = $('swatches');
+  ACCENTS.forEach(function (c) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'swatch';
+    b.style.background = c;
+    b.title = '主色 ' + c;
+    b.setAttribute('aria-label', '主色 ' + c);
+    b.addEventListener('click', function () {
+      document.documentElement.style.setProperty('--accent', c);
+      try { localStorage.setItem('mf-accent', c); } catch (e) {}
+      markSwatch();
+      refreshPalette();
+      renderStatics();
+    });
+    box.appendChild(b);
+  });
+  markSwatch();
+}
+function markSwatch() {
+  var cur = '';
+  try {
+    cur = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim().toLowerCase();
+  } catch (e) {}
+  var kids = $('swatches').children;
+  for (var i = 0; i < kids.length; i++) {
+    kids[i].classList.toggle('active', ACCENTS[i].toLowerCase() === cur);
+  }
+}
+
+/* ---------------- 画布高分屏适配（位图尺寸 ≠ CSS 尺寸） ---------------- */
+function fitCanvas(cv) {
+  var dpr = window.devicePixelRatio || 1;
+  var w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h) return null;
+  var W = Math.round(w * dpr), H = Math.round(h * dpr);
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  var ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+/* ---------------- 全局状态 ---------------- */
+var S = { mode: 'a' };
+var A = { // 模式 A 引擎状态
+  samples: null, coeffs: null, ranked: null,
+  N: 60, t: 0, speed: 1, playing: true, dirty: true,
+  trace: [], view: { s: 1, cx: 0, cy: 0 },
+  vis: { circles: true, vectors: true, trace: true, center: true, outline: true },
+  sourcePreset: null, sourceLabel: '', tableAll: false
+};
+var B = { // 模式 B 引擎状态
+  wave: 'square', wc: null,
+  N: 20, t: 0, speed: 1, playing: true, dirty: true,
+  zoom: 4,
+  vis: { circles: true, link: true, original: true, partial: true, grid: true },
+  tableAll: false
+};
+
+/* ================= 模式 A：任意路径 2D ================= */
+
+function loadPathA(points, label, presetId) {
+  var samples;
+  try {
+    samples = C.resampleClosedPath(points, PATH_M);
+  } catch (e) {
+    toast('路径采样失败：' + e.message, true);
+    return false;
+  }
+  A.samples = samples;
+  A.coeffs = C.computePathCoeffs(samples);
+  A.ranked = C.rankByAmp(A.coeffs);
+  A.sourcePreset = presetId || null;
+  A.sourceLabel = label;
+  A.trace = [];
+  A.t = 0;
+  var maxN = Math.min(A.coeffs.length, N_MAX);
+  $('rngNA').max = String(maxN);
+  if (A.N > maxN) A.N = maxN;
+  if (A.N < 1) A.N = 1;
+  computeViewA();
+  markPresetActive();
+  renderSpectrum();
+  renderTableA();
+  scheduleErrA();
+  syncControlsA();
+  A.dirty = true;
+  return true;
+}
+
+function computeViewA() {
+  var cv = $('canvasA');
+  var w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h || !A.samples) return;
+  var bb = C.pathBBox(A.samples);
+  var margin = 36;
+  var gw = Math.max(bb.w, 1e-9), gh = Math.max(bb.h, 1e-9);
+  var s = Math.min((w - 2 * margin) / gw, (h - 2 * margin) / gh);
+  A.view = {
+    s: s,
+    cx: w / 2 - (bb.x0 + bb.x1) / 2 * s,
+    cy: h / 2 - (bb.y0 + bb.y1) / 2 * s
+  };
+}
+
+/** 当前 N 项圆环链的各段（数据坐标）：[{x0,y0,x1,y1,r}] */
+function chainSegsA() {
+  var segs = [];
+  var x = 0, y = 0;
+  var n = Math.min(A.N, A.ranked.length);
+  for (var i = 0; i < n; i++) {
+    var c = A.ranked[i];
+    var ang = 2 * Math.PI * c.n * A.t + c.phase;
+    var nx = x + c.amp * Math.cos(ang);
+    var ny = y + c.amp * Math.sin(ang);
+    segs.push({ x0: x, y0: y, x1: nx, y1: ny, r: c.amp });
+    x = nx; y = ny;
+  }
+  return segs;
+}
+
+function renderA() {
+  var cv = $('canvasA');
+  var ctx = fitCanvas(cv);
+  if (!ctx || !A.samples) return;
+  var w = cv.clientWidth, h = cv.clientHeight;
+  var P = palette, v = A.view;
+  ctx.fillStyle = P.bg;
+  ctx.fillRect(0, 0, w, h);
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  // 原始轮廓参考线
+  if (A.vis.outline) {
+    ctx.beginPath();
+    for (var i = 0; i < A.samples.length; i++) {
+      var p = A.samples[i];
+      var sx = p.x * v.s + v.cx, sy = p.y * v.s + v.cy;
+      if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = P.outline;
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
+
+  // 轨迹线
+  if (A.vis.trace && A.trace.length > 1) {
+    ctx.beginPath();
+    for (var j = 0; j < A.trace.length; j++) {
+      var q = A.trace[j];
+      var tx = q.x * v.s + v.cx, ty = q.y * v.s + v.cy;
+      if (j === 0) ctx.moveTo(tx, ty); else ctx.lineTo(tx, ty);
+    }
+    ctx.strokeStyle = P.trace;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  // 圆环链
+  var segs = chainSegsA();
+  var k, g;
+  if (A.vis.circles) {
+    ctx.strokeStyle = P.circle;
+    ctx.lineWidth = 1;
+    for (k = 0; k < segs.length; k++) {
+      g = segs[k];
+      var rr = g.r * v.s;
+      if (rr < 0.6) continue; // 过小圆环跳过，抗锯齿收益为零
+      ctx.beginPath();
+      ctx.arc(g.x0 * v.s + v.cx, g.y0 * v.s + v.cy, rr, 0, 6.283185307);
+      ctx.stroke();
+    }
+  }
+  if (A.vis.vectors) {
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    for (k = 0; k < segs.length; k++) {
+      g = segs[k];
+      ctx.moveTo(g.x0 * v.s + v.cx, g.y0 * v.s + v.cy);
+      ctx.lineTo(g.x1 * v.s + v.cx, g.y1 * v.s + v.cy);
+    }
+    ctx.stroke();
+  }
+
+  // 中心点
+  if (A.vis.center) {
+    ctx.beginPath();
+    ctx.arc(v.cx, v.cy, 3, 0, 6.283185307);
+    ctx.fillStyle = P.center;
+    ctx.fill();
+  }
+
+  // 笔尖
+  if (segs.length) {
+    var tip = segs[segs.length - 1];
+    var px = tip.x1 * v.s + v.cx, py = tip.y1 * v.s + v.cy;
+    ctx.beginPath();
+    ctx.arc(px, py, 4, 0, 6.283185307);
+    ctx.fillStyle = P.tip;
+    ctx.fill();
+    ctx.strokeStyle = P.bg;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // 正在手绘的笔画（屏幕坐标，原样显示）
+  if (stroke && stroke.length > 1) {
+    ctx.beginPath();
+    ctx.moveTo(stroke[0].x, stroke[0].y);
+    for (var m = 1; m < stroke.length; m++) ctx.lineTo(stroke[m].x, stroke[m].y);
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+  }
+
+  // 来源标注
+  ctx.fillStyle = P.text;
+  ctx.font = '12px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(A.sourceLabel + ' · M=' + A.coeffs.length + ' · N=' + A.N, 10, h - 10);
+}
+
+/* ---------------- 频谱图 ---------------- */
+function renderSpectrum() {
+  var cv = $('canvasSpec');
+  var ctx = fitCanvas(cv);
+  if (!ctx) return;
+  var w = cv.clientWidth, h = cv.clientHeight;
+  var P = palette;
+  ctx.fillStyle = P.bg;
+  ctx.fillRect(0, 0, w, h);
+  if (!A.coeffs) return;
+  var M = A.coeffs.length;
+  var K = Math.min(M / 2, 140);
+  // 频率 → 幅值映射 + 显示范围内最大幅值
+  var ampOf = {};
+  var maxAmp = 0;
+  var i, n;
+  for (i = 0; i < M; i++) {
+    var c = A.coeffs[i];
+    ampOf[c.n] = c.amp;
+    if (Math.abs(c.n) <= K && c.amp > maxAmp) maxAmp = c.amp;
+  }
+  if (!(maxAmp > 0)) maxAmp = 1;
+  // 当前入选的频率集合
+  var sel = {};
+  var cnt = Math.min(A.N, A.ranked.length);
+  for (i = 0; i < cnt; i++) sel[A.ranked[i].n] = true;
+  var base = h - 18;
+  var bw = w / (2 * K + 1);
+  for (n = -K; n <= K; n++) {
+    var amp = ampOf[n] || 0;
+    var bh = (amp / maxAmp) * (base - 8);
+    var x = (n + K) * bw;
+    ctx.fillStyle = sel[n] ? accent : P.barOff;
+    ctx.fillRect(x, base - bh, Math.max(bw - 0.5, 0.5), bh);
+  }
+  ctx.strokeStyle = P.axis;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, base + 0.5); ctx.lineTo(w, base + 0.5); ctx.stroke();
+  ctx.fillStyle = P.text;
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('0', w / 2, h - 5);
+  ctx.textAlign = 'left';
+  ctx.fillText(String(-K), 2, h - 5);
+  ctx.textAlign = 'right';
+  ctx.fillText('+' + K, w - 2, h - 5);
+}
+
+/* ---------------- 数学面板（模式 A） ---------------- */
+function renderTableA() {
+  var tbody = $('coeffTbodyA');
+  while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+  if (!A.ranked) return;
+  var rows = Math.min(A.N, A.tableAll ? 50 : 8, A.ranked.length);
+  for (var i = 0; i < rows; i++) {
+    var c = A.ranked[i];
+    var tr = document.createElement('tr');
+    var cells = [
+      String(i + 1),
+      (c.n > 0 ? '+' : '') + c.n,
+      fmt(c.amp, 5),
+      fmt(c.phase, 2) + ' rad'
+    ];
+    for (var j = 0; j < cells.length; j++) {
+      var td = document.createElement('td');
+      td.textContent = cells[j];
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+  $('btnExpandA').textContent = A.tableAll ? '收起' : '展开更多';
+}
+
+var errTimerA = null;
+function scheduleErrA() {
+  clearTimeout(errTimerA);
+  errTimerA = setTimeout(function () {
+    if (!A.samples || !A.ranked) return;
+    var list = A.ranked.slice(0, Math.min(A.N, A.ranked.length));
+    var rms = C.pathRmsError(list, A.samples);
+    var bb = C.pathBBox(A.samples);
+    var rel = rms / Math.max(bb.w, bb.h, 1e-9) * 100;
+    $('statErrA').textContent = 'RMS 误差 = ' + fmt(rms) + '（相对路径尺度 ' + rel.toFixed(3) + '%）';
+  }, 120);
+}
+
+function syncControlsA() {
+  $('rngNA').value = String(A.N);
+  $('nValA').textContent = A.N + ' / ' + (A.coeffs ? Math.min(A.coeffs.length, N_MAX) : N_MAX);
+  $('rngSpeedA').value = String(A.speed);
+  $('speedValA').textContent = A.speed.toFixed(1) + '×';
+  $('rngTimeA').value = String(Math.round(A.t * 999));
+  $('timeValA').textContent = 't=' + A.t.toFixed(3);
+  $('chkCirclesA').checked = A.vis.circles;
+  $('chkVectorsA').checked = A.vis.vectors;
+  $('chkTraceA').checked = A.vis.trace;
+  $('chkCenterA').checked = A.vis.center;
+  $('chkOutlineA').checked = A.vis.outline;
+  $('btnPlayA').textContent = A.playing ? '⏸ 暂停' : '▶ 播放';
+  if (A.coeffs) {
+    $('statNA').textContent = '来源：' + A.sourceLabel + ' · 采样 M = ' + A.coeffs.length +
+      ' · 当前 N = ' + A.N + '（幅值降序选取）';
+  }
+}
+
+/* ================= 模式 B：经典波形 1D ================= */
+
+function loadWaveB(id) {
+  if (!C.WAVE_LIST.some(function (w) { return w.id === id; })) id = 'square';
+  B.wave = id;
+  B.wc = C.computeWaveCoeffs(id, WAVE_M);
+  var maxN = Math.min(B.wc.harmonics.length, N_MAX);
+  $('rngNB').max = String(maxN);
+  if (B.N > maxN) B.N = maxN;
+  markWaveActive();
+  renderTableB();
+  renderGibbs();
+  scheduleErrB();
+  syncControlsB();
+  B.dirty = true;
+}
+
+/** 模式 B 版面布局（CSS 像素） */
+function layoutB() {
+  var cv = $('canvasB');
+  var w = cv.clientWidth, h = cv.clientHeight;
+  var side = Math.min(h - 16, Math.max(120, w * 0.32));
+  var cx = side / 2 + 8;
+  var x0 = side + 34, x1 = w - 16;
+  var yMid = h / 2;
+  var vMax = 1.4; // 纵轴半量程（为吉布斯过冲留余量）
+  var yScale = (h / 2 - 22) / vMax;
+  return {
+    w: w, h: h, side: side, ccx: cx, ccy: yMid,
+    x0: x0, x1: x1, yMid: yMid, yScale: yScale, vMax: vMax
+  };
+}
+
+function renderB() {
+  var cv = $('canvasB');
+  var ctx = fitCanvas(cv);
+  if (!ctx || !B.wc) return;
+  var L = layoutB();
+  var P = palette;
+  ctx.fillStyle = P.bg;
+  ctx.fillRect(0, 0, L.w, L.h);
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  function yOf(v) { return L.yMid - v * L.yScale; }
+  function xOf(t) { return L.x0 + t * (L.x1 - L.x0); }
+
+  // 网格
+  if (B.vis.grid) {
+    ctx.strokeStyle = P.grid;
+    ctx.lineWidth = 1;
+    var gv;
+    for (var gi = -1; gi <= 1; gi++) {
+      ctx.beginPath(); ctx.moveTo(L.x0, yOf(gi)); ctx.lineTo(L.x1, yOf(gi)); ctx.stroke();
+      ctx.fillStyle = P.text; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+      ctx.fillText(gi > 0 ? '+' + gi : String(gi), L.x0 - 6, yOf(gi) + 3);
+    }
+    for (var gt = 0.25; gt < 1; gt += 0.25) {
+      ctx.beginPath(); ctx.moveTo(xOf(gt), 10); ctx.lineTo(xOf(gt), L.h - 10); ctx.stroke();
+    }
+    // 圆形区与波形区之间分隔
+    ctx.beginPath(); ctx.moveTo(L.x0 - 20, 8); ctx.lineTo(L.x0 - 20, L.h - 8); ctx.stroke();
+    gv = null;
+  }
+
+  // 原波形
+  if (B.vis.original) {
+    ctx.beginPath();
+    for (var i = 0; i <= 720; i++) {
+      var t0 = i / 720;
+      var v0 = C.waveValue(B.wave, t0);
+      if (i === 0) ctx.moveTo(xOf(t0), yOf(v0)); else ctx.lineTo(xOf(t0), yOf(v0));
+    }
+    ctx.strokeStyle = P.outline;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // N 项部分和曲线（解析求值，画到当前 t 为止）
+  if (B.vis.partial && B.t > 0.0005) {
+    ctx.beginPath();
+    var steps = Math.max(2, Math.floor(720 * B.t));
+    for (var j = 0; j <= steps; j++) {
+      var t1 = (j / 720);
+      if (t1 > B.t) t1 = B.t;
+      var v1 = C.evalWavePartial(B.wc, B.N, t1);
+      if (j === 0) ctx.moveTo(xOf(t1), yOf(v1)); else ctx.lineTo(xOf(t1), yOf(v1));
+    }
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  // 圆环链（y 分量即部分和；phasor P_k = 2i·c_k）
+  var px = L.ccx, py = yOf(B.wc.dc);
+  // 直流电平基准圆心标记
+  var n = Math.min(B.N, B.wc.harmonics.length);
+  var nodes = [{ x: px, y: py, r: 0 }];
+  for (var k = 0; k < n; k++) {
+    var hk = B.wc.harmonics[k];
+    var ang = 2 * Math.PI * hk.k * B.t + hk.phase;
+    var r = hk.amp * L.yScale;
+    var qx = px + r * Math.cos(ang);
+    var qy = py - r * Math.sin(ang);
+    nodes.push({ x: qx, y: qy, r: r });
+    if (B.vis.circles && r > 0.6) {
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, 6.283185307);
+      ctx.strokeStyle = P.circle;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.moveTo(px, py); ctx.lineTo(qx, qy);
+    ctx.strokeStyle = P.spoke;
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    px = qx; py = qy;
+  }
+  // 圆心
+  if (B.vis.circles) {
+    ctx.beginPath(); ctx.arc(L.ccx, yOf(B.wc.dc), 2.5, 0, 6.283185307);
+    ctx.fillStyle = P.center; ctx.fill();
+  }
+  // 笔尖
+  ctx.beginPath(); ctx.arc(px, py, 4, 0, 6.283185307);
+  ctx.fillStyle = P.tip; ctx.fill();
+
+  // 联动虚线：链尖 → 波形当前点
+  var wvx = xOf(B.t), wvy = yOf(C.evalWavePartial(B.wc, B.N, B.t));
+  if (B.vis.link) {
+    ctx.beginPath();
+    ctx.setLineDash([4, 4]);
+    ctx.moveTo(px, py);
+    ctx.lineTo(wvx, wvy);
+    ctx.strokeStyle = P.tip;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  ctx.beginPath(); ctx.arc(wvx, wvy, 3.5, 0, 6.283185307);
+  ctx.fillStyle = P.tip; ctx.fill();
+
+  // 标注
+  ctx.fillStyle = P.text;
+  ctx.font = '12px sans-serif';
+  ctx.textAlign = 'left';
+  var wname = '';
+  for (var wi = 0; wi < C.WAVE_LIST.length; wi++) if (C.WAVE_LIST[wi].id === B.wave) wname = C.WAVE_LIST[wi].name;
+  ctx.fillText(wname + ' · N=' + B.N + ' · t=' + B.t.toFixed(2), 10, L.h - 10);
+  ctx.fillText('t', L.x1 - 4, yOf(0) - 6);
+}
+
+/* ---------------- 吉布斯观察窗 ---------------- */
+function renderGibbs() {
+  var cv = $('canvasGibbs');
+  var ctx = fitCanvas(cv);
+  if (!ctx || !B.wc) return;
+  var w = cv.clientWidth, h = cv.clientHeight;
+  var P = palette;
+  ctx.fillStyle = P.bg;
+  ctx.fillRect(0, 0, w, h);
+  var jumps = C.waveJumps(B.wave);
+  var info = $('gibbsInfoB');
+  if (!jumps.length) {
+    ctx.fillStyle = P.text;
+    ctx.font = '13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('该波形处处连续，无吉布斯现象（试试方波或锯齿波）', w / 2, h / 2);
+    info.textContent = '连续波形的傅里叶部分和一致收敛，无过冲。';
+    return;
+  }
+  var t0 = jumps[0];
+  var half = 0.28 / B.zoom;      // 窗口半宽（时间轴）
+  var vMax = 1.5;
+  var x0 = 14, x1 = w - 14, yPad = 16;
+  function xOf(t) { return x0 + ((t - (t0 - half)) / (2 * half)) * (x1 - x0); }
+  function yOf(v) { return (h - yPad) - ((v + vMax) / (2 * vMax)) * (h - 2 * yPad); }
+
+  // 参考水平线：±1 电平 与 ±理论峰值（跳变量 J=2，过冲 8.95%·J → 峰值 ≈ ±1.179）
+  var peak = 1 + 2 * C.GIBBS_RATIO;
+  ctx.font = '10px sans-serif';
+  var levels = [[1, P.grid, '电平 +1'], [-1, P.grid, '电平 −1'],
+                [peak, P.tip, '理论峰值 +' + peak.toFixed(3)],
+                [-peak, P.tip, '理论峰值 −' + peak.toFixed(3)]];
+  for (var li = 0; li < levels.length; li++) {
+    ctx.beginPath();
+    ctx.setLineDash(li < 2 ? [2, 4] : [6, 4]);
+    ctx.moveTo(x0, yOf(levels[li][0]));
+    ctx.lineTo(x1, yOf(levels[li][0]));
+    ctx.strokeStyle = levels[li][1];
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = levels[li][1];
+    ctx.textAlign = 'left';
+    ctx.fillText(levels[li][2], x0 + 4, yOf(levels[li][0]) - 3);
+  }
+  // 间断点竖线
+  ctx.beginPath();
+  ctx.moveTo(xOf(t0), yOf(vMax)); ctx.lineTo(xOf(t0), yOf(-vMax));
+  ctx.strokeStyle = P.axis; ctx.lineWidth = 1; ctx.stroke();
+
+  // 原波形
+  ctx.beginPath();
+  var SAMPLES = 800, i, tt, vv;
+  for (i = 0; i <= SAMPLES; i++) {
+    tt = t0 - half + (i / SAMPLES) * 2 * half;
+    vv = C.waveValue(B.wave, ((tt % 1) + 1) % 1);
+    if (i === 0) ctx.moveTo(xOf(tt), yOf(vv)); else ctx.lineTo(xOf(tt), yOf(vv));
+  }
+  ctx.strokeStyle = P.outline; ctx.lineWidth = 1.5; ctx.stroke();
+
+  // N 项部分和 + 实测过冲
+  ctx.beginPath();
+  var maxAbs = 0;
+  for (i = 0; i <= SAMPLES; i++) {
+    tt = t0 - half + (i / SAMPLES) * 2 * half;
+    vv = C.evalWavePartial(B.wc, B.N, ((tt % 1) + 1) % 1);
+    if (Math.abs(vv) > maxAbs) maxAbs = Math.abs(vv);
+    if (i === 0) ctx.moveTo(xOf(tt), yOf(vv)); else ctx.lineTo(xOf(tt), yOf(vv));
+  }
+  ctx.strokeStyle = accent; ctx.lineWidth = 2; ctx.stroke();
+
+  var over = Math.max(0, maxAbs - 1);       // 超出电平的幅度
+  var ratio = over / 2 * 100;               // 相对跳变量 J=2 的百分比
+  var wn = B.wave === 'square' ? '方波' : '锯齿波';
+  info.textContent = wn + '在间断点 t=' + t0 + ' 处跳变量 J=2；理论过冲 ≈ 8.95%·J（峰值 ≈ ±' +
+    peak.toFixed(3) + '）。当前 N=' + B.N + ' 项实测过冲 ' + ratio.toFixed(2) + '%（放大 ' + B.zoom + '×）。';
+}
+
+/* ---------------- 数学面板（模式 B） ---------------- */
+function renderTableB() {
+  var tbody = $('coeffTbodyB');
+  while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+  if (!B.wc) return;
+  var rows = Math.min(B.N, B.tableAll ? 50 : 8, B.wc.harmonics.length);
+  for (var i = 0; i < rows; i++) {
+    var hk = B.wc.harmonics[i];
+    var tr = document.createElement('tr');
+    var cells = [String(hk.k), fmt(hk.a), fmt(hk.b), fmt(hk.amp)];
+    for (var j = 0; j < cells.length; j++) {
+      var td = document.createElement('td');
+      td.textContent = cells[j];
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+  $('btnExpandB').textContent = B.tableAll ? '收起' : '展开更多';
+}
+
+var errTimerB = null;
+function scheduleErrB() {
+  clearTimeout(errTimerB);
+  errTimerB = setTimeout(function () {
+    if (!B.wc) return;
+    var rms = C.waveRmsError(B.wc, B.N, WAVE_M);
+    $('statErrB').textContent = 'RMS 误差 = ' + fmt(rms) + '（相对量程 ±1：' + (rms / 2 * 100).toFixed(3) + '%）';
+  }, 120);
+}
+
+function syncControlsB() {
+  $('rngNB').value = String(B.N);
+  $('nValB').textContent = B.N + ' / ' + (B.wc ? Math.min(B.wc.harmonics.length, N_MAX) : N_MAX);
+  $('rngSpeedB').value = String(B.speed);
+  $('speedValB').textContent = B.speed.toFixed(1) + '×';
+  $('rngTimeB').value = String(Math.round(B.t * 999));
+  $('timeValB').textContent = 't=' + B.t.toFixed(3);
+  $('chkCirclesB').checked = B.vis.circles;
+  $('chkLinkB').checked = B.vis.link;
+  $('chkOriginalB').checked = B.vis.original;
+  $('chkPartialB').checked = B.vis.partial;
+  $('chkGridB').checked = B.vis.grid;
+  $('btnPlayB').textContent = B.playing ? '⏸ 暂停' : '▶ 播放';
+  if (B.wc) {
+    $('statNB').textContent = '采样 M = ' + WAVE_M + ' · 可用谐波 ' + B.wc.harmonics.length +
+      ' · 当前 N = ' + B.N + '（按频率从小到大）';
+  }
+}
+
+/* ---------------- 手绘输入（模式 A，支持触屏） ---------------- */
+var drawModeA = false;
+var stroke = null;      // 进行中的笔画（屏幕 CSS 像素坐标）
+var strokePid = null;
+
+function setDrawMode(onOff) {
+  drawModeA = !!onOff;
+  $('btnDrawA').classList.toggle('active', drawModeA);
+  $('canvasA').classList.toggle('drawing', drawModeA);
+  $('drawHintA').classList.toggle('show', drawModeA);
+  if (!drawModeA) stroke = null;
+  A.dirty = true;
+}
+function strokePoint(e) {
+  var r = $('canvasA').getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+function finishStroke(reason) {
+  if (!stroke) return;
+  var pts = stroke;
+  stroke = null;
+  strokePid = null;
+  if (pts.length < 8) {
+    toast('笔画太短（' + pts.length + ' 点），请画一个更大的图形', true);
+    return;
+  }
+  if (loadPathA(pts, '手绘路径（' + pts.length + ' 点）', null)) {
+    A.playing = true;
+    setDrawMode(false);
+    syncControlsA();
+    toast(reason || '手绘完成，已生成圆环动画');
+  }
+}
+function bindDrawA() {
+  var cv = $('canvasA');
+  cv.addEventListener('pointerdown', function (e) {
+    if (!drawModeA || S.mode !== 'a') return;
+    if (stroke) return; // 忽略第二根手指等多指情况
+    e.preventDefault();
+    stroke = [strokePoint(e)];
+    strokePid = e.pointerId;
+    try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+    A.dirty = true;
+  });
+  cv.addEventListener('pointermove', function (e) {
+    if (!stroke || e.pointerId !== strokePid) return;
+    e.preventDefault();
+    var p = strokePoint(e);
+    var last = stroke[stroke.length - 1];
+    if (Math.hypot(p.x - last.x, p.y - last.y) < 2) return;
+    stroke.push(p);
+    if (stroke.length >= DRAW_MAX) finishStroke('已达点数上限 ' + DRAW_MAX + '，自动完成');
+    A.dirty = true;
+  });
+  function up(e) {
+    if (!stroke || e.pointerId !== strokePid) return;
+    finishStroke(null);
+  }
+  cv.addEventListener('pointerup', up);
+  cv.addEventListener('pointercancel', function () { stroke = null; strokePid = null; A.dirty = true; });
+}
+
+/* ================= 导出：PNG / SVG / WebM ================= */
+
+function exportPng(mode) {
+  var cv = $(mode === 'a' ? 'canvasA' : 'canvasB');
+  if (mode === 'a') renderA(); else renderB();
+  if (!cv.toBlob) { toast('当前浏览器不支持 PNG 导出', true); return; }
+  cv.toBlob(function (blob) {
+    if (!blob) { toast('PNG 导出失败', true); return; }
+    saveBlob(blob, 'fourier-' + mode + '.png');
+    toast('PNG 已保存');
+  }, 'image/png');
+}
+
+function svgHead(w, h) {
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h +
+    '" viewBox="0 0 ' + w + ' ' + h + '">';
+}
+
+function buildSvgA() {
+  var cv = $('canvasA');
+  var w = cv.clientWidth, h = cv.clientHeight;
+  var v = A.view, P = palette;
+  var out = [svgHead(w, h)];
+  out.push('<rect width="100%" height="100%" fill="' + P.bg + '"/>');
+  function pts2str(list) {
+    var s = [];
+    for (var i = 0; i < list.length; i++) {
+      s.push((list[i].x * v.s + v.cx).toFixed(2) + ',' + (list[i].y * v.s + v.cy).toFixed(2));
+    }
+    return s.join(' ');
+  }
+  if (A.vis.outline) {
+    out.push('<polygon points="' + pts2str(A.samples) + '" fill="none" stroke="' + P.outline + '" stroke-width="1.2"/>');
+  }
+  if (A.vis.trace && A.trace.length > 1) {
+    out.push('<polyline points="' + pts2str(A.trace) + '" fill="none" stroke="' + P.trace + '" stroke-width="2"/>');
+  }
+  var segs = chainSegsA();
+  var i, g;
+  if (A.vis.circles) {
+    for (i = 0; i < segs.length; i++) {
+      g = segs[i];
+      var r = g.r * v.s;
+      if (r < 0.6) continue;
+      out.push('<circle cx="' + (g.x0 * v.s + v.cx).toFixed(2) + '" cy="' + (g.y0 * v.s + v.cy).toFixed(2) +
+        '" r="' + r.toFixed(2) + '" fill="none" stroke="' + P.circle + '" stroke-width="1"/>');
+    }
+  }
+  if (A.vis.vectors) {
+    var d = [];
+    for (i = 0; i < segs.length; i++) {
+      g = segs[i];
+      d.push('M' + (g.x0 * v.s + v.cx).toFixed(2) + ' ' + (g.y0 * v.s + v.cy).toFixed(2) +
+        'L' + (g.x1 * v.s + v.cx).toFixed(2) + ' ' + (g.y1 * v.s + v.cy).toFixed(2));
+    }
+    out.push('<path d="' + d.join('') + '" fill="none" stroke="' + accent + '" stroke-width="1.2"/>');
+  }
+  if (segs.length) {
+    var tip = segs[segs.length - 1];
+    out.push('<circle cx="' + (tip.x1 * v.s + v.cx).toFixed(2) + '" cy="' + (tip.y1 * v.s + v.cy).toFixed(2) +
+      '" r="4" fill="' + P.tip + '"/>');
+  }
+  out.push('</svg>');
+  return out.join('');
+}
+
+function buildSvgB() {
+  var cv = $('canvasB');
+  var w = cv.clientWidth, h = cv.clientHeight;
+  var L = layoutB(), P = palette;
+  function yOf(vv) { return L.yMid - vv * L.yScale; }
+  function xOf(tt) { return L.x0 + tt * (L.x1 - L.x0); }
+  var out = [svgHead(w, h)];
+  out.push('<rect width="100%" height="100%" fill="' + P.bg + '"/>');
+  var i, tt, vv;
+  if (B.vis.grid) {
+    var gd = '';
+    for (var gi = -1; gi <= 1; gi++) gd += 'M' + L.x0 + ' ' + yOf(gi).toFixed(1) + 'L' + L.x1 + ' ' + yOf(gi).toFixed(1);
+    out.push('<path d="' + gd + '" fill="none" stroke="' + P.grid + '" stroke-width="1"/>');
+  }
+  if (B.vis.original) {
+    var od = [];
+    for (i = 0; i <= 720; i++) {
+      tt = i / 720; vv = C.waveValue(B.wave, tt);
+      od.push((i ? 'L' : 'M') + xOf(tt).toFixed(2) + ' ' + yOf(vv).toFixed(2));
+    }
+    out.push('<path d="' + od.join('') + '" fill="none" stroke="' + P.outline + '" stroke-width="1.5"/>');
+  }
+  if (B.vis.partial && B.t > 0.0005) {
+    var pd = [];
+    var steps = Math.max(2, Math.floor(720 * B.t));
+    for (i = 0; i <= steps; i++) {
+      tt = Math.min(i / 720, B.t); vv = C.evalWavePartial(B.wc, B.N, tt);
+      pd.push((i ? 'L' : 'M') + xOf(tt).toFixed(2) + ' ' + yOf(vv).toFixed(2));
+    }
+    out.push('<path d="' + pd.join('') + '" fill="none" stroke="' + accent + '" stroke-width="2"/>');
+  }
+  // 圆环链
+  var px = L.ccx, py = yOf(B.wc.dc);
+  var n = Math.min(B.N, B.wc.harmonics.length);
+  for (var k = 0; k < n; k++) {
+    var hk = B.wc.harmonics[k];
+    var ang = 2 * Math.PI * hk.k * B.t + hk.phase;
+    var r = hk.amp * L.yScale;
+    var qx = px + r * Math.cos(ang), qy = py - r * Math.sin(ang);
+    if (B.vis.circles && r > 0.6) {
+      out.push('<circle cx="' + px.toFixed(2) + '" cy="' + py.toFixed(2) + '" r="' + r.toFixed(2) +
+        '" fill="none" stroke="' + P.circle + '" stroke-width="1"/>');
+    }
+    out.push('<line x1="' + px.toFixed(2) + '" y1="' + py.toFixed(2) + '" x2="' + qx.toFixed(2) +
+      '" y2="' + qy.toFixed(2) + '" stroke="' + P.spoke + '" stroke-width="1.2"/>');
+    px = qx; py = qy;
+  }
+  if (B.vis.link) {
+    out.push('<line x1="' + px.toFixed(2) + '" y1="' + py.toFixed(2) + '" x2="' + xOf(B.t).toFixed(2) +
+      '" y2="' + py.toFixed(2) + '" stroke="' + P.tip + '" stroke-width="1" stroke-dasharray="4,4"/>');
+  }
+  out.push('<circle cx="' + px.toFixed(2) + '" cy="' + py.toFixed(2) + '" r="4" fill="' + P.tip + '"/>');
+  out.push('</svg>');
+  return out.join('');
+}
+
+function exportSvg(mode) {
+  if (mode === 'a' && !A.samples) return;
+  if (mode === 'b' && !B.wc) return;
+  var svg = mode === 'a' ? buildSvgA() : buildSvgB();
+  saveBlob(new Blob([svg], { type: 'image/svg+xml' }), 'fourier-' + mode + '.svg');
+  toast('SVG 已导出');
+}
+
+/* ---------------- WebM 录像 ---------------- */
+var REC = {
+  a: { mr: null, chunks: [], timer: null, t0: 0, stream: null },
+  b: { mr: null, chunks: [], timer: null, t0: 0, stream: null }
+};
+function recUI(mode) {
+  return {
+    btn: $(mode === 'a' ? 'btnRecA' : 'btnRecB'),
+    stat: $(mode === 'a' ? 'recStatA' : 'recStatB')
+  };
+}
+function stopRec(mode) {
+  var R = REC[mode];
+  if (R.mr && R.mr.state !== 'inactive') { try { R.mr.stop(); } catch (e) {} }
+}
+function cleanupRec(mode) {
+  var R = REC[mode], ui = recUI(mode);
+  clearInterval(R.timer);
+  if (R.stream) { R.stream.getTracks().forEach(function (tr) { tr.stop(); }); }
+  R.mr = null; R.stream = null;
+  ui.btn.textContent = '⏺ 开始录像 WebM';
+  ui.btn.classList.remove('btn-danger');
+  ui.stat.style.color = '';
+}
+function toggleRec(mode) {
+  var R = REC[mode], ui = recUI(mode);
+  if (R.mr) { stopRec(mode); return; }
+  var cv = $(mode === 'a' ? 'canvasA' : 'canvasB');
+  if (typeof MediaRecorder === 'undefined' || !cv.captureStream) {
+    ui.stat.textContent = '当前浏览器不支持录像（需要 MediaRecorder 与 canvas.captureStream）';
+    toast('当前浏览器不支持 WebM 录像', true);
+    return;
+  }
+  var mimes = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+  var mime = '';
+  for (var i = 0; i < mimes.length; i++) {
+    try { if (MediaRecorder.isTypeSupported(mimes[i])) { mime = mimes[i]; break; } } catch (e) {}
+  }
+  if (!mime) {
+    ui.stat.textContent = '当前浏览器不支持 WebM 编码，无法录像';
+    return;
+  }
+  var stream, mr;
+  try {
+    stream = cv.captureStream(60);
+    mr = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8000000 });
+  } catch (e) {
+    ui.stat.textContent = '录像启动失败：' + e.message;
+    return;
+  }
+  R.chunks = [];
+  R.stream = stream;
+  R.mr = mr;
+  mr.ondataavailable = function (e) { if (e.data && e.data.size) R.chunks.push(e.data); };
+  mr.onstop = function () {
+    var blob = new Blob(R.chunks, { type: 'video/webm' });
+    if (blob.size > 0) { saveBlob(blob, 'fourier-' + mode + '.webm'); toast('WebM 录像已保存'); }
+    else { ui.stat.textContent = '录像为空'; }
+    cleanupRec(mode);
+    ui.stat.textContent = '';
+  };
+  mr.onerror = function (e) {
+    ui.stat.textContent = '录像出错：' + (e.error ? e.error.name : '未知');
+    cleanupRec(mode);
+  };
+  try { mr.start(250); } catch (e) {
+    ui.stat.textContent = '录像启动失败：' + e.message;
+    cleanupRec(mode);
+    return;
+  }
+  R.t0 = Date.now();
+  ui.btn.textContent = '⏹ 停止录像';
+  ui.btn.classList.add('btn-danger');
+  ui.stat.style.color = 'var(--danger)';
+  R.timer = setInterval(function () {
+    var s = Math.round((Date.now() - R.t0) / 1000);
+    ui.stat.textContent = '● 录制中 ' + s + 's（最长 120s）';
+    if (s >= 120) stopRec(mode);
+  }, 500);
+  toast('开始录像（' + mime + '）');
+}
+
+/* ================= 分享链接 ================= */
+
+function buildShareState() {
+  var st = {
+    v: 1,
+    m: S.mode,
+    a: {
+      n: A.N, speed: A.speed, t: Math.round(A.t * 1000) / 1000,
+      vis: {
+        circles: A.vis.circles, vectors: A.vis.vectors, trace: A.vis.trace,
+        center: A.vis.center, outline: A.vis.outline
+      }
+    },
+    b: {
+      w: B.wave, n: B.N, speed: B.speed, t: Math.round(B.t * 1000) / 1000,
+      vis: {
+        circles: B.vis.circles, link: B.vis.link, original: B.vis.original,
+        partial: B.vis.partial, grid: B.vis.grid
+      }
+    }
+  };
+  if (A.sourcePreset) st.a.preset = A.sourcePreset;
+  else if (A.samples) st.a.pts = C.packPoints(A.samples, 1024);
+  return st;
+}
+
+function doShare() {
+  if (!A.samples) { toast('请先加载一条路径', true); return; }
+  C.encodeState(buildShareState()).then(function (hash) {
+    var url = location.href.split('#')[0] + hash;
+    try { history.replaceState(null, '', hash); } catch (e) {}
+    function done() { toast('分享链接已复制到剪贴板（' + hash.length + ' 字符）'); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done, function () {
+        toast('链接已生成并写入地址栏，请手动复制', true);
+      });
+    } else {
+      toast('链接已生成并写入地址栏，请手动复制', true);
+    }
+  }).catch(function (e) {
+    toast('生成分享链接失败：' + e.message, true);
+  });
+}
+
+function applySharedState(st) {
+  S.mode = st.m;
+  // 先加载数据（loadPathA 会把 t 归零并钳制 N），再覆写共享设置
+  if (st.a.preset) {
+    var nm = '预设';
+    for (var i = 0; i < C.PRESET_LIST.length; i++) {
+      if (C.PRESET_LIST[i].id === st.a.preset) nm = C.PRESET_LIST[i].name;
+    }
+    loadPathA(C.makePresetPoints(st.a.preset, 4096), nm, st.a.preset);
+  } else if (st.a.pts) {
+    var pts = st.a.pts.map(function (p) { return { x: p[0], y: p[1] }; });
+    loadPathA(pts, '分享路径', null);
+  } else {
+    loadPathA(C.makePresetPoints('heart', 4096), '心形线', 'heart');
+  }
+  loadWaveB(st.b.w);
+  // 覆写模式 A 设置
+  A.N = Math.max(1, Math.min(Math.min(A.coeffs.length, N_MAX), st.a.n));
+  A.speed = st.a.speed;
+  A.t = st.a.t;
+  A.vis = {
+    circles: st.a.vis.circles, vectors: st.a.vis.vectors, trace: st.a.vis.trace,
+    center: st.a.vis.center, outline: st.a.vis.outline
+  };
+  // 覆写模式 B 设置
+  B.N = Math.max(1, Math.min(Math.min(B.wc.harmonics.length, N_MAX), st.b.n));
+  B.speed = st.b.speed;
+  B.t = st.b.t;
+  B.vis = {
+    circles: st.b.vis.circles, link: st.b.vis.link, original: st.b.vis.original,
+    partial: st.b.vis.partial, grid: st.b.vis.grid
+  };
+  syncControlsA();
+  syncControlsB();
+  renderSpectrum();
+  renderTableA();
+  renderTableB();
+  renderGibbs();
+  scheduleErrA();
+  scheduleErrB();
+  A.trace = [];
+  A.dirty = true;
+  B.dirty = true;
+}
+
+function restoreFromHash() {
+  if (!location.hash || location.hash.length < 4) return Promise.resolve(false);
+  return C.decodeState(location.hash).then(function (st) {
+    applySharedState(st);
+    toast('已从分享链接还原');
+    return true;
+  }).catch(function (e) {
+    toast('分享链接无效：' + e.message + '（已加载默认状态）', true);
+    return false;
+  });
+}
+
+/* ================= 帮助 / 快捷键 ================= */
+
+function closeHelp() { $('helpModal').classList.remove('show'); }
+function toggleHelp() { $('helpModal').classList.toggle('show'); }
+
+/* 首次打开自动弹出帮助：勾选「不再自动弹出」后写入 localStorage 记忆 */
+var NO_AUTO_HELP_KEY = 'mf-no-auto-help';
+function autoHelp() {
+  var chk = $('noAutoHelp');
+  var off = false;
+  try { off = localStorage.getItem(NO_AUTO_HELP_KEY) === '1'; } catch (e) {}
+  chk.checked = off; // 读回已保存的勾选状态
+  chk.addEventListener('change', function () {
+    try { localStorage.setItem(NO_AUTO_HELP_KEY, chk.checked ? '1' : '0'); } catch (e) {}
+  });
+  if (off) return;
+  if ((location.search || '').indexOf('nohelp') >= 0) return;
+  $('helpModal').classList.add('show');
+}
+
+function togglePlay() {
+  var E = S.mode === 'a' ? A : B;
+  E.playing = !E.playing;
+  if (S.mode === 'a') syncControlsA(); else syncControlsB();
+}
+function nudgeTime(d) {
+  var E = S.mode === 'a' ? A : B;
+  E.t = ((E.t + d) % 1 + 1) % 1;
+  if (S.mode === 'a') { A.trace = []; syncControlsA(); A.dirty = true; }
+  else { syncControlsB(); B.dirty = true; }
+}
+function nudgeN(d) {
+  if (S.mode === 'a') {
+    var maxN = Math.min(A.coeffs ? A.coeffs.length : 1, N_MAX);
+    A.N = Math.max(1, Math.min(maxN, A.N + d));
+    A.trace = [];
+    syncControlsA(); renderSpectrum(); renderTableA(); scheduleErrA();
+    A.dirty = true;
+  } else {
+    var maxB = Math.min(B.wc ? B.wc.harmonics.length : 1, N_MAX);
+    B.N = Math.max(1, Math.min(maxB, B.N + d));
+    syncControlsB(); renderTableB(); renderGibbs(); scheduleErrB();
+    B.dirty = true;
+  }
+}
+
+function bindKeyboard() {
+  document.addEventListener('keydown', function (e) {
+    var tag = (e.target && e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+    if (e.code === 'Space') {
+      if (tag === 'button') return; // 避免与聚焦按钮的默认点击重复触发
+      e.preventDefault();
+      togglePlay();
+    } else if (e.key === 'Escape') {
+      closeHelp();
+    } else if (e.key === 'h' || e.key === 'H') {
+      toggleHelp();
+    } else if (e.key === 'd' || e.key === 'D') {
+      toggleTheme();
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault(); nudgeTime(-0.005);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault(); nudgeTime(0.005);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault(); nudgeN(1);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault(); nudgeN(-1);
+    }
+  });
+}
+
+/* ================= 模式切换与静态重绘 ================= */
+
+function switchMode(m) {
+  S.mode = m === 'b' ? 'b' : 'a';
+  $('tabA').classList.toggle('active', S.mode === 'a');
+  $('tabB').classList.toggle('active', S.mode === 'b');
+  $('secA').hidden = S.mode !== 'a';
+  $('secB').hidden = S.mode !== 'b';
+  // 切走时停止另一模式的录像
+  stopRec(S.mode === 'a' ? 'b' : 'a');
+  if (S.mode === 'a') { computeViewA(); A.dirty = true; renderSpectrum(); }
+  else { B.dirty = true; renderGibbs(); }
+}
+
+function renderStatics() {
+  renderSpectrum();
+  renderTableA();
+  scheduleErrA();
+  renderTableB();
+  renderGibbs();
+  scheduleErrB();
+  A.dirty = true;
+  B.dirty = true;
+}
+
+/* ================= 控件绑定 ================= */
+
+function buildPresets() {
+  var box = $('presetGridA');
+  C.PRESET_LIST.forEach(function (p) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn btn-sm';
+    b.textContent = p.name;
+    b.setAttribute('data-preset', p.id);
+    b.addEventListener('click', function () {
+      loadPathA(C.makePresetPoints(p.id, 4096), p.name, p.id);
+      A.playing = true;
+      syncControlsA();
+    });
+    box.appendChild(b);
+  });
+}
+function markPresetActive() {
+  var kids = $('presetGridA').children;
+  for (var i = 0; i < kids.length; i++) {
+    kids[i].classList.toggle('active', kids[i].getAttribute('data-preset') === A.sourcePreset);
+  }
+}
+function buildWaves() {
+  var box = $('waveGridB');
+  C.WAVE_LIST.forEach(function (wv) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn btn-sm';
+    b.textContent = wv.name;
+    b.setAttribute('data-wave', wv.id);
+    b.addEventListener('click', function () {
+      loadWaveB(wv.id);
+      B.playing = true;
+      syncControlsB();
+    });
+    box.appendChild(b);
+  });
+}
+function markWaveActive() {
+  var kids = $('waveGridB').children;
+  for (var i = 0; i < kids.length; i++) {
+    kids[i].classList.toggle('active', kids[i].getAttribute('data-wave') === B.wave);
+  }
+}
+
+function loadSvgA() {
+  $('svgErrA').textContent = '';
+  var d = $('svgInputA').value;
+  try {
+    var pts = C.parseSVGPath(d);
+    if (loadPathA(pts, 'SVG 路径（' + pts.length + ' 点）', null)) {
+      A.playing = true;
+      syncControlsA();
+      toast('SVG 路径加载成功');
+    }
+  } catch (e) {
+    $('svgErrA').textContent = '解析失败：' + e.message;
+  }
+}
+
+function bindRange(id, fn) {
+  $(id).addEventListener('input', function () { fn(parseFloat(this.value)); });
+}
+function bindCheck(id, fn) {
+  $(id).addEventListener('change', function () { fn(this.checked); });
+}
+
+function bindAll() {
+  on('btnTheme', 'click', toggleTheme);
+  on('btnHelp', 'click', toggleHelp);
+  on('btnCloseHelp', 'click', closeHelp);
+  $('helpModal').addEventListener('click', function (e) { if (e.target === this) closeHelp(); });
+  on('btnShare', 'click', doShare);
+  on('tabA', 'click', function () { switchMode('a'); });
+  on('tabB', 'click', function () { switchMode('b'); });
+
+  /* ---- 模式 A ---- */
+  on('btnDrawA', 'click', function () { setDrawMode(!drawModeA); });
+  on('btnLoadSvgA', 'click', loadSvgA);
+  on('btnPlayA', 'click', function () { A.playing = !A.playing; syncControlsA(); A.dirty = true; });
+  bindRange('rngSpeedA', function (v) {
+    A.speed = Math.min(4, Math.max(0.1, v));
+    $('speedValA').textContent = A.speed.toFixed(1) + '×';
+  });
+  bindRange('rngNA', function (v) {
+    var maxN = Math.min(A.coeffs ? A.coeffs.length : 1, N_MAX);
+    A.N = Math.max(1, Math.min(maxN, Math.round(v)));
+    $('nValA').textContent = A.N + ' / ' + maxN;
+    A.trace = [];
+    renderSpectrum(); renderTableA(); scheduleErrA();
+    A.dirty = true;
+  });
+  bindRange('rngTimeA', function (v) {
+    A.t = Math.min(1, Math.max(0, v / 999));
+    $('timeValA').textContent = 't=' + A.t.toFixed(3);
+    A.trace = [];
+    A.dirty = true;
+  });
+  bindCheck('chkCirclesA', function (c) { A.vis.circles = c; A.dirty = true; });
+  bindCheck('chkVectorsA', function (c) { A.vis.vectors = c; A.dirty = true; });
+  bindCheck('chkTraceA', function (c) { A.vis.trace = c; if (!c) A.trace = []; A.dirty = true; });
+  bindCheck('chkCenterA', function (c) { A.vis.center = c; A.dirty = true; });
+  bindCheck('chkOutlineA', function (c) { A.vis.outline = c; A.dirty = true; });
+  on('btnExpandA', 'click', function () { A.tableAll = !A.tableAll; renderTableA(); });
+  on('btnPngA', 'click', function () { exportPng('a'); });
+  on('btnSvgA', 'click', function () { exportSvg('a'); });
+  on('btnRecA', 'click', function () { toggleRec('a'); });
+
+  /* ---- 模式 B ---- */
+  on('btnPlayB', 'click', function () { B.playing = !B.playing; syncControlsB(); B.dirty = true; });
+  bindRange('rngSpeedB', function (v) {
+    B.speed = Math.min(4, Math.max(0.1, v));
+    $('speedValB').textContent = B.speed.toFixed(1) + '×';
+  });
+  bindRange('rngNB', function (v) {
+    var maxN = Math.min(B.wc ? B.wc.harmonics.length : 1, N_MAX);
+    B.N = Math.max(1, Math.min(maxN, Math.round(v)));
+    $('nValB').textContent = B.N + ' / ' + maxN;
+    renderTableB(); renderGibbs(); scheduleErrB();
+    B.dirty = true;
+  });
+  bindRange('rngTimeB', function (v) {
+    B.t = Math.min(1, Math.max(0, v / 999));
+    $('timeValB').textContent = 't=' + B.t.toFixed(3);
+    B.dirty = true;
+  });
+  bindCheck('chkCirclesB', function (c) { B.vis.circles = c; B.dirty = true; });
+  bindCheck('chkLinkB', function (c) { B.vis.link = c; B.dirty = true; });
+  bindCheck('chkOriginalB', function (c) { B.vis.original = c; B.dirty = true; });
+  bindCheck('chkPartialB', function (c) { B.vis.partial = c; B.dirty = true; });
+  bindCheck('chkGridB', function (c) { B.vis.grid = c; B.dirty = true; });
+  on('btnExpandB', 'click', function () { B.tableAll = !B.tableAll; renderTableB(); });
+  on('btnPngB', 'click', function () { exportPng('b'); });
+  on('btnSvgB', 'click', function () { exportSvg('b'); });
+  on('btnRecB', 'click', function () { toggleRec('b'); });
+  var zoomBtns = document.querySelectorAll('#zoomRowB .zoom-btn');
+  for (var i = 0; i < zoomBtns.length; i++) {
+    zoomBtns[i].addEventListener('click', function () {
+      B.zoom = parseInt(this.getAttribute('data-zoom'), 10) || 4;
+      for (var j = 0; j < zoomBtns.length; j++) zoomBtns[j].classList.remove('active');
+      this.classList.add('active');
+      renderGibbs();
+    });
+  }
+
+  /* ---- 页面隐藏自动暂停 ---- */
+  document.addEventListener('visibilitychange', function () {
+    var E = S.mode === 'a' ? A : B;
+    if (document.hidden) {
+      if (E.playing) { E.playing = false; autoPaused = true; }
+      if (S.mode === 'a') syncControlsA(); else syncControlsB();
+    } else if (autoPaused) {
+      E.playing = true;
+      autoPaused = false;
+      if (S.mode === 'a') syncControlsA(); else syncControlsB();
+    }
+  });
+
+  /* ---- 窗口尺寸变化 ---- */
+  var rzTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(rzTimer);
+    rzTimer = setTimeout(function () {
+      computeViewA();
+      renderStatics();
+    }, 150);
+  });
+}
+var autoPaused = false;
+
+/* ================= 主循环 ================= */
+
+var lastTs = -1;
+function syncTimeUI() {
+  if (S.mode === 'a') {
+    if (document.activeElement !== $('rngTimeA')) $('rngTimeA').value = String(Math.round(A.t * 999));
+    $('timeValA').textContent = 't=' + A.t.toFixed(3);
+  } else {
+    if (document.activeElement !== $('rngTimeB')) $('rngTimeB').value = String(Math.round(B.t * 999));
+    $('timeValB').textContent = 't=' + B.t.toFixed(3);
+  }
+}
+function frame(ts) {
+  requestAnimationFrame(frame);
+  if (lastTs < 0) lastTs = ts;
+  var dt = Math.min(Math.max((ts - lastTs) / 1000, 0), 0.1);
+  lastTs = ts;
+  var E = S.mode === 'a' ? A : B;
+  if (E.playing) {
+    E.t += dt * E.speed / BASE_PERIOD;
+    E.t -= Math.floor(E.t);
+    if (S.mode === 'a' && A.vis.trace && !stroke && A.ranked) {
+      var segs = chainSegsA();
+      if (segs.length) {
+        var tip = segs[segs.length - 1];
+        A.trace.push({ x: tip.x1, y: tip.y1 });
+        if (A.trace.length > TRACE_MAX) A.trace.splice(0, A.trace.length - TRACE_MAX);
+      }
+    }
+    syncTimeUI();
+  }
+  if (S.mode === 'a') {
+    if (A.playing || A.dirty) { renderA(); A.dirty = false; }
+  } else {
+    if (B.playing || B.dirty) { renderB(); B.dirty = false; }
+  }
+}
+
+/* ================= 初始化 ================= */
+
+function init() {
+  refreshPalette();
+  $('btnTheme').textContent = currentTheme() === 'dark' ? '☀️' : '🌙';
+  buildSwatches();
+  buildPresets();
+  buildWaves();
+  bindAll();
+  bindDrawA();
+  bindKeyboard();
+  autoHelp();
+  restoreFromHash().then(function (restored) {
+    if (!restored) {
+      loadPathA(C.makePresetPoints('heart', 4096), '心形线', 'heart');
+      loadWaveB('square');
+    }
+    switchMode(S.mode);
+    requestAnimationFrame(frame);
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+
+})();
+
+</script>
+</body>
+</html>

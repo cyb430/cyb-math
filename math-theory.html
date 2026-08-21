@@ -1,0 +1,3318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>数论工具箱 — Number Theory Toolbox</title>
+<script>
+/* 尽早恢复深色主题，避免页面闪烁 */
+try { document.documentElement.dataset.theme = localStorage.getItem("nt-theme") || "light"; } catch (e) {}
+</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%234c6ef5'/%3E%3Ctext x='16' y='22' font-size='15' font-family='Georgia' text-anchor='middle' fill='white'%3E%E2%84%A4%3C/text%3E%3C/svg%3E">
+<style>
+
+/* ============================================================
+   主题变量（与 math-tools-pro 一致）
+   ============================================================ */
+:root {
+  --bg: #f2f4f8;
+  --card: #ffffff;
+  --card-border: #e6e9f0;
+  --text: #1a1f2b;
+  --subtle: #68717f;
+  --accent: #4c6ef5;
+  --accent-dark: #3b5bdb;
+  --border: #dfe3ec;
+  --grid: #e8ebf2;
+  --danger-bg: #fdecec;
+  --danger: #c0392b;
+  --danger-hover: #f9dada;
+  --field-bg: #ffffff;
+  --toolbar-bg: #ffffff;
+  --btn-bg: #e7ecf5;
+  --btn-hover: #dbe3f0;
+  --btn-active: #ced7e8;
+  --chip-bg: #eef1f7;
+  --chip-hover-bg: #e0e9ff;
+  --chip-hover-border: #c4d5ff;
+  --list-sel: #dbe4ff;
+  --tool-on-bg: #e0e9ff;
+  --scroll: #c6cdd9;
+  --invalid-bg: #fff5f5;
+  --ok: #2f9e44;
+  --mono: "SF Mono", Consolas, "Courier New", monospace;
+  --sans: -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", "Segoe UI", sans-serif;
+}
+[data-theme="dark"] {
+  --bg: #14171d;
+  --card: #1f232b;
+  --card-border: #2e3440;
+  --text: #e6e9f0;
+  --subtle: #9aa3b2;
+  --accent: #6b8afd;
+  --accent-dark: #4c6ef5;
+  --border: #333945;
+  --grid: #262b34;
+  --danger-bg: #3a2426;
+  --danger: #e08080;
+  --danger-hover: #4a2c2e;
+  --field-bg: #1a1e26;
+  --toolbar-bg: #1f232b;
+  --btn-bg: #2a2f3a;
+  --btn-hover: #343a47;
+  --btn-active: #3e4553;
+  --chip-bg: #262b34;
+  --chip-hover-bg: #2f3a5c;
+  --chip-hover-border: #3b5bdb;
+  --list-sel: #2f3a5c;
+  --tool-on-bg: #2f3a5c;
+  --scroll: #3a4150;
+  --invalid-bg: #3a2426;
+  --ok: #69db7c;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* ============================================================
+   顶栏
+   ============================================================ */
+#topbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--toolbar-bg);
+  border-bottom: 1px solid var(--card-border);
+  flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.logo {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  font-family: Georgia, serif; font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+  flex: none;
+}
+.brand h1 { font-size: 17px; font-weight: 700; letter-spacing: .01em; white-space: nowrap; }
+.tagline { font-size: 11px; color: var(--subtle); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top-actions { margin-left: auto; display: flex; gap: 6px; }
+
+/* ============================================================
+   工具选项卡
+   ============================================================ */
+#tabs {
+  flex: none;
+  display: flex;
+  gap: 6px;
+  padding: 8px 14px 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+#tabs::-webkit-scrollbar { height: 4px; }
+#tabs::-webkit-scrollbar-thumb { background: var(--scroll); border-radius: 2px; }
+.tab {
+  font-family: var(--sans); font-size: 13px;
+  border: 1px solid var(--card-border); border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  background: var(--card); color: var(--subtle);
+  padding: 8px 14px; cursor: pointer;
+  white-space: nowrap; flex: none;
+  transition: all .15s;
+}
+.tab:hover { color: var(--text); background: var(--btn-hover); }
+.tab.on { color: var(--accent-dark); font-weight: 700; background: var(--card); box-shadow: inset 0 2px 0 var(--accent); }
+
+/* ============================================================
+   内容区
+   ============================================================ */
+#content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 14px 20px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll) transparent;
+}
+#content::-webkit-scrollbar { width: 6px; }
+#content::-webkit-scrollbar-thumb { background: var(--scroll); border-radius: 3px; }
+#contentInner { max-width: 860px; margin: 0 auto; }
+
+.tool { display: none; }
+.tool.on { display: block; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+.card-head {
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 12px 7px;
+  border-bottom: 1px solid var(--grid);
+}
+.card-head .tick { width: 3px; height: 12px; background: var(--accent); border-radius: 2px; flex: none; }
+.card-head h2 { font-size: 13px; font-weight: 700; }
+.card-head .sub { font-size: 11px; color: var(--subtle); margin-left: auto; font-weight: 400; }
+.card-body { padding: 10px 12px 12px; }
+
+.hint { font-size: 11px; color: var(--subtle); line-height: 1.5; margin-bottom: 6px; }
+
+label.flabel { font-size: 12px; color: var(--subtle); display: block; margin: 8px 0 3px; }
+label.flabel:first-child { margin-top: 0; }
+
+input[type="text"], select {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--field-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 9px;
+  outline: none;
+  width: 100%;
+  transition: border-color .15s;
+}
+input:focus, select:focus { border-color: var(--accent); }
+input.invalid { border-color: var(--danger) !important; background: var(--invalid-bg); }
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+@media (max-width: 560px) { .field-row { grid-template-columns: 1fr; } }
+
+/* 示例快捷填入 */
+.chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0 2px; }
+.chip {
+  font-family: var(--mono); font-size: 11px;
+  background: var(--chip-bg); color: var(--subtle);
+  border: 1px solid var(--border); border-radius: 20px;
+  padding: 3px 9px; cursor: pointer;
+  transition: all .15s;
+}
+.chip:hover { background: var(--chip-hover-bg); color: var(--accent-dark); border-color: var(--chip-hover-border); }
+
+.row { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+.btn {
+  font-family: var(--sans);
+  font-size: 13px;
+  border: none; border-radius: 6px;
+  background: var(--btn-bg); color: var(--text);
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background .15s;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--btn-hover); }
+.btn:active { background: var(--btn-active); }
+.btn.accent { background: var(--accent); color: #fff; padding: 9px 16px; }
+.btn.accent:hover { background: var(--accent-dark); }
+.btn.danger { background: var(--danger-bg); color: var(--danger); }
+.btn.danger:hover { background: var(--danger-hover); }
+.btn.small { font-size: 12px; padding: 5px 10px; }
+
+.check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; user-select: none; }
+.check input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
+
+/* 结果输出 */
+.out {
+  margin-top: 10px;
+  background: var(--field-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 46dvh;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll) transparent;
+  display: none;
+}
+.out.show { display: block; }
+.out .hl { color: var(--accent-dark); font-weight: 700; }
+.out .ok { color: var(--ok); font-weight: 700; }
+.out .bad { color: var(--danger); font-weight: 700; }
+.out .dim { color: var(--subtle); }
+.out-head { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; display: none; }
+.out-head.show { display: flex; }
+.out-head span { font-size: 11px; color: var(--subtle); }
+
+/* CRT 方程行动态 */
+.crt-row { display: grid; grid-template-columns: auto 1fr auto 1fr auto auto; gap: 6px; align-items: center; margin-top: 6px; }
+.crt-row .fx { font-family: var(--mono); font-size: 13px; color: var(--subtle); white-space: nowrap; }
+.crt-row .rm { border: none; background: var(--danger-bg); color: var(--danger); border-radius: 5px; width: 26px; height: 26px; cursor: pointer; font-size: 13px; flex: none; }
+.crt-row .rm:hover { background: var(--danger-hover); }
+
+/* 底部状态栏 */
+#statusbar {
+  flex: none;
+  height: 32px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 14px;
+  font-size: 11px;
+  color: var(--subtle);
+  background: var(--bg);
+}
+#hintText { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Toast */
+#toast {
+  position: fixed; left: 50%; bottom: 44px; transform: translateX(-50%) translateY(8px);
+  background: var(--text); color: var(--bg);
+  font-size: 12.5px; padding: 8px 16px; border-radius: 20px;
+  opacity: 0; pointer-events: none; transition: all .2s; z-index: 80;
+  max-width: 86%; text-align: center;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* 帮助弹窗 */
+.help-mask { position: fixed; inset: 0; background: rgba(15, 20, 30, .45);
+  display: flex; align-items: center; justify-content: center; z-index: 60; padding: 14px; }
+.help-mask[hidden] { display: none; }
+.help-card { background: var(--card); color: var(--text); border: 1px solid var(--card-border);
+  border-radius: 14px; width: min(760px, 100%); max-height: 88dvh; display: flex; flex-direction: column;
+  box-shadow: 0 14px 44px rgba(10, 15, 30, .32); }
+.help-head { display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 20px; border-bottom: 1px solid var(--card-border); flex: none; }
+.help-head h2 { margin: 0; font-size: 16px; }
+.help-head button { border: none; background: none; color: var(--subtle); font-size: 17px;
+  cursor: pointer; padding: 2px 8px; border-radius: 7px; }
+.help-head button:hover { background: var(--btn-hover); color: var(--text); }
+.help-body { overflow: auto; padding: 4px 20px 20px; font-size: 13px; line-height: 1.8; }
+.help-body h3 { font-size: 13.5px; margin: 18px 0 4px; color: var(--accent); }
+.help-body h3:first-child { margin-top: 10px; }
+.help-body p { margin: 4px 0; }
+.help-body ul { margin: 4px 0 4px 18px; }
+.help-body table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 4px 0; }
+.help-body td { padding: 4px 8px 4px 0; border-bottom: 1px solid var(--card-border); vertical-align: top; }
+.help-body td:first-child { font-family: var(--mono); white-space: nowrap; color: var(--accent-dark); width: 1%; padding-right: 14px; }
+.help-body kbd { background: var(--field-bg); border: 1px solid var(--card-border); border-radius: 4px;
+  padding: 0 5px; font: 11px var(--mono); }
+.help-foot { flex: none; padding: 10px 20px; border-top: 1px solid var(--card-border); display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
+.help-foot label { margin-right: auto; display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--subtle); cursor: pointer; }
+.help-foot input { accent-color: var(--accent); }
+
+/* π(x) 曲线画布 */
+.plotbox { margin-top: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--field-bg); overflow: hidden; }
+canvas.pd { display: block; width: 100%; height: 280px; }
+
+@media (max-width: 560px) {
+  .tagline { display: none; }
+  #topbar { padding: 7px 10px; }
+  #tabs { padding: 7px 10px 0; }
+  #content { padding: 10px 10px 16px; }
+  .btn { padding: 8px 12px; }
+}
+</style>
+</head>
+<body>
+
+<header id="topbar">
+  <div class="brand">
+    <div class="logo">ℤ</div>
+    <h1>数论工具箱</h1>
+    <span class="tagline">质数 · 同余 · 原根 · 二次剩余 · 离散对数</span>
+  </div>
+  <div class="top-actions">
+    <button class="btn small" id="themeBtn" title="切换深浅色主题">🌓 主题</button>
+    <button class="btn small" id="shareBtn" title="复制链接，打开即可还原当前工具与输入">🔗 分享</button>
+    <button class="btn small" id="helpBtn" title="查看功能说明">❓ 帮助</button>
+  </div>
+</header>
+
+<nav id="tabs" role="tablist"></nav>
+
+<main id="content"><div id="contentInner">
+
+  <!-- ============ 质数工具 ============ -->
+  <section class="tool" id="tool-prime">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>质数判断 · 质因数分解</h2><span class="sub">Miller-Rabin + Pollard-Rho</span></div>
+      <div class="card-body">
+        <div class="hint">输入一个正整数 n（≤ 24 位可分解，≤ 40 位可判素）。完整分析包含：判素、分解、φ(n)、因数个数与和。</div>
+        <label class="flabel" for="p-n">整数 n</label>
+        <input type="text" id="p-n" inputmode="numeric" placeholder="例如 1234567891011" autocomplete="off">
+        <div class="chips">
+          <button class="chip" data-for="p-n">97</button>
+          <button class="chip" data-for="p-n">561</button>
+          <button class="chip" data-for="p-n">2305843009213693951</button>
+          <button class="chip" data-for="p-n">1234567891011</button>
+          <button class="chip" data-for="p-n">999999999999999989</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="p-analyze">完整分析</button>
+          <button class="btn" id="p-prime">质数判断</button>
+          <button class="btn" id="p-factor">质因数分解</button>
+          <button class="btn" id="p-divisors">所有因数</button>
+          <button class="btn" id="p-neighbor">相邻素数</button>
+        </div>
+        <div class="out-head" id="p-head"><span>结果</span><button class="btn small" data-copy="p-out">复制</button></div>
+        <div class="out" id="p-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 欧拉函数 ============ -->
+  <section class="tool" id="tool-phi">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>欧拉函数 φ(n)</h2><span class="sub">与 n 互素的数的个数</span></div>
+      <div class="card-body">
+        <div class="hint">φ(n) = n·∏(1 − 1/p)，其中 p 取遍 n 的不同质因子。输入正整数 n（≤ 24 位）。</div>
+        <label class="flabel" for="phi-n">整数 n</label>
+        <input type="text" id="phi-n" inputmode="numeric" placeholder="例如 36" autocomplete="off">
+        <div class="chips">
+          <button class="chip" data-for="phi-n">36</button>
+          <button class="chip" data-for="phi-n">100</button>
+          <button class="chip" data-for="phi-n">1001</button>
+          <button class="chip" data-for="phi-n">999983</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="phi-calc">计算 φ(n)</button>
+        </div>
+        <div class="out-head" id="phi-head"><span>结果</span><button class="btn small" data-copy="phi-out">复制</button></div>
+        <div class="out" id="phi-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 扩展欧几里得 ============ -->
+  <section class="tool" id="tool-gcd">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>扩展欧几里得 · GCD · LCM</h2><span class="sub">裴蜀恒等式</span></div>
+      <div class="card-body">
+        <div class="hint">求 gcd(a, b)、lcm(a, b)，并给出裴蜀恒等式 ax + by = gcd(a, b) 的一组整数解（含完整辗转相除步骤）。支持大整数与负数。</div>
+        <div class="field-row">
+          <div>
+            <label class="flabel" for="g-a">整数 a</label>
+            <input type="text" id="g-a" inputmode="numeric" placeholder="例如 240" autocomplete="off">
+          </div>
+          <div>
+            <label class="flabel" for="g-b">整数 b</label>
+            <input type="text" id="g-b" inputmode="numeric" placeholder="例如 46" autocomplete="off">
+          </div>
+        </div>
+        <div class="chips">
+          <button class="chip" data-pair="g-a:240,g-b:46">240, 46</button>
+          <button class="chip" data-pair="g-a:1999,g-b:107">1999, 107</button>
+          <button class="chip" data-pair="g-a:-84,g-b:30">-84, 30</button>
+          <button class="chip" data-pair="g-a:12345678901234567890,g-b:98765432109876543210">大整数对</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="g-calc">计算</button>
+        </div>
+        <div class="out-head" id="g-head"><span>结果</span><button class="btn small" data-copy="g-out">复制</button></div>
+        <div class="out" id="g-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 线性同余 ============ -->
+  <section class="tool" id="tool-cong">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>线性同余方程 ax ≡ b (mod m)</h2><span class="sub">含模逆元</span></div>
+      <div class="card-body">
+        <div class="hint">设 d = gcd(a, m)：d ∤ b 时无解；否则恰有 d 个模 m 不同余的解。gcd(a, m) = 1 时解唯一，即 x ≡ b·a⁻¹ (mod m)。</div>
+        <div class="field-row">
+          <div>
+            <label class="flabel" for="c-a">系数 a</label>
+            <input type="text" id="c-a" inputmode="numeric" placeholder="例如 14" autocomplete="off">
+          </div>
+          <div>
+            <label class="flabel" for="c-b">常数 b</label>
+            <input type="text" id="c-b" inputmode="numeric" placeholder="例如 30" autocomplete="off">
+          </div>
+        </div>
+        <label class="flabel" for="c-m">模数 m（正整数）</label>
+        <input type="text" id="c-m" inputmode="numeric" placeholder="例如 100" autocomplete="off">
+        <div class="chips">
+          <button class="chip" data-pair="c-a:14,c-b:30,c-m:100">14x≡30 (mod 100)</button>
+          <button class="chip" data-pair="c-a:3,c-b:7,c-m:11">3x≡7 (mod 11)</button>
+          <button class="chip" data-pair="c-a:6,c-b:5,c-m:9">6x≡5 (mod 9) 无解</button>
+          <button class="chip" data-pair="c-a:1,c-b:1,c-m:97">求 1 的逆元示例</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="c-calc">求解</button>
+          <button class="btn" id="c-inv">求 a⁻¹ (mod m)</button>
+        </div>
+        <div class="out-head" id="c-head"><span>结果</span><button class="btn small" data-copy="c-out">复制</button></div>
+        <div class="out" id="c-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 中国剩余定理 ============ -->
+  <section class="tool" id="tool-crt">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>中国剩余定理（CRT）</h2><span class="sub">支持非两两互素</span></div>
+      <div class="card-body">
+        <div class="hint">求解同余方程组 x ≡ aᵢ (mod mᵢ)。模数不要求两两互素——会自动做一致性检查；无解时明确指出矛盾位置。</div>
+        <div id="crtRows"></div>
+        <div class="row">
+          <button class="btn small" id="crt-add">＋ 添加方程</button>
+          <button class="btn small" id="crt-example">填入示例</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="crt-calc">求解方程组</button>
+        </div>
+        <div class="out-head" id="crt-head"><span>结果</span><button class="btn small" data-copy="crt-out">复制</button></div>
+        <div class="out" id="crt-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 模幂运算 ============ -->
+  <section class="tool" id="tool-pow">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>模幂运算 bᵉ mod m</h2><span class="sub">快速幂 · 支持负指数</span></div>
+      <div class="card-body">
+        <div class="hint">快速幂（二进制平方法）。指数为负时自动求 b 的模逆元（须 gcd(b, m) = 1）。支持百位大整数。</div>
+        <div class="field-row">
+          <div>
+            <label class="flabel" for="pw-b">底数 b</label>
+            <input type="text" id="pw-b" inputmode="numeric" placeholder="例如 7" autocomplete="off">
+          </div>
+          <div>
+            <label class="flabel" for="pw-e">指数 e（可为负）</label>
+            <input type="text" id="pw-e" inputmode="numeric" placeholder="例如 644" autocomplete="off">
+          </div>
+        </div>
+        <label class="flabel" for="pw-m">模数 m（正整数）</label>
+        <input type="text" id="pw-m" inputmode="numeric" placeholder="例如 1000" autocomplete="off">
+        <div class="chips">
+          <button class="chip" data-pair="pw-b:7,pw-e:644,pw-m:1000">7⁶⁴⁴ mod 1000</button>
+          <button class="chip" data-pair="pw-b:2,pw-e:-1,pw-m:97">2⁻¹ mod 97</button>
+          <button class="chip" data-pair="pw-b:123456789,pw-e:987654321,pw-m:1000000007">大数快速幂</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="pw-calc">计算</button>
+        </div>
+        <div class="out-head" id="pw-head"><span>结果</span><button class="btn small" data-copy="pw-out">复制</button></div>
+        <div class="out" id="pw-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 原根与阶 ============ -->
+  <section class="tool" id="tool-root">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>原根与乘法阶</h2><span class="sub">ord_n(a) · 最小原根</span></div>
+      <div class="card-body">
+        <div class="hint">a 模 n 的阶是最小的 k ≥ 1 使 aᵏ ≡ 1 (mod n)，须 gcd(a, n) = 1。g 是模素数 p 的原根当且仅当其阶为 p−1。</div>
+        <div class="field-row">
+          <div>
+            <label class="flabel" for="r-a">底数 a（求阶时填写）</label>
+            <input type="text" id="r-a" inputmode="numeric" placeholder="例如 2" autocomplete="off">
+          </div>
+          <div>
+            <label class="flabel" for="r-n">模数 n（≤ 24 位）</label>
+            <input type="text" id="r-n" inputmode="numeric" placeholder="例如 23" autocomplete="off">
+          </div>
+        </div>
+        <div class="chips">
+          <button class="chip" data-pair="r-a:2,r-n:23">ord₂₃(2)</button>
+          <button class="chip" data-pair="r-a:,r-n:23">23 的原根</button>
+          <button class="chip" data-pair="r-a:,r-n:998244353">998244353 的原根</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="r-order">求乘法阶</button>
+          <button class="btn" id="r-proot">找最小原根</button>
+          <label class="check"><input type="checkbox" id="r-list"> 列出全部原根（≤ 500 个）</label>
+        </div>
+        <div class="out-head" id="r-head"><span>结果</span><button class="btn small" data-copy="r-out">复制</button></div>
+        <div class="out" id="r-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 勒让德/雅可比 ============ -->
+  <section class="tool" id="tool-leg">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>勒让德 / 雅可比符号 · 二次剩余</h2><span class="sub">Tonelli-Shanks 开方</span></div>
+      <div class="card-body">
+        <div class="hint">勒让德符号 (a/p) 判断 a 是否为模奇素数 p 的二次剩余；雅可比符号 (a/n) 为其对奇合数 n 的推广。还可求解 x² ≡ a (mod p)。</div>
+        <div class="field-row">
+          <div>
+            <label class="flabel" for="l-a">a</label>
+            <input type="text" id="l-a" inputmode="numeric" placeholder="例如 5" autocomplete="off">
+          </div>
+          <div>
+            <label class="flabel" for="l-n">p 或奇数 n（正）</label>
+            <input type="text" id="l-n" inputmode="numeric" placeholder="例如 11" autocomplete="off">
+          </div>
+        </div>
+        <div class="chips">
+          <button class="chip" data-pair="l-a:5,l-n:11">(5/11)</button>
+          <button class="chip" data-pair="l-a:2,l-n:7">(2/7)</button>
+          <button class="chip" data-pair="l-a:1001,l-n:9907">雅可比 (1001/9907)</button>
+          <button class="chip" data-pair="l-a:10,l-n:13">x²≡10 (mod 13)</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="l-leg">勒让德 (a/p)</button>
+          <button class="btn" id="l-jac">雅可比 (a/n)</button>
+          <button class="btn" id="l-sqrt">解 x² ≡ a (mod p)</button>
+        </div>
+        <div class="out-head" id="l-head"><span>结果</span><button class="btn small" data-copy="l-out">复制</button></div>
+        <div class="out" id="l-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 离散对数 ============ -->
+  <section class="tool" id="tool-dlog">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>离散对数 aˣ ≡ b (mod p)</h2><span class="sub">BSGS 大步小步</span></div>
+      <div class="card-body">
+        <div class="hint">求最小的 x ≥ 0 使 aˣ ≡ b (mod p)，p 为素数（p ≤ 10¹²，BSGS 内存随 √p 增长）。须 gcd(a, p) = 1。</div>
+        <div class="field-row">
+          <div>
+            <label class="flabel" for="d-a">底数 a</label>
+            <input type="text" id="d-a" inputmode="numeric" placeholder="例如 5" autocomplete="off">
+          </div>
+          <div>
+            <label class="flabel" for="d-b">值 b</label>
+            <input type="text" id="d-b" inputmode="numeric" placeholder="例如 12" autocomplete="off">
+          </div>
+        </div>
+        <label class="flabel" for="d-p">素数模 p</label>
+        <input type="text" id="d-p" inputmode="numeric" placeholder="例如 23" autocomplete="off">
+        <div class="chips">
+          <button class="chip" data-pair="d-a:5,d-b:12,d-p:23">5ˣ≡12 (mod 23)</button>
+          <button class="chip" data-pair="d-a:2,d-b:3,d-p:11">2ˣ≡3 (mod 11)</button>
+          <button class="chip" data-pair="d-a:7,d-b:12345,d-p:1000003">较大示例</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="d-calc">求离散对数</button>
+        </div>
+        <div class="out-head" id="d-head"><span>结果</span><button class="btn small" data-copy="d-out">复制</button></div>
+        <div class="out" id="d-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 素数表 ============ -->
+  <section class="tool" id="tool-sieve">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>素数表 · π(n) · 第 n 个素数</h2><span class="sub">埃氏筛</span></div>
+      <div class="card-body">
+        <div class="hint">生成 ≤ N 的全部素数（N ≤ 5,000,000）；或求第 k 个素数（k ≤ 100,000）。结果可一键复制。</div>
+        <label class="flabel" for="s-n">上限 N</label>
+        <input type="text" id="s-n" inputmode="numeric" placeholder="例如 200" autocomplete="off">
+        <div class="chips">
+          <button class="chip" data-for="s-n">100</button>
+          <button class="chip" data-for="s-n">1000</button>
+          <button class="chip" data-for="s-n">1000000</button>
+        </div>
+        <label class="flabel" for="s-k">k（求第 k 个素数）</label>
+        <input type="text" id="s-k" inputmode="numeric" placeholder="例如 1000" autocomplete="off">
+        <div class="row">
+          <button class="btn accent" id="s-list">生成素数表</button>
+          <button class="btn" id="s-pi">只统计 π(N)</button>
+          <button class="btn" id="s-kth">求第 k 个素数</button>
+        </div>
+        <div class="out-head" id="s-head"><span>结果</span><button class="btn small" data-copy="s-out">复制</button></div>
+        <div class="out" id="s-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 进制转换 ============ -->
+  <section class="tool" id="tool-base">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>进制转换</h2><span class="sub">2 ~ 36 进制 · 大整数</span></div>
+      <div class="card-body">
+        <div class="hint">数字字符集为 0-9、a-z（不区分大小写）。支持任意长度整数，常用于进制相关的同余与编码计算。</div>
+        <label class="flabel" for="b-val">数值</label>
+        <input type="text" id="b-val" placeholder="例如 255 或 ff" autocomplete="off">
+        <div class="field-row">
+          <div>
+            <label class="flabel" for="b-from">源进制</label>
+            <select id="b-from"></select>
+          </div>
+          <div>
+            <label class="flabel" for="b-to">目标进制</label>
+            <select id="b-to"></select>
+          </div>
+        </div>
+        <div class="chips">
+          <button class="chip" data-pair="b-val:255,b-from:10,b-to:16">255 (十→十六)</button>
+          <button class="chip" data-pair="b-val:ff,b-from:16,b-to:10">ff (十六→十)</button>
+          <button class="chip" data-pair="b-val:11111111,b-from:2,b-to:10">11111111 (二→十)</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="b-calc">转换</button>
+        </div>
+        <div class="out-head" id="b-head"><span>结果</span><button class="btn small" data-copy="b-out">复制</button></div>
+        <div class="out" id="b-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 平方同余（高次） ============ -->
+  <section class="tool" id="tool-qcong">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>平方同余 x² ≡ a (mod m)</h2><span class="sub">Hensel 提升 + CRT</span></div>
+      <div class="card-body">
+        <div class="hint">任意模数 m（≥ 2，≤ 24 位）：自动分解为素数幂，奇素数幂用 Tonelli-Shanks + Hensel 提升，2 的幂用特判提升，最后 CRT 组合出全部解（超过 256 个时只报数量）。</div>
+        <div class="field-row">
+          <div>
+            <label class="flabel" for="qc-a">a</label>
+            <input type="text" id="qc-a" inputmode="numeric" placeholder="例如 10" autocomplete="off">
+          </div>
+          <div>
+            <label class="flabel" for="qc-m">模数 m</label>
+            <input type="text" id="qc-m" inputmode="numeric" placeholder="例如 13 或 169 或 360" autocomplete="off">
+          </div>
+        </div>
+        <div class="chips">
+          <button class="chip" data-pair="qc-a:10,qc-m:13">x²≡10 (mod 13)</button>
+          <button class="chip" data-pair="qc-a:10,qc-m:169">x²≡10 (mod 13²)</button>
+          <button class="chip" data-pair="qc-a:17,qc-m:256">x²≡17 (mod 2⁸)</button>
+          <button class="chip" data-pair="qc-a:9,qc-m:360">x²≡9 (mod 360)</button>
+          <button class="chip" data-pair="qc-a:4,qc-m:32">x²≡4 (mod 32) 含零因子</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="qc-calc">求解</button>
+        </div>
+        <div class="out-head" id="qc-head"><span>结果</span><button class="btn small" data-copy="qc-out">复制</button></div>
+        <div class="out" id="qc-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 二项同余 ============ -->
+  <section class="tool" id="tool-bcong">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>二项同余 xᵏ ≡ a (mod p)</h2><span class="sub">原根 + 指数法</span></div>
+      <div class="card-body">
+        <div class="hint">p 为素数（≤ 10¹²）。取原根 g 后化为线性同余 k·t ≡ ind_g(a) (mod p−1)，解数 = gcd(k, p−1)（整除时）。</div>
+        <div class="field-row">
+          <div>
+            <label class="flabel" for="bc-k">次数 k（≥ 1）</label>
+            <input type="text" id="bc-k" inputmode="numeric" placeholder="例如 3" autocomplete="off">
+          </div>
+          <div>
+            <label class="flabel" for="bc-a">a</label>
+            <input type="text" id="bc-a" inputmode="numeric" placeholder="例如 8" autocomplete="off">
+          </div>
+        </div>
+        <label class="flabel" for="bc-p">素数模 p</label>
+        <input type="text" id="bc-p" inputmode="numeric" placeholder="例如 11" autocomplete="off">
+        <div class="chips">
+          <button class="chip" data-pair="bc-k:3,bc-a:8,bc-p:11">x³≡8 (mod 11)</button>
+          <button class="chip" data-pair="bc-k:2,bc-a:4,bc-p:7">x²≡4 (mod 7)</button>
+          <button class="chip" data-pair="bc-k:5,bc-a:10,bc-p:23">x⁵≡10 (mod 23)</button>
+          <button class="chip" data-pair="bc-k:2,bc-a:3,bc-p:7">x²≡3 (mod 7) 无解</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="bc-calc">求解</button>
+        </div>
+        <div class="out-head" id="bc-head"><span>结果</span><button class="btn small" data-copy="bc-out">复制</button></div>
+        <div class="out" id="bc-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 一次不定方程 ============ -->
+  <section class="tool" id="tool-dioph">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>一次不定方程 ax + by = c</h2><span class="sub">整数解 · 非负解</span></div>
+      <div class="card-body">
+        <div class="hint">有解 ⟺ gcd(a, b) | c。给出特解与通解，并可枚举全部非负整数解（摘荔枝问题、百钱买百鸡等）。</div>
+        <div class="field-row">
+          <div>
+            <label class="flabel" for="di-a">a</label>
+            <input type="text" id="di-a" inputmode="numeric" placeholder="例如 7" autocomplete="off">
+          </div>
+          <div>
+            <label class="flabel" for="di-b">b</label>
+            <input type="text" id="di-b" inputmode="numeric" placeholder="例如 4" autocomplete="off">
+          </div>
+        </div>
+        <label class="flabel" for="di-c">c</label>
+        <input type="text" id="di-c" inputmode="numeric" placeholder="例如 100" autocomplete="off">
+        <div class="chips">
+          <button class="chip" data-pair="di-a:7,di-b:4,di-c:100">7x+4y=100</button>
+          <button class="chip" data-pair="di-a:3,di-b:5,di-c:100">3x+5y=100</button>
+          <button class="chip" data-pair="di-a:6,di-b:9,di-c:7">6x+9y=7 无解</button>
+          <button class="chip" data-pair="di-a:-13,di-b:5,di-c:2">-13x+5y=2</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="di-calc">求解</button>
+          <label class="check"><input type="checkbox" id="di-nn" checked> 枚举非负解（≤ 100 组）</label>
+        </div>
+        <div class="out-head" id="di-head"><span>结果</span><button class="btn small" data-copy="di-out">复制</button></div>
+        <div class="out" id="di-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 佩尔方程 ============ -->
+  <section class="tool" id="tool-pell">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>佩尔方程 x² − D·y² = 1</h2><span class="sub">连分数法</span></div>
+      <div class="card-body">
+        <div class="hint">D 为正的非完全平方数（≤ 9 位）。用 √D 的循环连分数求最小解，并给出负佩尔方程 x² − D·y² = −1 的可解性与递推生成的后续解。</div>
+        <label class="flabel" for="pe-d">D</label>
+        <input type="text" id="pe-d" inputmode="numeric" placeholder="例如 61" autocomplete="off">
+        <div class="chips">
+          <button class="chip" data-for="pe-d">2</button>
+          <button class="chip" data-for="pe-d">3</button>
+          <button class="chip" data-for="pe-d">61</button>
+          <button class="chip" data-for="pe-d">109</button>
+          <button class="chip" data-for="pe-d">991</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="pe-calc">求最小解</button>
+        </div>
+        <div class="out-head" id="pe-head"><span>结果</span><button class="btn small" data-copy="pe-out">复制</button></div>
+        <div class="out" id="pe-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 连分数 ============ -->
+  <section class="tool" id="tool-cf">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>连分数与最佳逼近</h2><span class="sub">有理数 · √n · 渐进分数</span></div>
+      <div class="card-body">
+        <div class="hint">三种模式：有理数 p/q 展开为有限连分数；√n 展开为循环连分数（展示循环节）；把连分数串还原为最简分数。均列出渐进分数（最佳逼近）与误差。</div>
+        <label class="flabel" for="cf-mode">模式</label>
+        <select id="cf-mode">
+          <option value="rational">有理数 p/q → 连分数</option>
+          <option value="sqrt">√n → 循环连分数</option>
+          <option value="parse">连分数 → 分数（格式 3;7,15,1,292）</option>
+        </select>
+        <div class="field-row">
+          <div>
+            <label class="flabel" for="cf-p">分子 p / 被开方数 n / 连分数串</label>
+            <input type="text" id="cf-p" placeholder="例如 415 或 23 或 3;7,15,1" autocomplete="off">
+          </div>
+          <div>
+            <label class="flabel" for="cf-q">分母 q（仅有理数模式）</label>
+            <input type="text" id="cf-q" inputmode="numeric" placeholder="例如 93" autocomplete="off">
+          </div>
+        </div>
+        <label class="flabel" for="cf-len">渐进分数个数（≤ 60）</label>
+        <input type="text" id="cf-len" inputmode="numeric" placeholder="默认 15" autocomplete="off">
+        <div class="chips">
+          <button class="chip" data-select="cf-mode:rational" data-pair="cf-p:415,cf-q:93">415/93 ≈ π×√2</button>
+          <button class="chip" data-select="cf-mode:rational" data-pair="cf-p:103993,cf-q:33102">103993/33102 ≈ π</button>
+          <button class="chip" data-select="cf-mode:sqrt" data-pair="cf-p:23,cf-q:">√23</button>
+          <button class="chip" data-select="cf-mode:parse" data-pair="cf-p:3；7，15，1，292,cf-q:">[3;7,15,1,292] ≈ π</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="cf-calc">展开</button>
+        </div>
+        <div class="out-head" id="cf-head"><span>结果</span><button class="btn small" data-copy="cf-out">复制</button></div>
+        <div class="out" id="cf-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 梅森素数 ============ -->
+  <section class="tool" id="tool-mersenne">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>梅森素数 M_p = 2^p − 1</h2><span class="sub">Lucas-Lehmer 判定</span></div>
+      <div class="card-body">
+        <div class="hint">输入指数 p（≤ 5000）。p 为合数时 M_p 必为合数（给出因子）；p 为素数时用 Lucas-Lehmer 测试精确判定，比通用素性测试更有教学价值。</div>
+        <label class="flabel" for="me-p">指数 p</label>
+        <input type="text" id="me-p" inputmode="numeric" placeholder="例如 127" autocomplete="off">
+        <div class="chips">
+          <button class="chip" data-for="me-p">127</button>
+          <button class="chip" data-for="me-p">521</button>
+          <button class="chip" data-for="me-p">607</button>
+          <button class="chip" data-for="me-p">1279</button>
+          <button class="chip" data-for="me-p">11</button>
+          <button class="chip" data-for="me-p">2047</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="me-calc">Lucas-Lehmer 判定</button>
+        </div>
+        <div class="out-head" id="me-head"><span>结果</span><button class="btn small" data-copy="me-out">复制</button></div>
+        <div class="out" id="me-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 素数分布 ============ -->
+  <section class="tool" id="tool-pdist">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>素数分布 · 孪生素数 · 哥德巴赫</h2><span class="sub">π(x) 曲线</span></div>
+      <div class="card-body">
+        <div class="hint">π(x) 曲线：蓝线为真实素数计数，灰线为主项近似 x/ln x（N ≤ 2,000,000）。孪生素数统计 N ≤ 5,000,000。哥德巴赫：任意偶数 n ≥ 4 给出一组拆分，n ≤ 10⁶ 时统计全部拆分数。</div>
+        <label class="flabel" for="pd-n">范围 N</label>
+        <input type="text" id="pd-n" inputmode="numeric" placeholder="例如 1000000" autocomplete="off">
+        <div class="chips">
+          <button class="chip" data-for="pd-n">100000</button>
+          <button class="chip" data-for="pd-n">1000000</button>
+        </div>
+        <label class="flabel" for="pd-g">偶数 n（哥德巴赫拆分）</label>
+        <input type="text" id="pd-g" inputmode="numeric" placeholder="例如 100 或 982451653072" autocomplete="off">
+        <div class="chips">
+          <button class="chip" data-for="pd-g">100</button>
+          <button class="chip" data-for="pd-g">2024</button>
+          <button class="chip" data-for="pd-g">982451653072</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="pd-plot">绘制 π(x) 曲线</button>
+          <button class="btn" id="pd-twin">孪生素数统计</button>
+          <button class="btn" id="pd-gold">哥德巴赫拆分</button>
+        </div>
+        <div class="plotbox" id="pd-box" hidden><canvas class="pd" id="pd-canvas"></canvas></div>
+        <div class="out-head" id="pd-head"><span>结果</span><button class="btn small" data-copy="pd-out">复制</button></div>
+        <div class="out" id="pd-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 伪素数 ============ -->
+  <section class="tool" id="tool-pseudo">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>伪素数与 Carmichael 数</h2><span class="sub">Fermat / Euler / 强伪素数</span></div>
+      <div class="card-body">
+        <div class="hint">对给定底数 a 检测 n 的「伪装程度」：费马伪素数（aⁿ⁻¹ ≡ 1）、欧拉伪素数（与雅可比符号一致）、强伪素数（单基 Miller-Rabin）；并用 Korselt 判据（无平方因子且 ∀p|n 有 p−1 | n−1）判定 Carmichael 数。</div>
+        <div class="field-row">
+          <div>
+            <label class="flabel" for="ps-n">n（Carmichael 判定需 ≤ 24 位）</label>
+            <input type="text" id="ps-n" inputmode="numeric" placeholder="例如 561" autocomplete="off">
+          </div>
+          <div>
+            <label class="flabel" for="ps-a">底数 a（≥ 2）</label>
+            <input type="text" id="ps-a" inputmode="numeric" placeholder="例如 2" autocomplete="off">
+          </div>
+        </div>
+        <div class="chips">
+          <button class="chip" data-pair="ps-n:341,ps-a:2">341 基 2</button>
+          <button class="chip" data-pair="ps-n:561,ps-a:2">561（Carmichael）</button>
+          <button class="chip" data-pair="ps-n:2047,ps-a:2">2047 强伪素数</button>
+          <button class="chip" data-pair="ps-n:121,ps-a:3">121 欧拉伪素数</button>
+          <button class="chip" data-pair="ps-n:825265,ps-a:2">825265</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="ps-calc">综合检测</button>
+        </div>
+        <div class="out-head" id="ps-head"><span>结果</span><button class="btn small" data-copy="ps-out">复制</button></div>
+        <div class="out" id="ps-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 数论函数 ============ -->
+  <section class="tool" id="tool-ntfunc">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>数论函数全家桶</h2><span class="sub">μ · λ · σₖ · φ 反问题</span></div>
+      <div class="card-body">
+        <div class="hint">一次算出：φ(n)、τ(n)、σ(n)、μ(n)、λ(n)、ω(n)、Ω(n)、rad(n)，并判断平方无关 / 完全数 / 亲和数。φ 反问题：给定 m 找出所有满足 φ(n) = m 的 n。</div>
+        <div class="field-row">
+          <div>
+            <label class="flabel" for="nf-n">n（≤ 24 位）</label>
+            <input type="text" id="nf-n" inputmode="numeric" placeholder="例如 220" autocomplete="off">
+          </div>
+          <div>
+            <label class="flabel" for="nf-k">k（σₖ 的指数，0~100）</label>
+            <input type="text" id="nf-k" inputmode="numeric" placeholder="例如 2" autocomplete="off">
+          </div>
+        </div>
+        <label class="flabel" for="nf-m">m（φ 反问题，m ≤ 10¹²）</label>
+        <input type="text" id="nf-m" inputmode="numeric" placeholder="例如 8" autocomplete="off">
+        <div class="chips">
+          <button class="chip" data-pair="nf-n:220,nf-k:2,nf-m:8">220（亲和数）</button>
+          <button class="chip" data-pair="nf-n:28,nf-k:0,nf-m:8">28（完全数）</button>
+          <button class="chip" data-pair="nf-n:360,nf-k:3,nf-m:96">360, σ₃</button>
+          <button class="chip" data-pair="nf-n:210,nf-k:1,nf-m:14">φ⁻¹(14)=∅ 示例</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="nf-all">全部函数</button>
+          <button class="btn" id="nf-sigma">σₖ(n)</button>
+          <button class="btn" id="nf-invphi">φ 反问题</button>
+        </div>
+        <div class="out-head" id="nf-head"><span>结果</span><button class="btn small" data-copy="nf-out">复制</button></div>
+        <div class="out" id="nf-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 阶乘与勒让德 ============ -->
+  <section class="tool" id="tool-factorial">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>阶乘与勒让德公式</h2><span class="sub">v_p(n!) · 末尾零 · 位数</span></div>
+      <div class="card-body">
+        <div class="hint">勒让德公式 v_p(n!) = Σ ⌊n/pⁱ⌋。支持：单个素数指数、n! 完整素因子分解（n ≤ 10⁶）、任意进制末尾零个数、n! 十进制位数（n ≤ 10¹²）、n! 精确值（n ≤ 5000）。</div>
+        <label class="flabel" for="fa-n">n</label>
+        <input type="text" id="fa-n" inputmode="numeric" placeholder="例如 100" autocomplete="off">
+        <div class="field-row">
+          <div>
+            <label class="flabel" for="fa-p">素数 p（求 v_p 时填写）</label>
+            <input type="text" id="fa-p" inputmode="numeric" placeholder="例如 5" autocomplete="off">
+          </div>
+          <div>
+            <label class="flabel" for="fa-b">进制 b（末尾零，2 ~ 10⁶）</label>
+            <input type="text" id="fa-b" inputmode="numeric" placeholder="默认 10" autocomplete="off">
+          </div>
+        </div>
+        <div class="chips">
+          <button class="chip" data-pair="fa-n:100,fa-p:5,fa-b:10">100! 末尾零</button>
+          <button class="chip" data-pair="fa-n:1000,fa-p:3,fa-b:2">v₃(1000!)</button>
+          <button class="chip" data-pair="fa-n:50,fa-p:7,fa-b:12">50! 分解 / 12 进制零</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="fa-vp">v_p(n!)</button>
+          <button class="btn" id="fa-fac">n! 完整分解</button>
+          <button class="btn" id="fa-zeros">末尾零个数</button>
+          <button class="btn" id="fa-digits">n! 位数</button>
+          <button class="btn" id="fa-exact">n! 精确值</button>
+        </div>
+        <div class="out-head" id="fa-head"><span>结果</span><button class="btn small" data-copy="fa-out">复制</button></div>
+        <div class="out" id="fa-out"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 组合计算 ============ -->
+  <section class="tool" id="tool-comb">
+    <div class="card">
+      <div class="card-head"><span class="tick"></span><h2>组合数论</h2><span class="sub">C(n,k) · 卡特兰 · 卢卡斯 · 分拆数</span></div>
+      <div class="card-body">
+        <div class="hint">精确大数：C(n, k)（结果 ≤ 5000 位）、卡特兰数 Cₙ。卢卡斯定理求 C(n,k) mod p（n、k 可上百位，p 素数 ≤ 10⁶）。分拆数 p(n)（n ≤ 5000）。</div>
+        <div class="field-row">
+          <div>
+            <label class="flabel" for="cb-n">n</label>
+            <input type="text" id="cb-n" inputmode="numeric" placeholder="例如 100" autocomplete="off">
+          </div>
+          <div>
+            <label class="flabel" for="cb-k">k</label>
+            <input type="text" id="cb-k" inputmode="numeric" placeholder="例如 50" autocomplete="off">
+          </div>
+        </div>
+        <label class="flabel" for="cb-p">素数 p（卢卡斯定理，≤ 10⁶）</label>
+        <input type="text" id="cb-p" inputmode="numeric" placeholder="例如 7" autocomplete="off">
+        <div class="chips">
+          <button class="chip" data-pair="cb-n:100,cb-k:50,cb-p:7">C(100,50)</button>
+          <button class="chip" data-pair="cb-n:10,cb-k:3,cb-p:1000003">C(10,3) mod p</button>
+          <button class="chip" data-pair="cb-n:123456789012345678901234567890,cb-k:987654321,cb-p:97">超大 n 卢卡斯</button>
+          <button class="chip" data-pair="cb-n:200,cb-k:100,cb-p:5">p(200) 分拆</button>
+        </div>
+        <div class="row">
+          <button class="btn accent" id="cb-binom">C(n, k) 精确值</button>
+          <button class="btn" id="cb-catalan">卡特兰数 Cₙ</button>
+          <button class="btn" id="cb-lucas">卢卡斯 C(n,k) mod p</button>
+          <button class="btn" id="cb-part">分拆数 p(n)</button>
+        </div>
+        <div class="out-head" id="cb-head"><span>结果</span><button class="btn small" data-copy="cb-out">复制</button></div>
+        <div class="out" id="cb-out"></div>
+      </div>
+    </div>
+  </section>
+
+</div></main>
+
+<footer id="statusbar">
+  <span id="hintText">就绪 — 全部计算使用 BigInt 精确进行，结果在本地生成，不会上传。</span>
+</footer>
+
+<!-- 帮助弹窗 -->
+<div id="helpMask" class="help-mask" hidden>
+  <div class="help-card" role="dialog" aria-label="功能说明">
+    <div class="help-head"><h2>数论工具箱 · 使用说明</h2><button id="helpClose" title="关闭（Esc）">✕</button></div>
+    <div class="help-body">
+      <h3>总览</h3>
+      <p>本工具箱覆盖初等数论常用计算，全部基于 BigInt 精确整数运算，不会出现浮点误差。计算完全在浏览器本地完成。顶部可切换深浅色主题；<b>🔗 分享</b>会把当前工具与全部输入编码进链接，发送给他人打开即可原样还原。</p>
+      <h3>各工具用法</h3>
+      <table>
+        <tr><td>质数工具</td><td>输入 n：「质数判断」用 Miller-Rabin 素性测试（&lt; 2⁶⁴ 为确定性结果，更大则为高概率）；「质因数分解」用试除 + Pollard-Rho（建议 ≤ 24 位）；「所有因数」列出全部正因数（超过 2000 个时不予枚举）；「相邻素数」给出 n 两侧最近的素数；「完整分析」一次输出以上全部及 φ(n)、因数个数 τ(n)、因数和 σ(n)。</td></tr>
+        <tr><td>素数表</td><td>埃氏筛生成 ≤ N 的素数（N ≤ 5×10⁶）；π(N) 只给个数；「第 k 个素数」用 Rosser 上界先定界再筛（k ≤ 10⁵）。列表过长时仅显示前 500 个，「复制」始终复制完整内容。</td></tr>
+        <tr><td>素数分布</td><td>绘制 π(x) 与近似 x/ln x 对比曲线（N ≤ 2×10⁶）；孪生素数对统计与列举（N ≤ 5×10⁶）；哥德巴赫拆分：任意 ≤ 40 位偶数给出一组 p+q 拆分，N ≤ 10⁶ 时枚举全部拆分。</td></tr>
+        <tr><td>梅森素数</td><td>Lucas-Lehmer 测试精确判定 M_p = 2^p − 1（指数 p ≤ 5000）。p 为合数时直接给出因子 2^q − 1（q 为 p 的最小质因子）。</td></tr>
+        <tr><td>伪素数</td><td>对底数 a 依次执行费马测试、欧拉测试（对比雅可比符号）、单基强测试，指出 n 是否为对应的伪素数；并用 Korselt 判据（无平方因子且 ∀p|n 有 p−1 | n−1）判定 Carmichael 数并展示验证过程。</td></tr>
+        <tr><td>欧拉函数</td><td>计算 φ(n) 并展示由质因数分解出发的推导过程：φ(n) = n·∏(1 − 1/p)。</td></tr>
+        <tr><td>数论函数</td><td>一次输出 φ、τ、σ、μ、λ、ω、Ω、rad，并判断平方无关/完全数/亲和数；「σₖ(n)」算因数 k 次幂和（k ≤ 100）；「φ 反问题」找出所有满足 φ(n) = m 的 n（m ≤ 10¹²），无解时说明该数是 nontotient。</td></tr>
+        <tr><td>阶乘勒让德</td><td>勒让德公式 v_p(n!) = Σ⌊n/pⁱ⌋（展示每一项）；n! 完整素因子分解（n ≤ 10⁶）；任意 b 进制末尾零（b ≤ 10⁶）；n! 十进制位数（n ≤ 10¹²，大 n 用 Stirling 级数）；n! 精确值（n ≤ 5000）。</td></tr>
+        <tr><td>扩展欧几里得</td><td>输入 a、b（可为负），输出 gcd、lcm，以及裴蜀恒等式 ax + by = gcd(a,b) 的一组解，并列出完整的辗转相除步骤表。</td></tr>
+        <tr><td>不定方程</td><td>解 ax + by = c：有解 ⟺ gcd(a,b) | c，给出特解、通解 x = x₀ + (b/d)t，并可枚举全部非负整数解（自动求 t 的取值区间）。</td></tr>
+        <tr><td>线性同余</td><td>解 ax ≡ b (mod m)。先算 d = gcd(a, m)：d 整除 b 才有解，此时在模 m 意义下恰有 d 个解，形如 x ≡ x₀ + k·(m/d)。「求 a⁻¹」直接给出 a 模 m 的乘法逆元（存在当且仅当 gcd(a, m) = 1）。</td></tr>
+        <tr><td>中国剩余定理</td><td>逐行输入 x ≡ aᵢ (mod mᵢ)，可增删方程（2~8 个）。模数不必两两互素：工具会逐步合并并检查相容性，若某对方程矛盾会指出具体位置。输出最小非负解与通解 x ≡ x₀ (mod M)，M 为各模数的最小公倍数。</td></tr>
+        <tr><td>平方同余</td><td>解 x² ≡ a (mod m)，m 任意（≤ 24 位）：自动分解 m，奇素数幂模用 Tonelli-Shanks + Hensel 逐位提升，模 2ᵏ 用特判公式（a ≡ 1 mod 8 时有 4 解），正确处理 a 含 p 因子（v_p 为奇数则无解）与 a ≡ 0 的情形，最后 CRT 组合。超过 256 个解时只报数量。</td></tr>
+        <tr><td>二项同余</td><td>解 xᵏ ≡ a (mod p)，p 素数 ≤ 10¹²。取原根 g，用 BSGS 求 ind_g(a)，化为线性同余 k·t ≡ ind (mod p−1)：有解 ⟺ gcd(k, p−1) | ind，解数即 gcd(k, p−1)。</td></tr>
+        <tr><td>模幂运算</td><td>计算 bᵉ mod m（快速幂）。e 为负时等价于求 (b⁻¹)^|e|，要求 b 与 m 互素，否则给出提示。</td></tr>
+        <tr><td>原根与阶</td><td>「求乘法阶」：最小 k 使 aᵏ ≡ 1 (mod n)，须 gcd(a, n) = 1，阶必整除 φ(n)。「找最小原根」：对素数 p 求最小原根 g（对 p−1 的每个质因子 q 验证 g^((p−1)/q) ≢ 1）；勾选「列出全部」可枚举所有原根 gᵏ（k 与 p−1 互素，最多 500 个），原根总数为 φ(p−1)。</td></tr>
+        <tr><td>勒让德/雅可比</td><td>(a/p) = 1 表示 a 是模 p 二次剩余，−1 为非剩余，0 表示 p | a，用欧拉判别法 a^((p−1)/2) 计算。雅可比符号 (a/n) 支持任意正奇数 n（含合数），按互反律递推，并给出中间步骤。「解 x² ≡ a」用 Tonelli-Shanks 算法给出两个平方根（若存在）。</td></tr>
+        <tr><td>离散对数</td><td>BSGS 算法求最小 x ≥ 0 使 aˣ ≡ b (mod p)，复杂度 O(√p)，故限制 p ≤ 10¹²。无解时如实报告。</td></tr>
+        <tr><td>佩尔方程</td><td>x² − D·y² = 1（D 非平方，≤ 9 位）：用 √D 的循环连分数求最小解，展示周期、验证等式、负佩尔（= −1）的可解性，以及由 (x₁+y₁√D)ᵏ 递推的前几组解。D 为平方数时明确拒绝。</td></tr>
+        <tr><td>连分数</td><td>三种模式：p/q 展开为有限连分数；√n 展开为循环连分数并展示循环节（n ≤ 9 位）；连分数串（如 <kbd>3;7,15,1,292</kbd>）还原为最简分数。均列出渐进分数（即最佳逼近）与误差，√n 模式还指出与佩尔方程的联系。</td></tr>
+        <tr><td>组合计算</td><td>C(n, k) 精确值（n ≤ 10⁴）、卡特兰数 Cₙ（n ≤ 5000）、分拆数 p(n)（n ≤ 5000，精确）；卢卡斯定理求 C(n,k) mod p：n、k 可达百位，p 为 ≤ 10⁶ 的素数，展示 p 进制分解过程。</td></tr>
+        <tr><td>进制转换</td><td>2~36 进制互转，字符集 0-9a-z 不区分大小写，支持任意长度整数。</td></tr>
+      </table>
+      <h3>防呆与限制</h3>
+      <ul>
+        <li>输入支持空格、逗号、下划线分隔与全角数字，自动清理后解析；非法输入会红框标出并在结果区给出具体原因。</li>
+        <li>分解类运算（分解、φ、阶、原根）建议 ≤ 24 位；判素 ≤ 40 位；GCD、同余、模幂支持百位级大整数。</li>
+        <li>模数必须为正整数；涉及逆元/阶/离散对数时会自动检查互素条件并说明。</li>
+        <li>所有计算在主线程完成，超大输入可能耗时数秒，界面会给出「计算中」提示。</li>
+      </ul>
+      <h3>链接分享</h3>
+      <p>点击 <b>🔗 分享</b> 后，当前选项卡、全部输入框内容与主题会被编码进 URL 的 <kbd>#s=</kbd> 片段并复制到剪贴板。对方打开链接即自动填充对应工具与输入，点击计算按钮即可复现结果，全程无需任何服务器。</p>
+    </div>
+    <div class="help-foot">
+      <label><input type="checkbox" id="helpNoMore"> 下次打开不再自动弹出</label>
+      <button class="btn accent" id="helpOk">开始使用</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   基础工具
+   ============================================================ */
+const $ = id => document.getElementById(id);
+
+function toast(msg, ms = 2200) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._tm);
+  t._tm = setTimeout(() => t.classList.remove("show"), ms);
+}
+function setHint(msg) { $("hintText").textContent = msg; }
+
+/* ---------- 主题 ---------- */
+const Theme = {
+  get: () => document.documentElement.dataset.theme || "light",
+  set(t) {
+    document.documentElement.dataset.theme = t;
+    try { localStorage.setItem("nt-theme", t); } catch (e) {}
+  },
+  toggle() { this.set(this.get() === "dark" ? "light" : "dark"); }
+};
+
+/* ============================================================
+   BigInt 数论核心
+   ============================================================ */
+const absB = x => x < 0n ? -x : x;
+
+function gcdB(a, b) {
+  a = absB(a); b = absB(b);
+  while (b) { const t = a % b; a = b; b = t; }
+  return a;
+}
+function lcmB(a, b) {
+  if (a === 0n || b === 0n) return 0n;
+  return absB(a / gcdB(a, b) * b);
+}
+function modB(a, m) { const r = a % m; return r < 0n ? r + m : r; }
+
+function modPow(b, e, m) {
+  if (m === 1n) return 0n;
+  b = modB(b, m);
+  let r = 1n;
+  while (e > 0n) {
+    if (e & 1n) r = r * b % m;
+    b = b * b % m;
+    e >>= 1n;
+  }
+  return r;
+}
+
+/* 扩展欧几里得：返回 {g, x, y} 满足 a*x + b*y = g = gcd(a,b)，g ≥ 0 */
+function egcd(a, b) {
+  let ox = 1n, oy = 0n, nx = 0n, ny = 1n;
+  let aa = a, bb = b;
+  while (bb !== 0n) {
+    const q = aa / bb;
+    [aa, bb] = [bb, aa - q * bb];
+    [ox, nx] = [nx, ox - q * nx];
+    [oy, ny] = [ny, oy - q * ny];
+  }
+  if (aa < 0n) { aa = -aa; ox = -ox; oy = -oy; }
+  return { g: aa, x: ox, y: oy };
+}
+
+/* 模逆元：不存在返回 null */
+function modInv(a, m) {
+  if (m <= 0n) return null;
+  const { g, x } = egcd(a, m);
+  if (g !== 1n) return null;
+  return modB(x, m);
+}
+
+/* ---------- 素性测试：Miller-Rabin（< 2^64 确定性） ---------- */
+const SMALL_PRIMES = [2n,3n,5n,7n,11n,13n,17n,19n,23n,29n,31n,37n];
+function isProbablePrime(n) {
+  if (n < 2n) return false;
+  for (const p of SMALL_PRIMES) {
+    if (n === p) return true;
+    if (n % p === 0n) return false;
+  }
+  let d = n - 1n, s = 0n;
+  while ((d & 1n) === 0n) { d >>= 1n; s++; }
+  const bases = [2n, 325n, 9375n, 28178n, 450775n, 9780504n, 1795265022n];
+  for (const a of bases) {
+    if (a % n === 0n) continue;
+    let x = modPow(a, d, n);
+    if (x === 1n || x === n - 1n) continue;
+    let comp = true;
+    for (let r = 1n; r < s; r++) {
+      x = x * x % n;
+      if (x === n - 1n) { comp = false; break; }
+    }
+    if (comp) return false;
+  }
+  return true;
+}
+const DETERMINISTIC_LIMIT = 1n << 64n; // 该基集合在 < 2^64 下为确定性
+
+/* ---------- Pollard-Rho（Brent 变体） ---------- */
+function pollardBrent(n) {
+  if (n % 2n === 0n) return 2n;
+  if (n % 3n === 0n) return 3n;
+  if (n % 5n === 0n) return 5n;
+  for (let attempt = 0; attempt < 64; attempt++) {
+    const rnd = () => BigInt(2 + Math.floor(Math.random() * 0x7fffffff)) % n;
+    let y = rnd(), c = 1n + rnd() % (n - 1n), m = 128n;
+    let g = 1n, r = 1n, q = 1n, x = 0n, ys = 0n;
+    let guard = 0;
+    while (g === 1n && guard++ < 100000) {
+      x = y;
+      for (let i = 0n; i < r; i++) y = (y * y % n + c) % n;
+      let k = 0n;
+      while (k < r && g === 1n) {
+        ys = y;
+        const lim = m < r - k ? m : r - k;
+        for (let i = 0n; i < lim; i++) {
+          y = (y * y % n + c) % n;
+          q = q * absB(x - y) % n;
+        }
+        g = gcdB(q, n);
+        k += m;
+      }
+      r <<= 1n;
+    }
+    if (g === n) {
+      let g2 = 1n, guard2 = 0;
+      do {
+        ys = (ys * ys % n + c) % n;
+        g2 = gcdB(absB(x - ys), n);
+      } while (g2 === 1n && guard2++ < 100000);
+      g = g2;
+    }
+    if (g > 1n && g < n) return g;
+  }
+  return null; // 罕见失败，交给调用方
+}
+
+/* 质因数分解 → 升序 [[p, e], ...]；cofactor 无法分解时抛出 */
+function factorize(n) {
+  if (n < 1n) throw new Error("只能分解正整数");
+  const fac = [];
+  let rest = n;
+  for (const p of SMALL_PRIMES) {
+    if (rest % p === 0n) {
+      let e = 0n;
+      while (rest % p === 0n) { rest /= p; e++; }
+      fac.push([p, e]);
+    }
+  }
+  const stack = rest > 1n ? [rest] : [];
+  let guard = 0;
+  while (stack.length) {
+    if (guard++ > 10000) throw new Error("分解超时，数字可能过大");
+    const m = stack.pop();
+    if (m === 1n) continue;
+    if (isProbablePrime(m)) { fac.push([m, 1n]); continue; }
+    const d = pollardBrent(m);
+    if (d === null) throw new Error("分解失败（Pollard-Rho 未命中），请重试");
+    stack.push(d, m / d);
+  }
+  /* 合并同因子 */
+  fac.sort((x, y) => (x[0] < y[0] ? -1 : x[0] > y[0] ? 1 : 0));
+  const out = [];
+  for (const [p, e] of fac) {
+    if (out.length && out[out.length - 1][0] === p) out[out.length - 1][1] += e;
+    else out.push([p, e]);
+  }
+  return out;
+}
+
+function factorStr(fac) {
+  return fac.map(([p, e]) => e === 1n ? String(p) : p + "^" + e).join(" × ");
+}
+function phiFromFac(n, fac) {
+  let r = n;
+  for (const [p] of fac) r = r / p * (p - 1n);
+  return r;
+}
+function divisorCountFromFac(fac) {
+  let r = 1n;
+  for (const [, e] of fac) r *= (e + 1n);
+  return r;
+}
+function divisorSumFromFac(fac) {
+  let r = 1n;
+  for (const [p, e] of fac) r *= (p ** (e + 1n) - 1n) / (p - 1n);
+  return r;
+}
+
+/* ---------- 勒让德 / 雅可比 ---------- */
+function legendre(a, p) {
+  const r = modPow(a, (p - 1n) / 2n, p);
+  if (r === 0n) return 0n;
+  return r === p - 1n ? -1n : r;
+}
+/* 返回 {v, steps}；n 必须为正奇数 */
+function jacobi(a, n) {
+  const steps = [];
+  a = modB(a, n);
+  let t = 1n;
+  while (a !== 0n) {
+    while ((a & 1n) === 0n) {
+      a >>= 1n;
+      const r = n & 7n;
+      if (r === 3n || r === 5n) t = -t;
+      steps.push(`提取因子 2：(2/${n}) = ${(r === 3n || r === 5n) ? "-1" : "+1"}`);
+    }
+    [a, n] = [n, a];
+    if ((a & 3n) === 3n && (n & 3n) === 3n) {
+      t = -t;
+      steps.push(`互反律：(${n}/${a}) 两者均 ≡ 3 (mod 4)，变号`);
+    } else {
+      steps.push(`互反律：翻转 (${n}/${a})，不变号`);
+    }
+    a = modB(a, n);
+  }
+  if (n === 1n) return { v: t, steps };
+  return { v: 0n, steps };
+}
+
+/* ---------- Tonelli-Shanks：x² ≡ a (mod p)，p 奇素数 ---------- */
+function tonelli(a, p) {
+  a = modB(a, p);
+  if (a === 0n) return 0n;
+  if (p === 2n) return a;
+  if (legendre(a, p) !== 1n) return null;
+  if ((p & 3n) === 3n) return modPow(a, (p + 1n) / 4n, p);
+  let q = p - 1n, s = 0n;
+  while ((q & 1n) === 0n) { q >>= 1n; s++; }
+  let z = 2n;
+  while (legendre(z, p) !== -1n) z++;
+  let c = modPow(z, q, p);
+  let x = modPow(a, (q + 1n) / 2n, p);
+  let t = modPow(a, q, p);
+  let m = s;
+  while (t !== 1n) {
+    let i = 1n, tt = t * t % p;
+    while (tt !== 1n) { tt = tt * tt % p; i++; if (i >= m) return null; }
+    const b = modPow(c, 1n << (m - i - 1n), p);
+    x = x * b % p;
+    c = b * b % p;
+    t = t * c % p;
+    m = i;
+  }
+  return x;
+}
+
+/* ---------- 原根 ---------- */
+function primitiveRoot(p, facPm1) {
+  const qs = facPm1.map(([q]) => q);
+  for (let g = 2n; g < p && g < 10000n; g++) {
+    let ok = true;
+    for (const q of qs) {
+      if (modPow(g, (p - 1n) / q, p) === 1n) { ok = false; break; }
+    }
+    if (ok) return g;
+  }
+  return null;
+}
+/* 乘法阶，须 gcd(a,n)=1；facPhi 为 φ(n) 的分解 */
+function multiplicativeOrder(a, n, phi, facPhi) {
+  let t = phi;
+  for (const [q, e] of facPhi) {
+    for (let i = 0n; i < e; i++) {
+      if (t % q !== 0n) break;
+      const cand = t / q;
+      if (modPow(a, cand, n) === 1n) t = cand;
+      else break;
+    }
+  }
+  return t;
+}
+
+/* ---------- BSGS 离散对数 ---------- */
+function bsgs(a, b, p) {
+  a = modB(a, p); b = modB(b, p);
+  if (p <= 2n) return b === modB(a, p) ? 0n : (b === 1n ? 0n : null);
+  const m = (function (x) { // ceil(sqrt(p))，p ≤ 1e12 安全转 Number
+    const r = BigInt(Math.ceil(Math.sqrt(Number(x))));
+    return r * r >= x ? r : r + 1n;
+  })(p);
+  const table = new Map();
+  let cur = 1n;
+  for (let j = 0n; j < m; j++) {
+    if (!table.has(cur)) table.set(cur, j);
+    cur = cur * a % p;
+  }
+  const am = modPow(modInv(a, p), m, p); // a^(-m)
+  let gamma = b;
+  for (let i = 0n; i <= m; i++) {
+    const j = table.get(gamma);
+    if (j !== undefined) {
+      const x = i * m + j;
+      if (modPow(a, x, p) === b) return x;
+    }
+    gamma = gamma * am % p;
+  }
+  return null;
+}
+
+/* ---------- 大整数开方 / 整除 ---------- */
+const cmpB = (x, y) => (x < y ? -1 : x > y ? 1 : 0);
+function isqrtB(n) {
+  if (n < 2n) return n;
+  let x = 1n << BigInt(Math.ceil(n.toString(2).length / 2));
+  while (true) {
+    const y = (x + n / x) >> 1n;
+    if (y >= x) break;
+    x = y;
+  }
+  while (x * x > n) x--;
+  while ((x + 1n) * (x + 1n) <= n) x++;
+  return x;
+}
+function floorDiv(a, b) { // 向下取整除法（b ≠ 0）
+  let q = a / b;
+  const r = a % b;
+  if (r !== 0n && ((r < 0n) !== (b < 0n))) q--;
+  return q;
+}
+function ceilDiv(a, b) { return -floorDiv(-a, b); }
+
+/* ---------- x² ≡ a (mod p^k) ---------- */
+function rangeRoots(step, cnt, M) { // x = t·step, t = 0..cnt−1（调用前保证 cnt 小）
+  const out = [];
+  for (let t = 0n; t < cnt; t++) out.push(t * step);
+  return out;
+}
+/* p 奇素数，p ∤ a，a 为 QR：Hensel 提升出模 p^m 的两个根；非剩余返回 null */
+function henselOdd(a, p, m, steps) {
+  let r = tonelli(modB(a, p), p);
+  if (r === null || r === 0n) return null;
+  steps.push(`模 ${p} 开方（Tonelli-Shanks）：r = ${r}`);
+  let pk = p;
+  for (let i = 1n; i < m; i++) {
+    const f = (r * r - a) / pk;              // 恰被 p^i 整除
+    const t = modB(-f * modInv(2n * r, p), p);
+    r = r + t * pk;
+    pk *= p;
+    if (i <= 6n) steps.push(`Hensel 提升：r ≡ ${r} (mod ${pk})`);
+  }
+  if (m > 7n) steps.push(`… 继续提升至模 ${p}^${m}`);
+  const M = p ** m;
+  r = modB(r, M);
+  const r2 = M - r;
+  return r === r2 ? [r] : (r < r2 ? [r, r2] : [r2, r]);
+}
+/* x² ≡ a (mod p^k)，p 奇素数。返回 {roots, count, modulus}；roots 超上限时为 null */
+function sqrtModOddPk(a, p, k, steps) {
+  const M = p ** k;
+  a = modB(a, M);
+  const h = (k + 1n) / 2n;
+  if (a === 0n) {
+    const step = p ** h, cnt = p ** (k - h);
+    steps.push(`a ≡ 0 (mod ${p}^${k})：x 须为 ${p}^${h} 的倍数，共 ${cnt} 个解`);
+    return { roots: cnt <= 256n ? rangeRoots(step, cnt, M) : null, count: cnt, modulus: M };
+  }
+  let s = 0n, a2 = a;
+  while (a2 % p === 0n) { a2 /= p; s++; }
+  if (s & 1n) { steps.push(`v_${p}(a) = ${s} 为奇数，无解`); return { roots: [], count: 0n, modulus: M }; }
+  const m = k - s;
+  steps.push(`a = ${p}^${s}·${a2}（v_${p} = ${s}），化为 y² ≡ ${a2} (mod ${p}^${m})，x = ${p}^${s / 2n}·y`);
+  const sub = henselOdd(a2, p, m, steps);
+  if (!sub) { steps.push(`${a2} 不是模 ${p} 的二次剩余，无解`); return { roots: [], count: 0n, modulus: M }; }
+  /* y 模 p^m 的每个解提升为 y + t·p^m（t = 0..p^{s/2}−1），对应模 p^k 的全部 x */
+  const mul = p ** (s / 2n), pm = p ** m, lifts = p ** (s / 2n);
+  const count = BigInt(sub.length) * lifts;
+  if (count > 256n) {
+    steps.push(`每个 y 再派生 ${lifts} 个解，共 ${count} 个（过多不枚举）`);
+    return { roots: null, count, modulus: M };
+  }
+  const roots = [];
+  for (const y of sub) for (let t = 0n; t < lifts; t++) roots.push(modB(mul * (y + t * pm), M));
+  roots.sort(cmpB);
+  return { roots, count, modulus: M };
+}
+/* x² ≡ a (mod 2^k) */
+function sqrtMod2k(a, k, steps) {
+  const M = 1n << k;
+  a = modB(a, M);
+  const h = (k + 1n) / 2n;
+  if (a === 0n) {
+    const step = 1n << h, cnt = 1n << (k - h);
+    steps.push(`a ≡ 0 (mod 2^${k})：x 须为 2^${h} 的倍数，共 ${cnt} 个解`);
+    return { roots: cnt <= 256n ? rangeRoots(step, cnt, M) : null, count: cnt, modulus: M };
+  }
+  let s = 0n, a2 = a;
+  while ((a2 & 1n) === 0n) { a2 >>= 1n; s++; }
+  if (s & 1n) { steps.push(`v_2(a) = ${s} 为奇数，无解`); return { roots: [], count: 0n, modulus: M }; }
+  const m = k - s;
+  steps.push(`a = 2^${s}·${a2}，化为 y² ≡ ${a2} (mod 2^${m})，x = 2^${s / 2n}·y`);
+  let ys;
+  if (m === 1n) ys = [1n];
+  else if (m === 2n) {
+    if ((a2 & 3n) !== 1n) { steps.push(`${a2} ≢ 1 (mod 4)，无解`); return { roots: [], count: 0n, modulus: M }; }
+    ys = [1n, 3n];
+  } else {
+    if ((a2 & 7n) !== 1n) { steps.push(`${a2} ≢ 1 (mod 8)，无解`); return { roots: [], count: 0n, modulus: M }; }
+    let r = 1n; // r² ≡ a2 (mod 8) 自动成立
+    for (let i = 3n; i < m; i++) {
+      if (modB(r * r - a2, 1n << (i + 1n)) !== 0n) r += 1n << (i - 1n);
+    }
+    const Mm = 1n << m, half = 1n << (m - 1n);
+    ys = [r, Mm - r, modB(r + half, Mm), modB(half - r, Mm)];
+    ys = [...new Set(ys.map(String))].map(BigInt).sort(cmpB);
+    steps.push(`模 2^${m} 有 4 个解：±r、±r + 2^${m - 1n}，其中 r = ${r}`);
+  }
+  const mul = 1n << (s / 2n), lifts = 1n << (s / 2n), pm = 1n << m;
+  const count = BigInt(ys.length) * lifts;
+  if (count > 256n) {
+    steps.push(`每个 y 再派生 ${lifts} 个解，共 ${count} 个（过多不枚举）`);
+    return { roots: null, count, modulus: M };
+  }
+  const roots = [];
+  for (const y of ys) for (let t = 0n; t < lifts; t++) roots.push(modB(mul * (y + t * pm), M));
+  roots.sort(cmpB);
+  return { roots, count, modulus: M };
+}
+/* x² ≡ a (mod n)，任意 n ≥ 2：分解 → 各素数幂求解 → CRT 组合 */
+function crtPair(a1, m1, a2, m2) { // 要求 gcd(m1, m2) = 1
+  return a1 + m1 * modB((a2 - a1) * modInv(m1, m2), m2);
+}
+function sqrtModN(a, n, steps) {
+  const fac = factorize(n);
+  steps.push(`模数分解：${n} = ${factorStr(fac)}`);
+  const comps = fac.map(([p, e]) => {
+    const sub = [];
+    const c = p === 2n ? sqrtMod2k(a, e, sub) : sqrtModOddPk(a, p, e, sub);
+    steps.push(`— 模 ${p}^${e}：`, ...sub.map(s => "  " + s));
+    return c;
+  });
+  let total = 1n;
+  for (const c of comps) total *= c.count;
+  if (total === 0n) return { roots: [], count: 0n, comps };
+  let roots = null;
+  if (total <= 256n && comps.every(c => c.roots !== null)) {
+    roots = [0n];
+    let M = 1n;
+    for (const c of comps) {
+      const next = [];
+      for (const x of roots) for (const r of c.roots) next.push(crtPair(x, M, r, c.modulus));
+      M *= c.modulus;
+      roots = [...new Set(next.map(String))].map(BigInt);
+    }
+    roots = roots.map(x => modB(x, M)).sort(cmpB);
+    steps.push(`CRT 组合 ${comps.length} 组局部解 → 模 ${M} 的全部解`);
+  }
+  return { roots, count: total, comps };
+}
+
+/* ---------- 二项同余 x^k ≡ a (mod p)，p 素数 ---------- */
+function binomCong(k, a, p, info) {
+  a = modB(a, p);
+  if (p === 2n) { info.push("模 2：x^k ≡ x (mod 2)"); return [a]; }
+  if (a === 0n) { info.push(`a ≡ 0 (mod ${p})：唯一解 x ≡ 0`); return [0n]; }
+  const facPm1 = factorize(p - 1n);
+  const g = primitiveRoot(p, facPm1);
+  if (g === null) throw new Error("未能找到原根（异常情况）");
+  info.push(`取模 ${p} 的原根 g = ${g}`);
+  const ind = bsgs(g, a, p);
+  info.push(`BSGS 求指数：ind_g(${a}) = ${ind}，即 ${g}^${ind} ≡ ${a}`);
+  const P = p - 1n;
+  const d = gcdB(k, P);
+  info.push(`化为线性同余：${k}·t ≡ ${ind} (mod ${P})，d = gcd(${k}, ${P}) = ${d}`);
+  if (ind % d !== 0n) { info.push(`d 不能整除 ${ind}，无解`); return []; }
+  const k1 = k / d, i1 = ind / d, P1 = P / d;
+  const t0 = modB(i1 * modInv(k1, P1), P1);
+  info.push(`t ≡ ${t0} (mod ${P1})，共 ${d} 个 t，对应 ${d} 个解 x = g^t`);
+  const show = d > 4096n ? 16n : d;
+  if (d > 4096n) info.push(`解过多（${d} 个），仅列出前 16 个`);
+  const roots = [];
+  for (let j = 0n; j < show; j++) roots.push(modPow(g, t0 + j * P1, p));
+  return roots.sort(cmpB);
+}
+
+/* ---------- 佩尔方程 x² − D·y² = 1 ---------- */
+function pell(D, capIter = 200000, capDigits = 3000) {
+  const a0 = isqrtB(D);
+  if (a0 * a0 === D) return { square: true };
+  const cf = [a0], period = [];
+  let m = 0n, d = 1n, a = a0;
+  let p1 = 1n, p0 = a0, q1 = 0n, q0 = 1n;
+  let neg = null; // x² − D·y² = −1 的解（若存在）
+  if (p0 * p0 - D * q0 * q0 === -1n) neg = { x: p0, y: q0 };
+  if (p0 * p0 - D * q0 * q0 === 1n) return { x: p0, y: q0, cf, period, neg, periodLen: 0n };
+  for (let i = 0; i < capIter; i++) {
+    m = d * a - m;
+    d = (D - m * m) / d;
+    a = (a0 + m) / d;
+    period.push(a);
+    const p = a * p0 + p1, q = a * q0 + q1;
+    p1 = p0; p0 = p; q1 = q0; q0 = q;
+    const v = p0 * p0 - D * q0 * q0;
+    if (v === -1n && !neg) neg = { x: p0, y: q0 };
+    if (v === 1n) return { x: p0, y: q0, cf, period, neg, periodLen: BigInt(period.length) };
+    if (String(p0).length > capDigits) return { overflow: true, neg, cf, period };
+  }
+  return { overflow: true, neg, cf, period };
+}
+
+/* ---------- 一次不定方程 ax + by = c ---------- */
+function solveLinDioph(a, b, c) {
+  if (a === 0n && b === 0n) return c === 0n ? { trivial: true } : null;
+  const { g, x, y } = egcd(a, b);
+  if (c % g !== 0n) return null;
+  const f = c / g;
+  return { x0: x * f, y0: y * f, g, dx: b / g, dy: -(a / g) };
+}
+/* 非负解 t 区间：[lo, hi]；hi 为 null 表示无上界（无穷多解），empty 表示无解 */
+function diophNNRange(sol) {
+  // x = x0 + dx·t ≥ 0，y = y0 + dy·t ≥ 0
+  let lo = null, hi = null, empty = false;
+  const apply = (coef, v) => { // coef·t ≥ v
+    if (coef > 0n) { const b = ceilDiv(v, coef); lo = lo === null || b > lo ? b : lo; }
+    else if (coef < 0n) { const b = floorDiv(v, coef); hi = hi === null || b < hi ? b : hi; }
+    else if (v > 0n) { empty = true; } // 0·t ≥ v > 0 恒不成立
+  };
+  apply(sol.dx, -sol.x0);
+  apply(sol.dy, -sol.y0);
+  if (empty || (lo !== null && hi !== null && lo > hi)) return { empty: true };
+  return { lo, hi, empty: false }; // lo 或 hi 为 null 表示该方向无界（无穷多解）
+}
+
+/* ---------- 连分数 ---------- */
+function cfRational(p, q) { // q > 0，返回部分商数组
+  const out = [];
+  while (q !== 0n) {
+    const f = floorDiv(p, q);
+    out.push(f);
+    const r = p - f * q;
+    p = q; q = r;
+  }
+  return out;
+}
+function cfValue(cf) { // 连分数 → 最简分数 [p, q]
+  let p = 1n, q = 0n;
+  for (let i = cf.length - 1; i >= 0; i--) { const t = p; p = cf[i] * p + q; q = t; }
+  const g = gcdB(p, q);
+  return q < 0n ? [-p / g, -q / g] : [p / g, q / g];
+}
+function cfSqrt(n) { // √n → {a0, period}（n 非平方数）
+  const a0 = isqrtB(n);
+  if (a0 * a0 === n) return { a0, period: [] };
+  let m = 0n, d = 1n, a = a0;
+  const period = [];
+  do {
+    m = d * a - m;
+    d = (n - m * m) / d;
+    a = (a0 + m) / d;
+    period.push(a);
+  } while (a !== 2n * a0);
+  return { a0, period };
+}
+/* 由部分商序列计算渐进分数列表 */
+function cfConvergents(terms) {
+  const out = [];
+  let pm1 = 1n, pm2 = 0n, qm1 = 0n, qm2 = 1n; // p₋₁=1, p₋₂=0; q₋₁=0, q₋₂=1
+  for (const a of terms) {
+    const p = a * pm1 + pm2, q = a * qm1 + qm2;
+    out.push([p, q]);
+    pm2 = pm1; pm1 = p; qm2 = qm1; qm1 = q;
+  }
+  return out;
+}
+
+/* ---------- 梅森素数 Lucas-Lehmer ---------- */
+function lucasLehmer(pn) { // pn: Number 素数指数
+  if (pn === 2) return true;
+  const M = (1n << BigInt(pn)) - 1n;
+  let s = 4n;
+  for (let i = 0; i < pn - 2; i++) s = (s * s - 2n) % M;
+  return s === 0n;
+}
+
+/* ---------- 伪素数 ---------- */
+function strongPspBase(n, a) { // 单基 Miller-Rabin：true = 通过
+  if (n < 2n) return false;
+  if (n === 2n || n === 3n) return true;
+  if ((n & 1n) === 0n) return false;
+  a = modB(a, n);
+  if (a === 0n) return true;
+  let d = n - 1n, s = 0n;
+  while ((d & 1n) === 0n) { d >>= 1n; s++; }
+  let x = modPow(a, d, n);
+  if (x === 1n || x === n - 1n) return true;
+  for (let r = 1n; r < s; r++) {
+    x = x * x % n;
+    if (x === n - 1n) return true;
+  }
+  return false;
+}
+function isCarmichael(n, fac) {
+  if (n < 3n || isProbablePrime(n)) return false;
+  for (const [p, e] of fac) {
+    if (e > 1n) return false;                       // 必须无平方因子
+    if ((n - 1n) % (p - 1n) !== 0n) return false;   // Korselt 判据
+  }
+  return true;
+}
+
+/* ---------- 数论函数 ---------- */
+function mobiusFac(fac) {
+  for (const [, e] of fac) if (e > 1n) return 0n;
+  return fac.length % 2 ? -1n : 1n;
+}
+function liouvilleFac(fac) {
+  let o = 0n;
+  for (const [, e] of fac) o += e;
+  return o % 2n ? -1n : 1n;
+}
+function sigmaKFac(fac, k) { // σₖ(n) = Σ dᵏ，k ≥ 0
+  if (k === 0n) return divisorCountFromFac(fac);
+  let r = 1n;
+  for (const [p, e] of fac) {
+    const pk = p ** k;
+    r *= (pk ** (e + 1n) - 1n) / (pk - 1n);
+  }
+  return r;
+}
+function divisorsFromFac(fac) {
+  let out = [1n];
+  for (const [p, e] of fac) {
+    const cur = [];
+    let pk = 1n;
+    for (let i = 0n; i <= e; i++) { for (const d of out) cur.push(d * pk); pk *= p; }
+    out = cur;
+  }
+  return out;
+}
+/* φ 反问题：找出所有 n 使 φ(n) = m（m ≤ 10^12 防爆炸）。
+   奇数解递归求解（保证规模严格下降），2 的幂次在顶层单独组合。 */
+function invPhi(m) {
+  const memo = new Map();
+  function oddSols(mm) { // φ(n) = mm 的所有奇数解 n
+    if (mm === 1n) return [1n];
+    if (mm & 1n) return [];
+    const key = String(mm);
+    if (memo.has(key)) return memo.get(key);
+    const divs = divisorsFromFac(factorize(mm));
+    if (divs.length > 200000) throw new Error("m 的因数过多，放弃求解");
+    const out = new Set();
+    for (const d of divs) {
+      const p = d + 1n;
+      if (p < 3n || !isProbablePrime(p)) continue;
+      let pe = 1n; // p^{e−1}
+      while (pe * d <= mm) {
+        const phiPart = pe * d; // φ(p^e) = p^{e−1}(p−1)
+        if (mm % phiPart !== 0n) break;
+        for (const s of oddSols(mm / phiPart)) {
+          if (s % p !== 0n) {
+            out.add((pe * p * s).toString());
+            if (out.size > 2000) throw new Error("解的数量过多（> 2000），不予枚举");
+          }
+        }
+        pe *= p;
+      }
+    }
+    const arr = [...out].map(BigInt).sort(cmpB);
+    memo.set(key, arr);
+    return arr;
+  }
+  if (m === 1n) return [1n, 2n];
+  if (m & 1n) return []; // n ≥ 3 时 φ(n) 为偶数
+  const out = new Set(oddSols(m).map(String)); // n 为奇数的情形
+  let p2 = 1n; // 2^{e−1}，e ≥ 1：n = 2^e·s，φ(n) = 2^{e−1}·φ(s)
+  while (p2 <= m) {
+    if (m % p2 === 0n) {
+      for (const s of oddSols(m / p2)) {
+        out.add((2n * p2 * s).toString());
+        if (out.size > 2000) throw new Error("解的数量过多（> 2000），不予枚举");
+      }
+    }
+    p2 *= 2n;
+  }
+  return [...out].map(BigInt).sort(cmpB);
+}
+
+/* ---------- 阶乘与勒让德公式 ---------- */
+function vpFactorial(n, p) { // v_p(n!) = Σ ⌊n/p^i⌋
+  let s = 0n, pk = p;
+  while (pk <= n) { s += n / pk; pk *= p; }
+  return s;
+}
+function factorialExact(n) { // n: Number ≤ 5000
+  let r = 1n;
+  for (let i = 2; i <= n; i++) r *= BigInt(i);
+  return r;
+}
+function factorialDigits(n) { // n BigInt；n ≤ 10^6 精确求和，否则 Stirling（n ≤ 10^12 双精度足够）
+  if (n <= 1000000n) {
+    let s = 0;
+    const N = Number(n);
+    for (let i = 2; i <= N; i++) s += Math.log10(i);
+    return BigInt(Math.floor(s)) + 1n;
+  }
+  const x = Number(n);
+  const lf = x * Math.log(x) - x + 0.5 * Math.log(2 * Math.PI * x) + 1 / (12 * x);
+  return BigInt(Math.floor(lf / Math.LN10)) + 1n;
+}
+
+/* ---------- 组合数论 ---------- */
+function binomExact(n, k) {
+  if (k < 0n || k > n) return 0n;
+  if (k > n - k) k = n - k;
+  let r = 1n;
+  for (let i = 1n; i <= k; i++) r = r * (n - k + i) / i;
+  return r;
+}
+function catalan(n) { return binomExact(2n * n, n) / (n + 1n); }
+function binomModP(n, k, p) { // n, k < p，p 素数（JS Number），返回 BigInt
+  if (k < 0 || k > n) return 0n;
+  if (k > n - k) k = n - k;
+  const pb = BigInt(p);
+  let num = 1n, den = 1n;
+  for (let i = 0; i < k; i++) {
+    num = num * BigInt(n - i) % pb;
+    den = den * BigInt(i + 1) % pb;
+  }
+  return num * modInv(den, pb) % pb;
+}
+function lucasMod(n, k, p) { // 卢卡斯定理：C(n,k) mod p，n/k 任意大，p 素数 ≤ 10^6
+  if (k < 0n || k > n) return 0n;
+  const pb = BigInt(p);
+  let r = 1n;
+  while (n > 0n || k > 0n) {
+    const ni = Number(n % pb), ki = Number(k % pb);
+    if (ki > ni) return 0n;
+    r = r * binomModP(ni, ki, p) % pb;
+    n /= pb; k /= pb;
+  }
+  return r;
+}
+function partitionP(n) { // 分拆数 p(n)，n: Number ≤ 5000
+  const dp = new Array(n + 1).fill(0n);
+  dp[0] = 1n;
+  for (let k = 1; k <= n; k++)
+    for (let i = k; i <= n; i++) dp[i] += dp[i - k];
+  return dp[n];
+}
+
+/* ============================================================
+   输入解析（防呆）
+   ============================================================ */
+class InputError extends Error {}
+
+function cleanNumStr(s) {
+  return String(s)
+    .replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFF10 + 48)) // 全角数字
+    .replace(/[，、]/g, ",")
+    .replace(/[\s,_'’]/g, "")
+    .replace(/^[+＋]/, "")
+    .replace(/^[-−–]/, "-");
+}
+/* 解析整数，允许负号；digits 上限防护 */
+function parseBig(s, name, { min = null, maxDigits = 120, allowNeg = true } = {}) {
+  const raw = cleanNumStr(s);
+  if (raw === "" || raw === "-") throw new InputError(`${name}不能为空`);
+  if (!/^-?\d+$/.test(raw)) throw new InputError(`${name}必须是整数（当前输入：「${String(s).slice(0, 40)}」）`);
+  const digits = raw.replace("-", "").length;
+  if (digits > maxDigits) throw new InputError(`${name}超出范围：最多 ${maxDigits} 位（当前 ${digits} 位）`);
+  const v = BigInt(raw);
+  if (min !== null && v < min) throw new InputError(`${name}必须 ≥ ${min}`);
+  if (!allowNeg && v < 0n) throw new InputError(`${name}不能为负数`);
+  return v;
+}
+function markInvalid(id, bad) {
+  const el = $(id);
+  if (el) el.classList.toggle("invalid", !!bad);
+}
+
+/* ============================================================
+   结果输出
+   ============================================================ */
+function showOut(toolPrefix, lines) {
+  const out = $(toolPrefix + "-out");
+  out.innerHTML = lines.map(l => {
+    const esc = l.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return esc
+      .replace(/^【(.+)】/, '<span class="hl">【$1】</span>')
+      .replace(/✓ (.+)/, '<span class="ok">✓ $1</span>')
+      .replace(/✗ (.+)/, '<span class="bad">✗ $1</span>');
+  }).join("\n");
+  out.classList.add("show");
+  $(toolPrefix + "-head").classList.add("show");
+  out.scrollTop = 0;
+}
+function showErr(toolPrefix, msg) {
+  showOut(toolPrefix, [`【输入有误】`, `✗ ${msg}`]);
+}
+/* 复制内容：优先取工具写入的完整文本（如被截断显示的素数表），否则取显示文本 */
+function copyTextFor(el) { return el.dataset.copy !== undefined ? el.dataset.copy : el.innerText; }
+/* 防长任务卡死感知：先渲染“计算中”，下一帧再算 */
+function runTask(prefix, fn) {
+  showOut(prefix, ["【计算中】…"]);
+  setHint("计算中…");
+  setTimeout(() => {
+    try {
+      const lines = fn();
+      showOut(prefix, lines);
+      setHint("计算完成 — 结果已生成。");
+    } catch (e) {
+      showErr(prefix, e instanceof InputError ? e.message : ("计算失败：" + e.message));
+      setHint("出错了：" + e.message);
+    }
+  }, 30);
+}
+
+/* ============================================================
+   各工具实现
+   ============================================================ */
+
+/* ---------- 质数工具 ---------- */
+const P_LIMIT_FACTOR = 24, P_LIMIT_PRIME = 40;
+
+function primeCheckLines(n) {
+  const lines = ["【质数判断】"];
+  if (n < 2n) { lines.push(`✗ ${n} 不是质数（质数定义为大于 1 的整数）`); return lines; }
+  const digits = String(n).length;
+  if (digits > P_LIMIT_PRIME) throw new InputError(`判素最多支持 ${P_LIMIT_PRIME} 位（当前 ${digits} 位）`);
+  const pr = isProbablePrime(n);
+  if (pr) {
+    const certain = n < DETERMINISTIC_LIMIT;
+    lines.push(`✓ ${n} 是质数` + (certain ? "（Miller-Rabin 确定性判定）" : "（Miller-Rabin 高概率判定，7 组基全部通过）"));
+  } else {
+    lines.push(`✗ ${n} 是合数（Miller-Rabin 找到合数证据）`);
+  }
+  return lines;
+}
+
+function factorLines(n, withPhi) {
+  if (n === 1n) {
+    const lines = ["【质因数分解】", "1 没有质因子（1 既非质数也非合数）"];
+    if (withPhi) lines.push("", "【派生量】", "φ(1) = 1", "τ(1) = 1", "σ(1) = 1");
+    return { lines, fac: [] };
+  }
+  const digits = String(n).length;
+  if (digits > P_LIMIT_FACTOR) throw new InputError(`分解最多支持 ${P_LIMIT_FACTOR} 位（当前 ${digits} 位），以免浏览器长时间卡顿`);
+  const fac = factorize(n);
+  const lines = ["【质因数分解】", `${n} = ${factorStr(fac)}`];
+  lines.push(`不同质因子：${fac.map(([p]) => p).join(", ")}`);
+  if (withPhi) {
+    const phi = phiFromFac(n, fac);
+    lines.push("", "【派生量】",
+      `φ(n) = ${phi}`,
+      `τ(n) 因数个数 = ${divisorCountFromFac(fac)}`,
+      `σ(n) 因数和 = ${divisorSumFromFac(fac)}`);
+  }
+  return { lines, fac };
+}
+
+function toolPrime(mode) {
+  runTask("p", () => {
+    let n;
+    try { n = parseBig($("p-n").value, "n", { min: 1n, maxDigits: P_LIMIT_PRIME, allowNeg: false }); markInvalid("p-n", false); }
+    catch (e) { markInvalid("p-n", true); throw e; }
+
+    if (mode === "prime") return primeCheckLines(n);
+    if (mode === "factor") return factorLines(n, false).lines;
+    if (mode === "divisors") {
+      const { fac } = factorLines(n, false);
+      const cnt = divisorCountFromFac(fac);
+      if (cnt > 2000n) return ["【所有因数】", `✗ 因数个数过多（τ(n) = ${cnt}），不予枚举`];
+      let divs = [1n];
+      for (const [p, e] of fac) {
+        const cur = [];
+        let pk = 1n;
+        for (let i = 0n; i <= e; i++) {
+          for (const d of divs) cur.push(d * pk);
+          pk *= p;
+        }
+        divs = cur;
+      }
+      divs.sort((x, y) => (x < y ? -1 : 1));
+      return ["【所有因数】", `共 ${cnt} 个：`, divs.join(", ")];
+    }
+    if (mode === "neighbor") {
+      const lines = ["【相邻素数】"];
+      if (String(n).length > P_LIMIT_PRIME) throw new InputError(`最多支持 ${P_LIMIT_PRIME} 位`);
+      let lo = n - 1n, hi = n + 1n, guard = 0;
+      while (lo > 1n && !isProbablePrime(lo) && guard++ < 200000n) lo--;
+      const foundLo = lo > 1n && isProbablePrime(lo);
+      guard = 0;
+      while (!isProbablePrime(hi) && guard++ < 200000n) hi++;
+      const foundHi = isProbablePrime(hi); // 步数耗尽时 hi 可能仍非素数，不能照报
+      lines.push(foundLo ? `前一个素数：${lo}（距离 ${n - lo}）` : "前一个素数：不存在（n ≤ 2）");
+      lines.push(foundHi ? `后一个素数：${hi}（距离 ${hi - n}）` : "后一个素数：200000 步内未找到");
+      return lines;
+    }
+    /* analyze */
+    const lines = primeCheckLines(n);
+    if (n >= 2n) {
+      const r = factorLines(n, true);
+      lines.push("", ...r.lines);
+    }
+    return lines;
+  });
+}
+
+/* ---------- 欧拉函数 ---------- */
+function toolPhi() {
+  runTask("phi", () => {
+    let n;
+    try { n = parseBig($("phi-n").value, "n", { min: 1n, maxDigits: P_LIMIT_FACTOR, allowNeg: false }); markInvalid("phi-n", false); }
+    catch (e) { markInvalid("phi-n", true); throw e; }
+    if (n === 1n) return ["【欧拉函数】", "φ(1) = 1（约定）"];
+    const fac = factorize(n);
+    const phi = phiFromFac(n, fac);
+    return [
+      "【欧拉函数 φ(n)】",
+      `n = ${n} = ${factorStr(fac)}`,
+      "",
+      "推导：φ(n) = n · ∏(1 − 1/p)",
+      `     = ${n} · ${fac.map(([p]) => `(1 − 1/${p})`).join("·")}`,
+      `     = ${n} · ${fac.map(([p]) => `(${p}−1)/${p}`).join("·")}`,
+      "",
+      `✓ φ(${n}) = ${phi}`,
+      `含义：1 ~ ${n} 中与 ${n} 互素的整数共 ${phi} 个`
+    ];
+  });
+}
+
+/* ---------- 扩展欧几里得 ---------- */
+function toolGcd() {
+  runTask("g", () => {
+    let a, b;
+    try { a = parseBig($("g-a").value, "a", { maxDigits: 100 }); markInvalid("g-a", false); }
+    catch (e) { markInvalid("g-a", true); throw e; }
+    try { b = parseBig($("g-b").value, "b", { maxDigits: 100 }); markInvalid("g-b", false); }
+    catch (e) { markInvalid("g-b", true); throw e; }
+    if (a === 0n && b === 0n) throw new InputError("a 与 b 不能同时为 0");
+
+    /* 步骤表（在绝对值上做除法） */
+    const steps = [];
+    let x0 = absB(a), y0 = absB(b);
+    if (y0 !== 0n) {
+      let u = x0, v = y0;
+      let guard = 0;
+      while (v !== 0n && guard++ < 10000) {
+        const q = u / v, r = u % v;
+        steps.push(`${u} = ${q} × ${v} + ${r}`);
+        u = v; v = r;
+      }
+    }
+    const { g, x, y } = egcd(a, b);
+    const lines = ["【扩展欧几里得】"];
+    if (steps.length) { lines.push("辗转相除：", ...steps.map(s => "  " + s), ""); }
+    lines.push(
+      `✓ gcd(${a}, ${b}) = ${g}`,
+      `✓ lcm(${a}, ${b}) = ${lcmB(a, b)}`,
+      "",
+      "【裴蜀恒等式】a·x + b·y = gcd(a, b) 的一组解：",
+      `x = ${x}`,
+      `y = ${y}`,
+      `验证：(${a})×(${x}) + (${b})×(${y}) = ${a * x + b * y}`,
+      "",
+      `通解：x = ${x} + k·(${b / g})，y = ${y} − k·(${a / g})，k ∈ ℤ`
+    );
+    return lines;
+  });
+}
+
+/* ---------- 线性同余 ---------- */
+function toolCong(onlyInv) {
+  runTask("c", () => {
+    let a, b, m;
+    try { a = parseBig($("c-a").value, "a", { maxDigits: 100 }); markInvalid("c-a", false); }
+    catch (e) { markInvalid("c-a", true); throw e; }
+    try { m = parseBig($("c-m").value, "m", { min: 1n, maxDigits: 100, allowNeg: false }); markInvalid("c-m", false); }
+    catch (e) { markInvalid("c-m", true); throw e; }
+    const d = gcdB(a, m);
+
+    if (onlyInv) {
+      const lines = [`【模逆元】求 a⁻¹ 使 a·a⁻¹ ≡ 1 (mod ${m})`];
+      if (d !== 1n) {
+        lines.push(`✗ 不存在：gcd(${a}, ${m}) = ${d} ≠ 1，逆元存在当且仅当互素`);
+        return lines;
+      }
+      const inv = modInv(a, m);
+      lines.push(`✓ gcd(${a}, ${m}) = 1，逆元存在`, `a⁻¹ ≡ ${inv} (mod ${m})`, `验证：${modB(a, m)} × ${inv} mod ${m} = ${modB(a, m) * inv % m}`);
+      return lines;
+    }
+
+    try { b = parseBig($("c-b").value, "b", { maxDigits: 100 }); markInvalid("c-b", false); }
+    catch (e) { markInvalid("c-b", true); throw e; }
+    const lines = [`【线性同余】${a}x ≡ ${b} (mod ${m})`];
+    lines.push(`d = gcd(a, m) = gcd(${a}, ${m}) = ${d}`);
+    if (modB(b, d) !== 0n) {
+      lines.push(`✗ ${d} 不能整除 ${b}，方程无解`);
+      return lines;
+    }
+    const a1 = a / d, b1 = b / d, m1 = m / d;
+    const inv = modInv(a1, m1);
+    const x0 = modB(b1 * inv, m1);
+    lines.push(`两边同除以 d：${a1}x ≡ ${b1} (mod ${m1})`);
+    if (m1 !== 1n) lines.push(`(${a1})⁻¹ ≡ ${inv} (mod ${m1})`);
+    lines.push(`x ≡ ${b1} × ${inv} ≡ ${x0} (mod ${m1})`, "");
+    if (d === 1n) {
+      lines.push(`✓ 唯一解：x ≡ ${x0} (mod ${m})`);
+    } else if (d <= 50n) {
+      const sols = [];
+      for (let k = 0n; k < d; k++) sols.push(String(x0 + k * m1));
+      lines.push(`✓ 模 ${m} 下共 ${d} 个解：`, sols.join(", "));
+    } else {
+      lines.push(`✓ 模 ${m} 下共 ${d} 个解（过多不枚举）：`, `x ≡ ${x0} + k·${m1} (mod ${m})，k = 0, 1, …, ${d - 1n}`);
+    }
+    return lines;
+  });
+}
+
+/* ---------- CRT ---------- */
+const CRT_MAX = 8;
+function crtAddRow(aVal = "", mVal = "") {
+  const rows = $("crtRows");
+  if (rows.children.length >= CRT_MAX) { toast(`最多 ${CRT_MAX} 个方程`); return; }
+  const div = document.createElement("div");
+  div.className = "crt-row";
+  div.innerHTML = `<span class="fx">x ≡</span>
+    <input type="text" class="crt-a" inputmode="numeric" placeholder="a" value="" autocomplete="off">
+    <span class="fx">(mod</span>
+    <input type="text" class="crt-m" inputmode="numeric" placeholder="m" value="" autocomplete="off">
+    <button class="rm" title="删除此行">✕</button>`;
+  const spanClose = document.createElement("span");
+  spanClose.className = "fx"; spanClose.textContent = ")";
+  div.insertBefore(spanClose, div.lastChild);
+  div.querySelector(".crt-a").value = aVal;
+  div.querySelector(".crt-m").value = mVal;
+  div.querySelector(".rm").onclick = () => {
+    if (rows.children.length <= 2) { toast("至少保留 2 个方程"); return; }
+    div.remove();
+  };
+  rows.appendChild(div);
+}
+function toolCrt() {
+  runTask("crt", () => {
+    const rows = [...$("crtRows").children];
+    if (rows.length < 2) throw new InputError("至少需要 2 个方程");
+    const eqs = [];
+    rows.forEach((r, i) => {
+      const aEl = r.querySelector(".crt-a"), mEl = r.querySelector(".crt-m");
+      try { var a = parseBig(aEl.value, `第 ${i + 1} 行的 a`, { maxDigits: 40 }); aEl.classList.remove("invalid"); }
+      catch (e) { aEl.classList.add("invalid"); throw e; }
+      try { var m = parseBig(mEl.value, `第 ${i + 1} 行的 m`, { min: 1n, maxDigits: 40, allowNeg: false }); mEl.classList.remove("invalid"); }
+      catch (e) { mEl.classList.add("invalid"); throw e; }
+      eqs.push([modB(a, m), m]);
+    });
+
+    const lines = ["【中国剩余定理】"];
+    eqs.forEach(([a, m], i) => lines.push(`  x ≡ ${a} (mod ${m})`));
+    lines.push("");
+
+    let x = eqs[0][0], M = eqs[0][1];
+    lines.push(`初始：x ≡ ${x} (mod ${M})`);
+    for (let i = 1; i < eqs.length; i++) {
+      const [a2, m2] = eqs[i];
+      const d = gcdB(M, m2);
+      const diff = a2 - x;
+      if (diff % d !== 0n) {
+        lines.push(`✗ 合并第 ${i + 1} 个方程时矛盾：`,
+          `  已有 x ≡ ${x} (mod ${M})，新增 x ≡ ${a2} (mod ${m2})`,
+          `  gcd(${M}, ${m2}) = ${d}，但 (${a2} − ${x}) = ${diff} 不被 ${d} 整除`,
+          `  方程组无解`);
+        return lines;
+      }
+      const M1 = M / d, m21 = m2 / d;
+      /* m21 = 1 时新方程被现有解蕴含，t 取 0 即可 */
+      let t = 0n;
+      if (m21 !== 1n) t = modB((diff / d) * modInv(M1, m21), m21);
+      const L = M1 * m2; // lcm(M, m2)
+      x = modB(x + M * t, L);
+      M = L;
+      lines.push(`合并 x ≡ ${a2} (mod ${m2})：gcd = ${d}` + (d === 1n ? "（互素）" : "（相容）") + ` → x ≡ ${x} (mod ${M})`);
+      if (String(M).length > 80) throw new InputError("合并后的模数过大（> 80 位），请缩小模数规模");
+    }
+    lines.push("", `✓ 最小非负解：x = ${x}`, `通解：x ≡ ${x} (mod ${M})`);
+    lines.push("", "验证：", ...eqs.map(([a, m], i) => `  ${x} mod ${m} = ${x % m}（要求 ${a}）${x % m === a ? " ✓" : " ✗"}`));
+    return lines;
+  });
+}
+
+/* ---------- 模幂 ---------- */
+function toolPow() {
+  runTask("pw", () => {
+    let b, e, m;
+    try { b = parseBig($("pw-b").value, "底数 b", { maxDigits: 100 }); markInvalid("pw-b", false); }
+    catch (e2) { markInvalid("pw-b", true); throw e2; }
+    try { e = parseBig($("pw-e").value, "指数 e", { maxDigits: 100 }); markInvalid("pw-e", false); }
+    catch (e2) { markInvalid("pw-e", true); throw e2; }
+    try { m = parseBig($("pw-m").value, "模数 m", { min: 1n, maxDigits: 100, allowNeg: false }); markInvalid("pw-m", false); }
+    catch (e2) { markInvalid("pw-m", true); throw e2; }
+
+    const lines = [`【模幂运算】(${b})^(${e}) mod ${m}`];
+    let base = b, exp = e;
+    if (e < 0n) {
+      const inv = modInv(b, m);
+      if (inv === null) {
+        lines.push(`✗ 指数为负时要求 b 可逆，但 gcd(${b}, ${m}) = ${gcdB(b, m)} ≠ 1`);
+        return lines;
+      }
+      lines.push(`负指数：先求逆元 (${b})⁻¹ ≡ ${inv} (mod ${m})`);
+      base = inv; exp = -e;
+    }
+    const r = modPow(base, exp, m);
+    const bits = exp.toString(2).length;
+    lines.push(`快速幂：指数二进制共 ${bits} 位，约 ${bits} 次平方与取模`, "", `✓ 结果 = ${r}`);
+    return lines;
+  });
+}
+
+/* ---------- 原根与阶 ---------- */
+function toolOrder() {
+  runTask("r", () => {
+    let a, n;
+    try { a = parseBig($("r-a").value, "a", { maxDigits: P_LIMIT_FACTOR }); markInvalid("r-a", false); }
+    catch (e) { markInvalid("r-a", true); throw e; }
+    try { n = parseBig($("r-n").value, "n", { min: 2n, maxDigits: P_LIMIT_FACTOR, allowNeg: false }); markInvalid("r-n", false); }
+    catch (e) { markInvalid("r-n", true); throw e; }
+    const lines = [`【乘法阶】求最小 k ≥ 1 使 ${a}^k ≡ 1 (mod ${n})`];
+    const d = gcdB(a, n);
+    if (d !== 1n) {
+      lines.push(`✗ 不存在：gcd(${a}, ${n}) = ${d} ≠ 1，阶只对既约剩余类定义`);
+      return lines;
+    }
+    const fac = factorize(n);
+    const phi = phiFromFac(n, fac);
+    const ord = multiplicativeOrder(a, n, phi, factorize(phi));
+    lines.push(`φ(${n}) = ${phi}（阶必为 φ(n) 的约数）`, "", `✓ ord_${n}(${a}) = ${ord}`);
+    if (ord === phi) lines.push(`该元素是模 ${n} 的原根（阶 = φ(n)）`);
+    lines.push(`验证：${a}^${ord} mod ${n} = ${modPow(a, ord, n)}`);
+    return lines;
+  });
+}
+function toolProot() {
+  runTask("r", () => {
+    let p;
+    try { p = parseBig($("r-n").value, "模数 n", { min: 2n, maxDigits: P_LIMIT_FACTOR, allowNeg: false }); markInvalid("r-n", false); }
+    catch (e) { markInvalid("r-n", true); throw e; }
+    const lines = [`【原根】模 ${p}`];
+    if (!isProbablePrime(p)) {
+      lines.push(`✗ ${p} 不是素数。注：原根只对 n = 1, 2, 4, p^k, 2p^k（p 奇素数）存在，本工具处理素数情形`);
+      return lines;
+    }
+    if (p === 2n) { lines.push("✓ 模 2 的原根：1"); return lines; }
+    const facPm1 = factorize(p - 1n);
+    lines.push(`p − 1 = ${p - 1n} = ${factorStr(facPm1)}`);
+    const g = primitiveRoot(p, facPm1);
+    if (g === null) { lines.push("✗ 在搜索范围内未找到原根（异常情况）"); return lines; }
+    lines.push("", `检验 g = ${g}：对每个质因子 q | (p−1)，验证 g^((p−1)/q) ≢ 1 (mod p)`);
+    for (const [q] of facPm1) {
+      lines.push(`  ${g}^(${p - 1n}/${q}) mod ${p} = ${modPow(g, (p - 1n) / q, p)} ≠ 1 ✓`);
+    }
+    lines.push("", `✓ 最小原根：g = ${g}`);
+    const phiPm1 = phiFromFac(p - 1n, facPm1);
+    lines.push(`原根总数：φ(p−1) = ${phiPm1}`);
+    if ($("r-list").checked) {
+      if (phiPm1 > 500n) {
+        lines.push(`✗ 原根共 ${phiPm1} 个，超过 500 个不予枚举`);
+      } else {
+        const roots = [];
+        for (let k = 1n; k < p - 1n; k++) {
+          if (gcdB(k, p - 1n) === 1n) roots.push(modPow(g, k, p));
+        }
+        roots.sort((x, y) => (x < y ? -1 : 1));
+        lines.push("", `全部原根（g^k，gcd(k, p−1)=1，共 ${roots.length} 个）：`, roots.join(", "));
+      }
+    }
+    return lines;
+  });
+}
+
+/* ---------- 勒让德 / 雅可比 / 二次剩余 ---------- */
+function toolLeg(mode) {
+  runTask("l", () => {
+    let a, n;
+    try { a = parseBig($("l-a").value, "a", { maxDigits: 60 }); markInvalid("l-a", false); }
+    catch (e) { markInvalid("l-a", true); throw e; }
+    try { n = parseBig($("l-n").value, mode === "jac" ? "n" : "p", { min: 3n, maxDigits: 60, allowNeg: false }); markInvalid("l-n", false); }
+    catch (e) { markInvalid("l-n", true); throw e; }
+
+    if (mode === "jac") {
+      if ((n & 1n) === 0n) throw new InputError("雅可比符号要求 n 为正奇数");
+      const { v, steps } = jacobi(a, n);
+      const lines = [`【雅可比符号】(${a} / ${n})`];
+      if (steps.length <= 60) lines.push("计算过程：", ...steps.map(s => "  " + s), "");
+      else lines.push(`（过程共 ${steps.length} 步，从略）`);
+      lines.push(v === 0n ? `✓ (${a}/${n}) = 0（gcd(a, n) > 1）` : `✓ (${a}/${n}) = ${v}`);
+      if (!isProbablePrime(n)) lines.push(`注：${n} 为合数，雅可比 = 1 不能推出 a 是二次剩余`);
+      return lines;
+    }
+
+    /* 勒让德与开方都要求素数 */
+    if ((n & 1n) === 0n) throw new InputError("勒让德符号要求 p 为奇素数");
+    if (!isProbablePrime(n)) throw new InputError(`${n} 不是素数，勒让德符号只对奇素数定义（合数请用雅可比符号）`);
+    const lg = legendre(a, n);
+    if (mode === "leg") {
+      const am = modB(a, n);
+      return [
+        `【勒让德符号】(${a} / ${n})`,
+        `欧拉判别法：a^((p−1)/2) mod p = ${am}^${(n - 1n) / 2n} mod ${n} = ${modPow(a, (n - 1n) / 2n, n)}`,
+        "",
+        lg === 1n ? `✓ (a/p) = 1 — ${am} 是模 ${n} 的二次剩余（存在 x 使 x² ≡ ${am}）`
+        : lg === -1n ? `✓ (a/p) = −1 — ${am} 是模 ${n} 的二次非剩余`
+        : `✓ (a/p) = 0 — ${n} 整除 ${a}`
+      ];
+    }
+    /* tonelli */
+    const lines = [`【二次剩余开方】x² ≡ ${a} (mod ${n})`];
+    if (lg === -1n) {
+      lines.push(`✗ 无解：(${a}/${n}) = −1，a 是二次非剩余`);
+      return lines;
+    }
+    const x = tonelli(a, n);
+    if (x === null) { lines.push("✗ 开方失败（异常）"); return lines; }
+    if (x === 0n) { lines.push(`✓ 唯一解：x ≡ 0 (mod ${n})（${n} 整除 a）`); return lines; }
+    const x2 = n - x;
+    lines.push(`✓ 两个解：x ≡ ${x}，x ≡ ${x === x2 ? x : x2} (mod ${n})`);
+    lines.push(`验证：${x}² mod ${n} = ${x * x % n}`);
+    return lines;
+  });
+}
+
+/* ---------- 离散对数 ---------- */
+function toolDlog() {
+  runTask("d", () => {
+    let a, b, p;
+    try { a = parseBig($("d-a").value, "a", { maxDigits: 13 }); markInvalid("d-a", false); }
+    catch (e) { markInvalid("d-a", true); throw e; }
+    try { b = parseBig($("d-b").value, "b", { maxDigits: 13 }); markInvalid("d-b", false); }
+    catch (e) { markInvalid("d-b", true); throw e; }
+    try { p = parseBig($("d-p").value, "p", { min: 2n, maxDigits: 12, allowNeg: false }); markInvalid("d-p", false); }
+    catch (e) { markInvalid("d-p", true); throw e; }
+    if (p > 1000000000000n) throw new InputError("BSGS 限制 p ≤ 10¹²");
+    const lines = [`【离散对数】${a}^x ≡ ${b} (mod ${p})`];
+    if (!isProbablePrime(p)) { lines.push(`✗ ${p} 不是素数，本工具仅支持素数模`); return lines; }
+    if (gcdB(a, p) !== 1n) { lines.push(`✗ gcd(${a}, ${p}) ≠ 1，底数必须与模互素`); return lines; }
+    const m = Math.ceil(Math.sqrt(Number(p)));
+    lines.push(`BSGS：取 m = ⌈√p⌉ = ${m}，建立 ${m} 项小步表…`);
+    const x = bsgs(a, b, p);
+    if (x === null) {
+      lines.push("✗ 无解：b 不在 a 生成的循环子群内");
+    } else {
+      lines.push("", `✓ 最小解：x = ${x}`, `验证：${modB(a, p)}^${x} mod ${p} = ${modPow(a, x, p)}`);
+    }
+    return lines;
+  });
+}
+
+/* ---------- 素数表 ---------- */
+function sieve(n) {
+  const N = Number(n);
+  const buf = new Uint8Array(N + 1);
+  const primes = [];
+  for (let i = 2; i <= N; i++) {
+    if (!buf[i]) {
+      primes.push(i);
+      if (i <= N / i) for (let j = i * i; j <= N; j += i) buf[j] = 1;
+    }
+  }
+  return primes;
+}
+const SIEVE_MAX = 5000000;
+function toolSieve(mode) {
+  runTask("s", () => {
+    delete $("s-out").dataset.copy; // 清除上一次可能残留的完整列表
+    if (mode === "kth") {
+      let k;
+      try { k = parseBig($("s-k").value, "k", { min: 1n, maxDigits: 6, allowNeg: false }); markInvalid("s-k", false); }
+      catch (e) { markInvalid("s-k", true); throw e; }
+      if (k > 100000n) throw new InputError("k 最大 100000");
+      const kn = Number(k);
+      /* Rosser 上界 */
+      const bound = kn < 6 ? 20 : Math.ceil(kn * (Math.log(kn) + Math.log(Math.log(kn)))) + 10;
+      const primes = sieve(bound);
+      return ["【第 k 个素数】", `✓ 第 ${k} 个素数是 ${primes[kn - 1]}`, `（筛上界 ${bound}，共筛得 ${primes.length} 个素数）`];
+    }
+    let n;
+    try { n = parseBig($("s-n").value, "N", { min: 2n, maxDigits: 7, allowNeg: false }); markInvalid("s-n", false); }
+    catch (e) { markInvalid("s-n", true); throw e; }
+    if (n > BigInt(SIEVE_MAX)) throw new InputError(`N 最大 ${SIEVE_MAX.toLocaleString()}（防止浏览器卡顿）`);
+    const primes = sieve(n);
+    if (mode === "pi") {
+      return ["【素数计数 π(N)】", `✓ π(${n}) = ${primes.length}`, `即 ≤ ${n} 的素数共 ${primes.length} 个`];
+    }
+    const lines = ["【素数表】", `≤ ${n} 的素数共 ${primes.length} 个：`, ""];
+    if (primes.length > 500) {
+      lines.push(primes.slice(0, 500).join(", "), `…（其余 ${primes.length - 500} 个省略，点「复制」获取完整列表）`);
+    } else {
+      lines.push(primes.join(", "));
+    }
+    /* 显示截断时「复制」仍能拿到完整列表 */
+    $("s-out").dataset.copy = `≤ ${n} 的素数共 ${primes.length} 个：\n` + primes.join(", ");
+    return lines;
+  });
+}
+
+/* ---------- 进制转换 ---------- */
+const DIGITS36 = "0123456789abcdefghijklmnopqrstuvwxyz";
+function toolBase() {
+  runTask("b", () => {
+    const raw = $("b-val").value.trim().toLowerCase()
+      .replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFF10 + 48)) // 全角数字
+      .replace(/[\s,_'’]/g, "");
+    const from = Number($("b-from").value), to = Number($("b-to").value);
+    if (!raw) { markInvalid("b-val", true); throw new InputError("数值不能为空"); }
+    let neg = false, s = raw;
+    if (s[0] === "-") { neg = true; s = s.slice(1); }
+    if (!s) { markInvalid("b-val", true); throw new InputError("数值不能为空"); }
+    for (const ch of s) {
+      const dv = DIGITS36.indexOf(ch);
+      if (dv < 0 || dv >= from) {
+        markInvalid("b-val", true);
+        throw new InputError(`字符「${ch}」不是合法的 ${from} 进制数字`);
+      }
+    }
+    markInvalid("b-val", false);
+    if (s.length > 5000) throw new InputError("数值过长（最多 5000 位）");
+    /* 转 BigInt */
+    let v = 0n;
+    const fb = BigInt(from);
+    for (const ch of s) v = v * fb + BigInt(DIGITS36.indexOf(ch));
+    if (neg) v = -v;
+    /* 转出 */
+    let out = "0", av = absB(v), tb = BigInt(to);
+    if (av > 0n) {
+      const parts = [];
+      while (av > 0n) { parts.push(DIGITS36[Number(av % tb)]); av /= tb; }
+      out = parts.reverse().join("");
+    }
+    if (v < 0n) out = "-" + out;
+    return [
+      "【进制转换】",
+      `${raw}（${from} 进制）= ${v < 0n ? "-" : ""}${absB(v).toString()}（十进制）`,
+      "",
+      `✓ ${to} 进制结果：${out}`
+    ];
+  });
+}
+
+/* ---------- 大数显示辅助 ---------- */
+function fmtBig(v, maxLen = 2000) {
+  const s = String(v);
+  if (s.length <= maxLen) return s;
+  return s.slice(0, 160) + ` …[共 ${s.length} 位，中间省略]… ` + s.slice(-160);
+}
+/* 二次剩余符号 */
+function dec(x, prec = 12) { const v = Number(x); return Number.isFinite(v) ? String(Number(v.toPrecision(prec))) : "（过大无法显示为小数）"; }
+
+/* ---------- 平方同余 ---------- */
+function toolQcong() {
+  runTask("qc", () => {
+    let a, m;
+    try { a = parseBig($("qc-a").value, "a", { maxDigits: 40 }); markInvalid("qc-a", false); }
+    catch (e) { markInvalid("qc-a", true); throw e; }
+    try { m = parseBig($("qc-m").value, "模数 m", { min: 2n, maxDigits: P_LIMIT_FACTOR, allowNeg: false }); markInvalid("qc-m", false); }
+    catch (e) { markInvalid("qc-m", true); throw e; }
+    const steps = [];
+    const { roots, count } = sqrtModN(a, m, steps);
+    const lines = [`【平方同余】x² ≡ ${a} (mod ${m})`, "", "求解过程：", ...steps.map(s => "  " + s), ""];
+    if (count === 0n) lines.push("✗ 无解");
+    else if (roots !== null) {
+      lines.push(`✓ 共 ${count} 个解（模 ${m}）：`, roots.join(", "), "",
+        `验证：${roots[0]}² mod ${m} = ${roots[0] * roots[0] % m}（要求 ${modB(a, m)}）`);
+    } else {
+      lines.push(`✓ 共 ${count} 个解（数量过多，不予枚举）`);
+    }
+    return lines;
+  });
+}
+
+/* ---------- 二项同余 ---------- */
+function toolBcong() {
+  runTask("bc", () => {
+    let k, a, p;
+    try { k = parseBig($("bc-k").value, "k", { min: 1n, maxDigits: 40, allowNeg: false }); markInvalid("bc-k", false); }
+    catch (e) { markInvalid("bc-k", true); throw e; }
+    try { a = parseBig($("bc-a").value, "a", { maxDigits: 40 }); markInvalid("bc-a", false); }
+    catch (e) { markInvalid("bc-a", true); throw e; }
+    try { p = parseBig($("bc-p").value, "p", { min: 2n, maxDigits: 12, allowNeg: false }); markInvalid("bc-p", false); }
+    catch (e) { markInvalid("bc-p", true); throw e; }
+    if (p > 1000000000000n) throw new InputError("BSGS 限制 p ≤ 10¹²");
+    const lines = [`【二项同余】x^${k} ≡ ${a} (mod ${p})`];
+    if (!isProbablePrime(p)) { lines.push(`✗ ${p} 不是素数，本工具仅支持素数模`); return lines; }
+    const info = [];
+    const roots = binomCong(k, a, p, info);
+    lines.push("", ...info.map(s => "  " + s), "");
+    if (!roots.length) lines.push("✗ 无解");
+    else {
+      lines.push(`✓ 解（模 ${p}）：`, roots.join(", "), "",
+        `验证：${roots[0]}^${k} mod ${p} = ${modPow(roots[0], k, p)}（要求 ${modB(a, p)}）`);
+    }
+    return lines;
+  });
+}
+
+/* ---------- 一次不定方程 ---------- */
+function toolDioph() {
+  runTask("di", () => {
+    let a, b, c;
+    try { a = parseBig($("di-a").value, "a", { maxDigits: 100 }); markInvalid("di-a", false); }
+    catch (e) { markInvalid("di-a", true); throw e; }
+    try { b = parseBig($("di-b").value, "b", { maxDigits: 100 }); markInvalid("di-b", false); }
+    catch (e) { markInvalid("di-b", true); throw e; }
+    try { c = parseBig($("di-c").value, "c", { maxDigits: 100 }); markInvalid("di-c", false); }
+    catch (e) { markInvalid("di-c", true); throw e; }
+    const lines = [`【一次不定方程】${a}x + ${b}y = ${c}`];
+    const sol = solveLinDioph(a, b, c);
+    if (!sol) { lines.push(`✗ 无整数解：gcd(${a}, ${b}) = ${gcdB(a, b)} 不能整除 ${c}`); return lines; }
+    if (sol.trivial) { lines.push("✓ a = b = c = 0：任意整数对 (x, y) 都是解"); return lines; }
+    lines.push(`gcd(a, b) = ${sol.g}，整除 c ✓`, "",
+      `特解：x₀ = ${sol.x0}，y₀ = ${sol.y0}`,
+      `验证：(${a})×(${sol.x0}) + (${b})×(${sol.y0}) = ${a * sol.x0 + b * sol.y0}`, "",
+      `通解：x = ${sol.x0} + (${sol.dx})·t`,
+      `      y = ${sol.y0} + (${sol.dy})·t，t ∈ ℤ`);
+    if ($("di-nn").checked) {
+      lines.push("", "【非负整数解】");
+      const { lo, hi, empty } = diophNNRange(sol);
+      if (empty) lines.push("✗ 不存在非负解");
+      else if (lo === null || hi === null) {
+        lines.push("有无穷多组非负解，其中 30 组：");
+        if (lo !== null) {
+          for (let t = lo, i = 0; i < 30; t++, i++)
+            lines.push(`  x = ${sol.x0 + sol.dx * t}，y = ${sol.y0 + sol.dy * t}`);
+        } else {
+          for (let t = hi, i = 0; i < 30; t--, i++)
+            lines.push(`  x = ${sol.x0 + sol.dx * t}，y = ${sol.y0 + sol.dy * t}`);
+        }
+      } else {
+        const cnt = hi - lo + 1n;
+        lines.push(`共 ${cnt} 组` + (cnt > 100n ? "（仅列前 100 组）" : "："));
+        for (let t = lo, i = 0; t <= hi && i < 100; t++, i++)
+          lines.push(`  x = ${sol.x0 + sol.dx * t}，y = ${sol.y0 + sol.dy * t}`);
+      }
+    }
+    return lines;
+  });
+}
+
+/* ---------- 佩尔方程 ---------- */
+function toolPell() {
+  runTask("pe", () => {
+    let D;
+    try { D = parseBig($("pe-d").value, "D", { min: 2n, maxDigits: 9, allowNeg: false }); markInvalid("pe-d", false); }
+    catch (e) { markInvalid("pe-d", true); throw e; }
+    const lines = [`【佩尔方程】x² − ${D}·y² = 1`];
+    const r = pell(D);
+    if (r.square) { lines.push(`✗ D = ${D} = ${isqrtB(D)}² 是完全平方数，佩尔方程要求 D 为非平方数`); return lines; }
+    if (r.overflow) { lines.push("✗ 最小解过大（超过 3000 位或 20 万次迭代），放弃计算。可换较小的 D"); return lines; }
+    lines.push(`√${D} 的连分数：[${r.cf[0]}; (${r.period.join(", ")})]，周期 r = ${r.periodLen}`, "",
+      `✓ 最小解：x₁ = ${r.x}`, `          y₁ = ${r.y}`,
+      `验证：${fmtBig(r.x * r.x, 80)} − ${D}×${fmtBig(r.y * r.y, 80)} = ${r.x * r.x - D * r.y * r.y}`, "");
+    if (r.neg) lines.push(`负佩尔 x² − ${D}y² = −1 可解（周期为奇数），最小解：x = ${r.neg.x}，y = ${r.neg.y}`);
+    else lines.push(`负佩尔 x² − ${D}y² = −1 无解（周期为偶数）`);
+    lines.push("", "由 (x₁ + y₁√D)ᵏ 递推的后续解：");
+    let xk = r.x, yk = r.y;
+    for (let kk = 2; kk <= 4; kk++) {
+      const nx = r.x * xk + D * r.y * yk, ny = r.x * yk + r.y * xk;
+      xk = nx; yk = ny;
+      lines.push(`  k=${kk}：x = ${fmtBig(xk, 90)}`, `        y = ${fmtBig(yk, 90)}`);
+    }
+    return lines;
+  });
+}
+
+/* ---------- 连分数 ---------- */
+function toolCf() {
+  runTask("cf", () => {
+    const mode = $("cf-mode").value;
+    let len = 15;
+    if ($("cf-len").value.trim() !== "") {
+      let L;
+      try { L = parseBig($("cf-len").value, "个数", { min: 1n, maxDigits: 2, allowNeg: false }); markInvalid("cf-len", false); }
+      catch (e) { markInvalid("cf-len", true); throw e; }
+      len = Math.min(60, Number(L));
+    }
+    const convLines = (conv, target) => conv.map(([p, q], i) => {
+      const approx = q <= 1000000000000000n ? dec(Number(p) / Number(q)) : "（分数过大）";
+      const err = Number.isFinite(target) ? Math.abs(Number(p) / Number(q) - target).toExponential(2) : "?";
+      return `  ${i}: ${fmtBig(p, 40)} / ${fmtBig(q, 40)} ≈ ${approx}　误差 ${err}`;
+    });
+
+    if (mode === "rational") {
+      let p, q;
+      try { p = parseBig($("cf-p").value, "分子 p", { maxDigits: 60 }); markInvalid("cf-p", false); }
+      catch (e) { markInvalid("cf-p", true); throw e; }
+      try { q = parseBig($("cf-q").value, "分母 q", { min: 1n, maxDigits: 60, allowNeg: false }); markInvalid("cf-q", false); }
+      catch (e) { markInvalid("cf-q", true); throw e; }
+      const cf = cfRational(p, q);
+      const lines = [`【连分数展开】${p} / ${q}`,
+        `= [${cf[0]}${cf.length > 1 ? "; " + cf.slice(1).join(", ") : ""}]（共 ${cf.length} 项）`, ""];
+      const conv = cfConvergents(cf).slice(0, len);
+      lines.push(`渐进分数（最佳逼近，前 ${conv.length} 个）：`,
+        ...convLines(conv, Number(p) / Number(q)));
+      const [rp, rq] = conv[conv.length - 1];
+      lines.push("", `最后一个渐进分数 = ${rp}/${rq}` + (rp * q === p * rq ? "，已精确等于原分数 ✓" : ""));
+      return lines;
+    }
+
+    if (mode === "sqrt") {
+      let n;
+      try { n = parseBig($("cf-p").value, "n", { min: 2n, maxDigits: 9, allowNeg: false }); markInvalid("cf-p", false); }
+      catch (e) { markInvalid("cf-p", true); throw e; }
+      const a0 = isqrtB(n);
+      if (a0 * a0 === n) return [`【√${n}】`, `✓ ${n} = ${a0}² 是完全平方数，√${n} = ${a0}（无连分数展开）`];
+      const { period } = cfSqrt(n);
+      const showPeriod = period.length <= 120 ? period.join(", ") : period.slice(0, 120).join(", ") + ` …（周期共 ${period.length} 项）`;
+      const lines = [`【循环连分数】√${n}`, `= [${a0}; (${showPeriod})]`, `周期长度 r = ${period.length}`, ""];
+      const terms = [a0];
+      for (let i = 0; terms.length < len + 1; i++) terms.push(period[i % period.length]); // 循环节可能极长，不用展开符防栈溢出
+      const conv = cfConvergents(terms.slice(0, len + 1));
+      lines.push(`渐进分数（前 ${conv.length} 个）：`, ...convLines(conv, Math.sqrt(Number(n))));
+      /* 与佩尔方程的联系 */
+      const convP = cfConvergents([a0, ...period.slice(0, -1)]);
+      const [pp, pq] = convP[convP.length - 1];
+      lines.push("", `与佩尔方程的联系：首个周期末的渐进分数 ${pp}/${pq} 满足`,
+        `  ${pp}² − ${n}×${pq}² = ${pp * pp - n * pq * pq}（= (−1)^r）`);
+      return lines;
+    }
+
+    /* parse 模式 */
+    const raw = $("cf-p").value.trim().replace(/[\[\]\s]/g, "");
+    if (!raw) { markInvalid("cf-p", true); throw new InputError("连分数串不能为空，格式：3;7,15,1,292"); }
+    const parts = raw.split(/[;,，；]/).filter(s => s !== "");
+    if (!parts.length) { markInvalid("cf-p", true); throw new InputError("连分数串不能为空，格式：3;7,15,1,292"); }
+    const cf = [];
+    for (const s of parts) {
+      let v;
+      try { v = parseBig(s, "部分商", { maxDigits: 40 }); } catch (e) { markInvalid("cf-p", true); throw new InputError(`部分商「${s}」不是整数`); }
+      cf.push(v);
+    }
+    for (let i = 1; i < cf.length; i++) {
+      if (cf[i] <= 0n) { markInvalid("cf-p", true); throw new InputError(`第 ${i + 1} 个部分商 ${cf[i]} 必须为正整数`); }
+    }
+    markInvalid("cf-p", false);
+    const [p, q] = cfValue(cf);
+    const lines = [`【连分数求值】[${cf[0]}${cf.length > 1 ? "; " + cf.slice(1).join(", ") : ""}]`,
+      `✓ = ${p} / ${q}` + (q <= 1000000000000000n ? ` ≈ ${dec(Number(p) / Number(q))}` : ""), ""];
+    const conv = cfConvergents(cf).slice(0, len);
+    lines.push("各级渐进分数：", ...convLines(conv, Number(p) / Number(q)));
+    return lines;
+  });
+}
+
+/* ---------- 梅森素数 ---------- */
+function toolMersenne() {
+  runTask("me", () => {
+    let p;
+    try { p = parseBig($("me-p").value, "指数 p", { min: 2n, maxDigits: 4, allowNeg: false }); markInvalid("me-p", false); }
+    catch (e) { markInvalid("me-p", true); throw e; }
+    const pn = Number(p);
+    if (pn > 5000) throw new InputError("指数最大 5000（Lucas-Lehmer 为 O(p²) 位运算）");
+    const digits = Math.floor(pn * Math.log10(2)) + 1;
+    const lines = [`【梅森数】M_${pn} = 2^${pn} − 1（约 ${digits} 位十进制）`];
+    if (!isProbablePrime(p)) {
+      const fac = factorize(p);
+      const q = fac[0][0];
+      lines.push(`指数 ${pn} 是合数：${pn} = ${factorStr(fac)}`, "",
+        `性质：q | p ⇒ (2^q − 1) | (2^p − 1)`,
+        `这里 ${q} | ${pn}，故 2^${q} − 1 = ${(1n << q) - 1n} 整除 M_${pn}`, "",
+        `✗ M_${pn} 是合数（梅森素数的指数必须是素数）`);
+      return lines;
+    }
+    lines.push("指数是素数，执行 Lucas-Lehmer 测试：",
+      "  s₀ = 4，s_{i+1} = (s_i² − 2) mod M_p",
+      `  共迭代 ${pn - 2} 步，判定 s_{p−2} ≡ 0 ?`);
+    const t0 = Date.now();
+    const okP = lucasLehmer(pn);
+    const ms = Date.now() - t0;
+    lines.push(`  计算完成，耗时 ${ms} ms`, "");
+    lines.push(okP ? `✓ M_${pn} 是梅森素数！` : `✗ M_${pn} 是合数（s_{p−2} ≢ 0）`);
+    if (okP && pn <= 127) lines.push("", `M_${pn} = ${(1n << p) - 1n}`);
+    return lines;
+  });
+}
+
+/* ---------- 素数分布 ---------- */
+let pdLastData = null;
+function pdDraw() {
+  if (!pdLastData) return;
+  const cv = $("pd-canvas");
+  const dpr = window.devicePixelRatio || 1;
+  const W = cv.clientWidth || 600, H = 280;
+  cv.width = W * dpr; cv.height = H * dpr;
+  cv.style.height = H + "px";
+  const ctx = cv.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const cs = getComputedStyle(document.documentElement);
+  const cText = (cs.getPropertyValue("--text") || "#000").trim();
+  const cGrid = (cs.getPropertyValue("--grid") || "#ddd").trim();
+  const cAccent = (cs.getPropertyValue("--accent") || "#4c6ef5").trim();
+  const cSub = (cs.getPropertyValue("--subtle") || "#888").trim();
+  ctx.clearRect(0, 0, W, H);
+  const { pts, N } = pdLastData;
+  const piN = pts[pts.length - 1][1];
+  const maxY = Math.max(piN, N / Math.log(N)) * 1.06;
+  const padL = 56, padR = 12, padT = 12, padB = 28;
+  const X = v => padL + (W - padL - padR) * v / N;
+  const Y = v => H - padB - (H - padT - padB) * v / maxY;
+  /* 网格与刻度 */
+  ctx.font = "10px " + getComputedStyle(document.body).fontFamily;
+  ctx.strokeStyle = cGrid; ctx.fillStyle = cSub; ctx.lineWidth = 1;
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (let i = 0; i <= 4; i++) {
+    const yv = maxY * i / 4;
+    ctx.beginPath(); ctx.moveTo(padL, Y(yv)); ctx.lineTo(W - padR, Y(yv)); ctx.stroke();
+    ctx.fillText(String(Math.round(yv)), padL - 6, Y(yv));
+  }
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  for (let i = 0; i <= 4; i++) {
+    const xv = N * i / 4;
+    ctx.fillText(xv >= 10000 ? (xv / 1000) + "k" : String(Math.round(xv)), X(xv), H - padB + 6);
+  }
+  /* 裁剪绘图区 */
+  ctx.save();
+  ctx.beginPath(); ctx.rect(padL, padT, W - padL - padR, H - padT - padB); ctx.clip();
+  /* 灰线：x/ln x */
+  ctx.strokeStyle = cSub; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+  ctx.beginPath();
+  for (let i = 1; i <= 200; i++) {
+    const x = N * i / 200;
+    const y = x / Math.log(x);
+    i === 1 ? ctx.moveTo(X(x), Y(y)) : ctx.lineTo(X(x), Y(y));
+  }
+  ctx.stroke();
+  /* 蓝线：π(x) */
+  ctx.setLineDash([]);
+  ctx.strokeStyle = cAccent; ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  pts.forEach(([x, y], i) => i === 0 ? ctx.moveTo(X(x), Y(y)) : ctx.lineTo(X(x), Y(y)));
+  ctx.stroke();
+  ctx.restore();
+  /* 图例 */
+  ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  ctx.fillStyle = cAccent; ctx.fillText("— π(x)", padL + 8, padT + 10);
+  ctx.fillStyle = cSub; ctx.fillText("┄ x/ln x", padL + 66, padT + 10);
+}
+function toolPdistPlot() {
+  runTask("pd", () => {
+    let n;
+    try { n = parseBig($("pd-n").value, "N", { min: 10n, maxDigits: 7, allowNeg: false }); markInvalid("pd-n", false); }
+    catch (e) { markInvalid("pd-n", true); throw e; }
+    if (n > 2000000n) throw new InputError("绘图限制 N ≤ 2,000,000");
+    const N = Number(n);
+    const primes = sieve(n);
+    const S = 400, pts = [];
+    let idx = 0;
+    for (let i = 1; i <= S; i++) {
+      const x = Math.floor(N * i / S);
+      while (idx < primes.length && primes[idx] <= x) idx++;
+      pts.push([x, idx]);
+    }
+    pdLastData = { pts, N };
+    $("pd-box").hidden = false;
+    pdDraw();
+    const approx = N / Math.log(N);
+    return ["【素数分布 π(x)】",
+      `π(${N}) = ${primes.length}`,
+      `主项近似 N/ln N ≈ ${Math.round(approx)}（偏低 ${(100 * (primes.length - approx) / primes.length).toFixed(2)}%）`,
+      `勒让德修正 N/(ln N − 1.08366) ≈ ${Math.round(N / (Math.log(N) - 1.08366))}`,
+      "", "曲线已绘制在上方画布：蓝实线 = π(x)，灰虚线 = x/ln x"];
+  });
+}
+function toolPdistTwin() {
+  runTask("pd", () => {
+    let n;
+    try { n = parseBig($("pd-n").value, "N", { min: 5n, maxDigits: 7, allowNeg: false }); markInvalid("pd-n", false); }
+    catch (e) { markInvalid("pd-n", true); throw e; }
+    if (n > 5000000n) throw new InputError("孪生素数统计限制 N ≤ 5,000,000");
+    const primes = sieve(n);
+    const pairs = [];
+    for (let i = 0; i + 1 < primes.length; i++)
+      if (primes[i + 1] - primes[i] === 2) pairs.push([primes[i], primes[i + 1]]);
+    const lines = ["【孪生素数】", `≤ ${n} 的孪生素数对共 ${pairs.length} 对（素数总数 ${primes.length}）`, ""];
+    const show = pairs.slice(0, 100).map(([x, y]) => `(${x}, ${y})`).join("  ");
+    lines.push(pairs.length > 100 ? show + `  …（其余 ${pairs.length - 100} 对省略）` : show);
+    return lines;
+  });
+}
+function toolPdistGold() {
+  runTask("pd", () => {
+    let n;
+    try { n = parseBig($("pd-g").value, "n", { min: 4n, maxDigits: 40, allowNeg: false }); markInvalid("pd-g", false); }
+    catch (e) { markInvalid("pd-g", true); throw e; }
+    if ((n & 1n) !== 0n) throw new InputError("哥德巴赫猜想针对偶数：n 必须是偶数");
+    const lines = [`【哥德巴赫拆分】${n} = p + q（p ≤ q 均为素数）`];
+    if (n <= 1000000n) {
+      const primes = sieve(n);
+      const set = new Uint8Array(Number(n) + 1);
+      for (const p of primes) set[p] = 1;
+      let cnt = 0, first = null;
+      for (const p of primes) {
+        const q = Number(n) - p;
+        if (q < p) break;
+        if (set[q]) { cnt++; if (!first) first = [p, q]; }
+      }
+      lines.push(`✓ 最小拆分：${n} = ${first[0]} + ${first[1]}`, `全部拆分共 ${cnt} 组`);
+      if (cnt <= 60) {
+        const all = [];
+        for (const p of primes) { const q = Number(n) - p; if (q < p) break; if (set[q]) all.push(`${p}+${q}`); }
+        lines.push(all.join("，"));
+      }
+    } else {
+      /* 大偶数：逐个奇数试（最小素因子通常很小） */
+      let found = null, tried = 0;
+      if (isProbablePrime(n - 2n)) found = [2n, n - 2n];
+      for (let p = 3n; !found && tried < 100000; p += 2n, tried++) {
+        if (isProbablePrime(p) && isProbablePrime(n - p)) found = [p, n - p];
+      }
+      if (found) lines.push(`✓ ${n} = ${found[0]} + ${found[1]}（尝试 ${tried + 1} 个候选即命中）`);
+      else lines.push("✗ 在前 100,000 个奇数候选中未找到拆分（极不可能，可重试）");
+    }
+    return lines;
+  });
+}
+
+/* ---------- 伪素数 ---------- */
+function toolPseudo() {
+  runTask("ps", () => {
+    let n, a;
+    try { n = parseBig($("ps-n").value, "n", { min: 2n, maxDigits: 40, allowNeg: false }); markInvalid("ps-n", false); }
+    catch (e) { markInvalid("ps-n", true); throw e; }
+    try { a = parseBig($("ps-a").value, "底数 a", { min: 2n, maxDigits: 40, allowNeg: false }); markInvalid("ps-a", false); }
+    catch (e) { markInvalid("ps-a", true); throw e; }
+    const prime = isProbablePrime(n);
+    const lines = [`【伪素数检测】n = ${n}，底数 a = ${a}`];
+    lines.push(prime ? "n 是素数（7 基 Miller-Rabin）——各测试必然通过，无伪装可言" : "n 是合数（7 基 Miller-Rabin 找到证据）");
+    const g = gcdB(a, n);
+    if (g > 1n) lines.push(`注意：gcd(a, n) = ${g} > 1，以下测试不具伪素数意义`);
+    const an = modB(a, n);
+    const fermatV = modPow(an, n - 1n, n);
+    lines.push("", `费马测试：a^(n−1) mod n = ${fmtBig(fermatV, 60)}`);
+    if (fermatV === 1n) lines.push(prime ? "  通过（素数由费马小定理必然通过）" : `  ✗ 通过！n 是基 ${a} 的【费马伪素数】`);
+    else lines.push("  未通过 → 合数身份暴露");
+    if ((n & 1n) === 1n && n >= 3n) {
+      const ej = modPow(an, (n - 1n) / 2n, n);
+      const jac = jacobi(a, n).v;
+      const jacM = jac === -1n ? n - 1n : jac;
+      const eulerPass = ej === jacM;
+      lines.push("", `欧拉测试：a^((n−1)/2) mod n = ${fmtBig(ej, 60)}，雅可比 (a/n) = ${jac}`);
+      if (eulerPass) lines.push(prime ? "  一致（素数必然）" : `  ✗ 一致！n 是基 ${a} 的【欧拉伪素数】`);
+      else lines.push("  不一致 → 合数身份暴露（欧拉测试比费马更强）");
+      const sp = strongPspBase(n, an);
+      lines.push("", `强测试（单基 Miller-Rabin）：${sp ? "通过" : "未通过"}`);
+      if (sp && !prime) lines.push(`  ✗ n 是基 ${a} 的【强伪素数】`);
+      else if (!sp) lines.push("  合数身份暴露（强测试最强）");
+    } else {
+      lines.push("（n 为偶数，欧拉/强测试不适用）");
+    }
+    if (!prime) {
+      if (String(n).length > P_LIMIT_FACTOR) {
+        lines.push("", "Carmichael 判定：跳过（n 超过 24 位，分解代价高）");
+      } else {
+        const fac = factorize(n);
+        if (isCarmichael(n, fac)) {
+          lines.push("", "✗ n 是【Carmichael 数】——对一切与 n 互素的底数都通过费马测试！",
+            `  Korselt 判据验证：${n} = ${factorStr(fac)}`,
+            "  无平方因子 ✓；" + fac.map(([p]) => `(${p}−1) | (${n}−1)`).join("，") + " ✓");
+        } else {
+          lines.push("", "n 不是 Carmichael 数（Korselt 判据不成立）");
+        }
+      }
+    }
+    return lines;
+  });
+}
+
+/* ---------- 数论函数 ---------- */
+function toolNtfuncAll() {
+  runTask("nf", () => {
+    let n;
+    try { n = parseBig($("nf-n").value, "n", { min: 1n, maxDigits: P_LIMIT_FACTOR, allowNeg: false }); markInvalid("nf-n", false); }
+    catch (e) { markInvalid("nf-n", true); throw e; }
+    const fac = factorize(n);
+    const phi = phiFromFac(n, fac), tau = divisorCountFromFac(fac), sigma = divisorSumFromFac(fac);
+    const mu = mobiusFac(fac), lam = liouvilleFac(fac);
+    const omega = BigInt(fac.length);
+    let omg = 0n; for (const [, e] of fac) omg += e;
+    let rad = 1n; for (const [p] of fac) rad *= p;
+    const lines = [`【数论函数】n = ${n}` + (fac.length ? ` = ${factorStr(fac)}` : "")];
+    lines.push(
+      `φ(n)   = ${phi}　（与 n 互素的个数）`,
+      `τ(n)   = ${tau}　（因数个数）`,
+      `σ(n)   = ${sigma}　（因数和）`,
+      `σₖ(n) 可点「σₖ(n)」按钮计算`,
+      `μ(n)   = ${mu}　（莫比乌斯函数）`,
+      `λ(n)   = ${lam}　（刘维尔函数，Ω(n) = ${omg}）`,
+      `ω(n)   = ${omega}　（不同质因子个数）`,
+      `rad(n) = ${rad}　（无平方部分，质因子之积）`, "");
+    lines.push(mu !== 0n ? "✓ n 是平方无关数（squarefree）" : "n 含平方因子");
+    if (n > 1n) {
+      if (sigma === 2n * n) lines.push(`✓ n 是【完全数】：σ(n) = 2n`);
+      else {
+        const m = sigma - n;
+        if (m > 0n && m !== n && String(m).length <= P_LIMIT_FACTOR) {
+          const sm = divisorSumFromFac(factorize(m));
+          if (sm - m === n) lines.push(`✓ n 与 ${m} 构成【亲和数对】：σ(n)−n = ${m}，σ(${m})−${m} = ${n}`);
+          else lines.push(`n 既非完全数也非亲和数（σ(n)−n = ${m}）`);
+        } else if (m === n) {
+          lines.push("（σ(n)−n = n？异常）");
+        } else lines.push(`n 非完全数（σ(n)−n = ${m}）`);
+      }
+      if (sigma - n === 1n) lines.push("n 是素数（真因数和为 1）");
+    }
+    return lines;
+  });
+}
+function toolNtfuncSigma() {
+  runTask("nf", () => {
+    let n, k;
+    try { n = parseBig($("nf-n").value, "n", { min: 1n, maxDigits: P_LIMIT_FACTOR, allowNeg: false }); markInvalid("nf-n", false); }
+    catch (e) { markInvalid("nf-n", true); throw e; }
+    try { k = parseBig($("nf-k").value || "1", "k", { min: 0n, maxDigits: 3, allowNeg: false }); markInvalid("nf-k", false); }
+    catch (e) { markInvalid("nf-k", true); throw e; }
+    if (k > 100n) throw new InputError("k 最大 100");
+    const fac = factorize(n);
+    const v = sigmaKFac(fac, k);
+    return [`【因数幂和 σ_${k}】`,
+      `n = ${n}` + (fac.length ? ` = ${factorStr(fac)}` : ""),
+      `σ_${k}(n) = ∏ (p^(${k}(e+1)) − 1)/(p^${k} − 1)`, "",
+      `✓ σ_${k}(${n}) = ${fmtBig(v)}`];
+  });
+}
+function toolNtfuncInvphi() {
+  runTask("nf", () => {
+    let m;
+    try { m = parseBig($("nf-m").value, "m", { min: 1n, maxDigits: 12, allowNeg: false }); markInvalid("nf-m", false); }
+    catch (e) { markInvalid("nf-m", true); throw e; }
+    const sols = invPhi(m);
+    const lines = [`【φ 反问题】求所有 n 使 φ(n) = ${m}`];
+    if (!sols.length) {
+      lines.push(`✗ 无解：${m} 不是欧拉函数值（nontotient）`, m > 2n && (m & 1n) === 1n ? "（n ≥ 3 时 φ(n) 必为偶数）" : "");
+      return lines.filter(x => x);
+    }
+    lines.push(`✓ 共 ${sols.length} 个解：`);
+    lines.push(sols.length <= 200 ? sols.join(", ") : sols.slice(0, 200).join(", ") + ` …（共 ${sols.length} 个）`);
+    lines.push("", `验证：φ(${sols[0]}) = ${phiFromFac(sols[0], factorize(sols[0]))}`);
+    return lines;
+  });
+}
+
+/* ---------- 阶乘与勒让德 ---------- */
+function toolFact(mode) {
+  runTask("fa", () => {
+    let n;
+    try { n = parseBig($("fa-n").value, "n", { min: 0n, maxDigits: 13, allowNeg: false }); markInvalid("fa-n", false); }
+    catch (e) { markInvalid("fa-n", true); throw e; }
+
+    if (mode === "vp") {
+      let p;
+      try { p = parseBig($("fa-p").value, "p", { min: 2n, maxDigits: 40, allowNeg: false }); markInvalid("fa-p", false); }
+      catch (e) { markInvalid("fa-p", true); throw e; }
+      if (!isProbablePrime(p)) throw new InputError(`p = ${p} 必须是素数`);
+      const terms = [];
+      let pk = p;
+      while (pk <= n) { terms.push(`⌊${n}/${pk}⌋ = ${n / pk}`); pk *= p; }
+      const v = vpFactorial(n, p);
+      const lines = [`【勒让德公式】v_${p}(${n}!)`, `v_p(n!) = Σ ⌊n/p^i⌋`];
+      lines.push(terms.length <= 40 ? terms.join(" + ") : terms.slice(0, 40).join(" + ") + " + …", "");
+      lines.push(`✓ v_${p}(${n}!) = ${v}`, `即 ${p}^${v} 整除 ${n}!，但 ${p}^${v + 1n} 不整除`);
+      return lines;
+    }
+
+    if (mode === "fac") {
+      if (n > 1000000n) throw new InputError("完整分解限制 n ≤ 1,000,000");
+      if (n < 2n) return ["【n! 分解】", `${n}! = 1（空积）`];
+      const primes = sieve(n);
+      const parts = primes.map(p => {
+        const e = vpFactorial(n, BigInt(p));
+        return e === 1n ? String(p) : `${p}^${e}`;
+      });
+      const lines = [`【${n}! 的素因子分解】`, `共 ${primes.length} 个不同素因子：`, ""];
+      lines.push(parts.length <= 500 ? parts.join(" × ") : parts.slice(0, 500).join(" × ") + ` …（其余 ${parts.length - 500} 个素因子省略）`);
+      lines.push("", `${n}! 共 ${factorialDigits(n)} 位十进制`);
+      return lines;
+    }
+
+    if (mode === "zeros") {
+      let b;
+      try { b = parseBig($("fa-b").value || "10", "进制 b", { min: 2n, maxDigits: 7, allowNeg: false }); markInvalid("fa-b", false); }
+      catch (e) { markInvalid("fa-b", true); throw e; }
+      if (b > 1000000n) throw new InputError("进制 b 最大 10⁶");
+      const fac = factorize(b);
+      const lines = [`【末尾零】${n}! 在 ${b} 进制下的末尾零个数`, `${b} = ${factorStr(fac)}`];
+      let ans = null;
+      for (const [p, e] of fac) {
+        const v = vpFactorial(n, p);
+        const t = v / e;
+        lines.push(`  v_${p}(${n}!) = ${v}，${b} 中指数 ${e} → ⌊${v}/${e}⌋ = ${t}`);
+        if (ans === null || t < ans) ans = t;
+      }
+      lines.push("", `✓ 末尾零个数 = ${ans}（取各素因子最小值）`);
+      return lines;
+    }
+
+    if (mode === "digits") {
+      if (n > 1000000000000n) throw new InputError("位数计算限制 n ≤ 10¹²（Stirling 精度保护）");
+      const d = factorialDigits(n);
+      return ["【n! 的十进制位数】",
+        n <= 1000000n ? "方法：逐点求和 Σ log₁₀(i)（精确取整）" : "方法：Stirling 级数（该规模下误差远小于 1）",
+        "", `✓ ${n}! 共 ${d} 位十进制数字`];
+    }
+
+    /* exact */
+    if (n > 5000n) throw new InputError("精确值限制 n ≤ 5000（防止输出过长）");
+    const f = factorialExact(Number(n));
+    const s = String(f);
+    return [`【${n}! 精确值】`, `共 ${s.length} 位：`, "", fmtBig(f, 4000)];
+  });
+}
+
+/* ---------- 组合计算 ---------- */
+function toolComb(mode) {
+  runTask("cb", () => {
+    if (mode === "binom" || mode === "catalan" || mode === "part") {
+      let n;
+      try { n = parseBig($("cb-n").value, "n", { min: 0n, maxDigits: 7, allowNeg: false }); markInvalid("cb-n", false); }
+      catch (e) { markInvalid("cb-n", true); throw e; }
+      if (mode === "binom") {
+        if (n > 10000n) throw new InputError("精确 C(n,k) 限制 n ≤ 10000");
+        let k;
+        try { k = parseBig($("cb-k").value, "k", { min: 0n, maxDigits: 7, allowNeg: false }); markInvalid("cb-k", false); }
+        catch (e) { markInvalid("cb-k", true); throw e; }
+        if (k > n) return [`【组合数】C(${n}, ${k})`, "✓ k > n，结果为 0"];
+        const v = binomExact(n, k);
+        const s = String(v);
+        return [`【组合数】C(${n}, ${k})`, "", `✓ = ${fmtBig(v, 4000)}`, `（共 ${s.length} 位）`];
+      }
+      if (mode === "catalan") {
+        if (n > 5000n) throw new InputError("卡特兰数限制 n ≤ 5000");
+        const v = catalan(n);
+        return [`【卡特兰数】C_${n} = C(2n, n)/(n+1)`, "", `✓ C_${n} = ${fmtBig(v, 4000)}`, `（共 ${String(v).length} 位）`];
+      }
+      /* part */
+      if (n > 5000n) throw new InputError("分拆数限制 n ≤ 5000");
+      const v = partitionP(Number(n));
+      return [`【分拆数】p(${n})`, "整数 n 写成无序正整数之和的方案数", "", `✓ p(${n}) = ${fmtBig(v, 4000)}`];
+    }
+    /* lucas */
+    let n, k, p;
+    try { n = parseBig($("cb-n").value, "n", { min: 0n, maxDigits: 100, allowNeg: false }); markInvalid("cb-n", false); }
+    catch (e) { markInvalid("cb-n", true); throw e; }
+    try { k = parseBig($("cb-k").value, "k", { min: 0n, maxDigits: 100, allowNeg: false }); markInvalid("cb-k", false); }
+    catch (e) { markInvalid("cb-k", true); throw e; }
+    try { p = parseBig($("cb-p").value, "p", { min: 2n, maxDigits: 7, allowNeg: false }); markInvalid("cb-p", false); }
+    catch (e) { markInvalid("cb-p", true); throw e; }
+    if (p > 1000000n) throw new InputError("卢卡斯定理限制 p ≤ 10⁶");
+    if (!isProbablePrime(p)) throw new InputError(`p = ${p} 必须是素数`);
+    const lines = [`【卢卡斯定理】C(${n}, ${k}) mod ${p}`];
+    if (k > n) { lines.push("✓ k > n，结果为 0"); return lines; }
+    /* 展示 p 进制分解 */
+    const digs = (x) => { const d = []; let t = x; do { d.unshift(String(t % p)); t /= p; } while (t > 0n); return d; };
+    const dn = digs(n), dk = digs(k);
+    while (dk.length < dn.length) dk.unshift("0");
+    lines.push(`n 的 ${p} 进制：(${dn.join(", ")})`, `k 的 ${p} 进制：(${dk.join(", ")})`,
+      `C(n,k) ≡ ∏ C(n_i, k_i) (mod p)`, "");
+    const v = lucasMod(n, k, Number(p));
+    lines.push(`✓ C(${n}, ${k}) ≡ ${v} (mod ${p})`);
+    return lines;
+  });
+}
+
+/* ============================================================
+   选项卡框架
+   ============================================================ */
+const TOOLS = [
+  { id: "prime", name: "质数工具", hint: "质数判断 / 质因数分解 / 因数 / 相邻素数" },
+  { id: "sieve", name: "素数表", hint: "埃氏筛 / π(n) / 第 n 个素数" },
+  { id: "pdist", name: "素数分布", hint: "π(x) 曲线 / 孪生素数 / 哥德巴赫拆分" },
+  { id: "mersenne", name: "梅森素数", hint: "Lucas-Lehmer 精确判定 M_p = 2^p − 1" },
+  { id: "pseudo", name: "伪素数", hint: "费马/欧拉/强伪素数与 Carmichael 数检测" },
+  { id: "phi",   name: "欧拉函数", hint: "φ(n)：与 n 互素的整数个数" },
+  { id: "ntfunc", name: "数论函数", hint: "μ / λ / σₖ / 完全数 / 亲和数 / φ 反问题" },
+  { id: "factorial", name: "阶乘勒让德", hint: "v_p(n!) / n! 分解 / 末尾零 / 位数 / 精确值" },
+  { id: "gcd",   name: "扩展欧几里得", hint: "gcd / lcm / 裴蜀恒等式" },
+  { id: "dioph", name: "不定方程", hint: "ax + by = c 的整数解与非负解" },
+  { id: "cong",  name: "线性同余", hint: "解 ax ≡ b (mod m)，求模逆元" },
+  { id: "crt",   name: "中国剩余定理", hint: "解同余方程组，支持非互素模数" },
+  { id: "qcong", name: "平方同余", hint: "x² ≡ a (mod m)：Hensel 提升 + CRT，任意模数" },
+  { id: "bcong", name: "二项同余", hint: "xᵏ ≡ a (mod p)：原根 + 指数法" },
+  { id: "pow",   name: "模幂运算", hint: "快速幂 bᵉ mod m，支持负指数" },
+  { id: "root",  name: "原根与阶", hint: "乘法阶 ord_n(a)、素数模的原根" },
+  { id: "leg",   name: "勒让德符号", hint: "勒让德/雅可比符号、二次剩余开方" },
+  { id: "dlog",  name: "离散对数", hint: "BSGS 求 aˣ ≡ b (mod p)" },
+  { id: "pell",  name: "佩尔方程", hint: "x² − D·y² = 1 最小解，连分数法" },
+  { id: "cf",    name: "连分数", hint: "有理数/√n 连分数展开与最佳逼近" },
+  { id: "comb",  name: "组合计算", hint: "C(n,k) / 卡特兰数 / 卢卡斯定理 / 分拆数" },
+  { id: "base",  name: "进制转换", hint: "2~36 进制大整数互转" },
+];
+let activeTool = "prime";
+
+function buildTabs() {
+  const nav = $("tabs");
+  TOOLS.forEach(t => {
+    const b = document.createElement("button");
+    b.className = "tab";
+    b.textContent = t.name;
+    b.dataset.tool = t.id;
+    b.setAttribute("role", "tab");
+    b.onclick = () => activate(t.id);
+    nav.appendChild(b);
+  });
+}
+function activate(id) {
+  activeTool = id;
+  document.querySelectorAll(".tab").forEach(el => el.classList.toggle("on", el.dataset.tool === id));
+  document.querySelectorAll(".tool").forEach(el => el.classList.toggle("on", el.id === "tool-" + id));
+  const t = TOOLS.find(x => x.id === id);
+  if (t) setHint(t.hint);
+  const tab = document.querySelector(`.tab[data-tool="${id}"]`);
+  if (tab) tab.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+
+/* ============================================================
+   分享 / 恢复
+   ============================================================ */
+function collectState() {
+  const inputs = {};
+  document.querySelectorAll("#contentInner input[type=text], #contentInner input[type=checkbox]").forEach(el => {
+    if (!el.id) return;
+    inputs[el.id] = el.type === "checkbox" ? (el.checked ? 1 : 0) : el.value;
+  });
+  /* CRT 动态行单独收集 */
+  const crt = [...$("crtRows").children].map(r => [r.querySelector(".crt-a").value, r.querySelector(".crt-m").value]);
+  return { v: 1, theme: Theme.get(), tool: activeTool, inputs, crt };
+}
+function shareLink() {
+  try {
+    const hash = "#s=" + btoa(unescape(encodeURIComponent(JSON.stringify(collectState()))));
+    const url = location.origin + location.pathname + hash;
+    history.replaceState(null, "", hash);
+    (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject())
+      .then(() => toast("链接已复制，打开即可还原当前工具与输入"))
+      .catch(() => prompt("复制以下链接：", url));
+  } catch (e) { toast("生成链接失败：" + e.message); }
+}
+function restoreFromHash() {
+  const m = /#s=([A-Za-z0-9+/=]+)/.exec(location.hash);
+  if (!m) return false;
+  try {
+    const payload = JSON.parse(decodeURIComponent(escape(atob(m[1]))));
+    if (payload.theme) Theme.set(payload.theme);
+    if (payload.inputs) {
+      for (const [id, val] of Object.entries(payload.inputs)) {
+        const el = $(id);
+        if (!el) continue;
+        if (el.type === "checkbox") el.checked = !!val;
+        else el.value = String(val);
+      }
+    }
+    if (Array.isArray(payload.crt) && payload.crt.length >= 2) {
+      $("crtRows").innerHTML = "";
+      payload.crt.slice(0, CRT_MAX).forEach(([a, mm]) => crtAddRow(String(a), String(mm)));
+    }
+    if (payload.tool && TOOLS.some(t => t.id === payload.tool)) activate(payload.tool);
+    return true;
+  } catch (e) { return false; }
+}
+
+/* ============================================================
+   帮助弹窗
+   ============================================================ */
+function openHelp() { $("helpMask").hidden = false; }
+const NOHELP_KEY = "nt-nohelp"; // 「下次打开不再自动弹出」偏好
+function setNoHelp(v) { try { v ? localStorage.setItem(NOHELP_KEY, "1") : localStorage.removeItem(NOHELP_KEY); } catch (e) {} }
+function closeHelp() {
+  $("helpMask").hidden = true;
+  setNoHelp($("helpNoMore").checked);
+}
+
+/* ============================================================
+   初始化
+   ============================================================ */
+function init() {
+  buildTabs();
+
+  /* 进制下拉 */
+  for (const id of ["b-from", "b-to"]) {
+    const sel = $(id);
+    for (let i = 2; i <= 36; i++) {
+      const op = document.createElement("option");
+      op.value = i; op.textContent = i + " 进制";
+      sel.appendChild(op);
+    }
+  }
+  $("b-from").value = 10; $("b-to").value = 16;
+
+  /* CRT 默认两行 */
+  crtAddRow(); crtAddRow();
+
+  /* 工具绑定 */
+  $("p-analyze").onclick = () => toolPrime("analyze");
+  $("p-prime").onclick = () => toolPrime("prime");
+  $("p-factor").onclick = () => toolPrime("factor");
+  $("p-divisors").onclick = () => toolPrime("divisors");
+  $("p-neighbor").onclick = () => toolPrime("neighbor");
+  $("phi-calc").onclick = toolPhi;
+  $("g-calc").onclick = toolGcd;
+  $("c-calc").onclick = () => toolCong(false);
+  $("c-inv").onclick = () => toolCong(true);
+  $("crt-calc").onclick = toolCrt;
+  $("crt-add").onclick = () => crtAddRow();
+  $("crt-example").onclick = () => {
+    $("crtRows").innerHTML = "";
+    crtAddRow("2", "3"); crtAddRow("3", "4"); crtAddRow("1", "5");
+    toast("已填入示例：x≡2(mod 3), x≡3(mod 4), x≡1(mod 5)");
+  };
+  $("pw-calc").onclick = toolPow;
+  $("r-order").onclick = toolOrder;
+  $("r-proot").onclick = toolProot;
+  $("l-leg").onclick = () => toolLeg("leg");
+  $("l-jac").onclick = () => toolLeg("jac");
+  $("l-sqrt").onclick = () => toolLeg("sqrt");
+  $("d-calc").onclick = toolDlog;
+  $("s-list").onclick = () => toolSieve("list");
+  $("s-pi").onclick = () => toolSieve("pi");
+  $("s-kth").onclick = () => toolSieve("kth");
+  $("b-calc").onclick = toolBase;
+
+  /* 新工具绑定 */
+  $("qc-calc").onclick = toolQcong;
+  $("bc-calc").onclick = toolBcong;
+  $("di-calc").onclick = toolDioph;
+  $("pe-calc").onclick = toolPell;
+  $("cf-calc").onclick = toolCf;
+  $("me-calc").onclick = toolMersenne;
+  $("pd-plot").onclick = toolPdistPlot;
+  $("pd-twin").onclick = toolPdistTwin;
+  $("pd-gold").onclick = toolPdistGold;
+  $("ps-calc").onclick = toolPseudo;
+  $("nf-all").onclick = toolNtfuncAll;
+  $("nf-sigma").onclick = toolNtfuncSigma;
+  $("nf-invphi").onclick = toolNtfuncInvphi;
+  $("fa-vp").onclick = () => toolFact("vp");
+  $("fa-fac").onclick = () => toolFact("fac");
+  $("fa-zeros").onclick = () => toolFact("zeros");
+  $("fa-digits").onclick = () => toolFact("digits");
+  $("fa-exact").onclick = () => toolFact("exact");
+  $("cb-binom").onclick = () => toolComb("binom");
+  $("cb-catalan").onclick = () => toolComb("catalan");
+  $("cb-lucas").onclick = () => toolComb("lucas");
+  $("cb-part").onclick = () => toolComb("part");
+
+  /* 示例 chips */
+  document.querySelectorAll(".chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      const sel = chip.dataset.select;
+      if (sel) { // 示例附带模式下拉（如连分数的三种模式）
+        const [sid, sval] = sel.split(":");
+        const selEl = $(sid.trim());
+        if (selEl) selEl.value = sval;
+      }
+      const pair = chip.dataset.pair;
+      if (pair) {
+        pair.split(",").forEach(kv => {
+          const [id, val] = kv.split(":");
+          const el = $(id.trim());
+          if (el) { el.value = val === undefined ? "" : val.trim(); el.classList.remove("invalid"); }
+        });
+      } else if (chip.dataset.for) {
+        const el = $(chip.dataset.for);
+        el.value = chip.textContent.trim();
+        el.classList.remove("invalid");
+      }
+    });
+  });
+
+  /* 复制按钮 */
+  document.querySelectorAll("[data-copy]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const el = $(btn.dataset.copy);
+      const text = copyTextFor(el);
+      (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject())
+        .then(() => toast("结果已复制"))
+        .catch(() => prompt("复制以下内容：", text));
+    });
+  });
+
+  /* 输入时清除红框 */
+  document.querySelectorAll("input").forEach(el => {
+    el.addEventListener("input", () => el.classList.remove("invalid"));
+  });
+  /* 回车触发主按钮 */
+  const enterMap = {
+    "p-n": "p-analyze", "phi-n": "phi-calc",
+    "g-a": "g-calc", "g-b": "g-calc",
+    "c-a": "c-calc", "c-b": "c-calc", "c-m": "c-calc",
+    "pw-b": "pw-calc", "pw-e": "pw-calc", "pw-m": "pw-calc",
+    "r-a": "r-order", "r-n": "r-order",
+    "l-a": "l-leg", "l-n": "l-leg",
+    "d-a": "d-calc", "d-b": "d-calc", "d-p": "d-calc",
+    "s-n": "s-list", "s-k": "s-kth", "b-val": "b-calc",
+    "qc-a": "qc-calc", "qc-m": "qc-calc",
+    "bc-k": "bc-calc", "bc-a": "bc-calc", "bc-p": "bc-calc",
+    "di-a": "di-calc", "di-b": "di-calc", "di-c": "di-calc",
+    "pe-d": "pe-calc",
+    "cf-p": "cf-calc", "cf-q": "cf-calc", "cf-len": "cf-calc",
+    "me-p": "me-calc",
+    "pd-n": "pd-plot", "pd-g": "pd-gold",
+    "ps-n": "ps-calc", "ps-a": "ps-calc",
+    "nf-n": "nf-all", "nf-k": "nf-sigma", "nf-m": "nf-invphi",
+    "fa-n": "fa-digits", "fa-p": "fa-vp", "fa-b": "fa-zeros",
+    "cb-n": "cb-binom", "cb-k": "cb-binom", "cb-p": "cb-lucas"
+  };
+  document.querySelectorAll("input[type=text]").forEach(el => {
+    el.addEventListener("keydown", e => {
+      if (e.key === "Enter" && enterMap[el.id]) $(enterMap[el.id]).click();
+    });
+  });
+
+  /* 顶栏 */
+  $("themeBtn").onclick = () => { Theme.toggle(); if (pdLastData && !$("pd-box").hidden) pdDraw(); };
+  window.addEventListener("resize", () => { if (pdLastData && !$("pd-box").hidden) pdDraw(); });
+  $("shareBtn").onclick = shareLink;
+  $("helpBtn").onclick = openHelp;
+  $("helpClose").onclick = closeHelp;
+  $("helpOk").onclick = closeHelp;
+  $("helpMask").addEventListener("click", e => { if (e.target === $("helpMask")) closeHelp(); });
+  $("helpNoMore").addEventListener("change", e => setNoHelp(e.target.checked)); // 勾选/取消勾选立即持久化
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("helpMask").hidden) closeHelp(); });
+
+  /* 恢复链接状态，否则按偏好自动弹帮助 */
+  const restored = restoreFromHash();
+  activate(activeTool);
+  let noHelp = false;
+  try { noHelp = localStorage.getItem(NOHELP_KEY) === "1"; } catch (e) {}
+  $("helpNoMore").checked = noHelp; // 启动时回读勾选状态
+  if (!noHelp && !restored) openHelp();
+}
+init();
+</script>
+</body>
+</html>
