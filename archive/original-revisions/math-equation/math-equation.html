@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方程求解器 Equation Solver Pro</title>
+<style>
+:root{
+  --bg:#0b1020; --bg2:#101735; --card:#151d3f; --card2:#1a2450;
+  --line:#26305e; --txt:#e8ecf8; --muted:#9aa5c9;
+  --inset:#0d1430; --inset2:#0a0f26;
+  --gridc:#1d2750; --axesc:#3a4780; --axestxt:#8d97bd;
+  --headbg:rgba(11,16,32,.7); --codetxt:#9fc0ff; --hoverbg:rgba(91,140,255,.12);
+  --bodybg:radial-gradient(1200px 800px at 80% -10%,#1c2a63 0%,var(--bg) 55%);
+  --acc:#5b8cff; --acc2:#8a5bff; --good:#3ddc97; --warn:#ffb454; --bad:#ff6b81;
+  --mono:"SF Mono",Consolas,"Courier New",monospace;
+}
+[data-theme="light"]{
+  --bg:#f2f4fb; --bg2:#e9edf8; --card:#ffffff; --card2:#f5f7fe;
+  --line:#d9dfef; --txt:#1d2542; --muted:#5d6787;
+  --inset:#eef1fa; --inset2:#ffffff;
+  --gridc:#e3e8f5; --axesc:#aab4d4; --axestxt:#7a86aa;
+  --headbg:rgba(255,255,255,.75); --codetxt:#3a63c8; --hoverbg:rgba(91,140,255,.08);
+  --bodybg:radial-gradient(1200px 800px at 80% -10%,#e6ecfd 0%,var(--bg) 55%);
+  --good:#0da271; --bad:#d93b55;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bodybg);color:var(--txt);
+  font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;min-height:100vh}
+header{padding:16px 28px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;
+  background:var(--headbg);backdrop-filter:blur(8px);position:sticky;top:0;z-index:50}
+.hbtns{margin-left:auto;display:flex;gap:8px}
+.hbtn{background:var(--card);border:1px solid var(--line);color:var(--muted);width:38px;height:38px;
+  border-radius:10px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:.2s}
+.hbtn:hover{color:var(--txt);border-color:var(--acc)}
+.logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--acc),var(--acc2));
+  display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff}
+header h1{font-size:20px;font-weight:700}
+header .sub{font-size:12px;color:var(--muted)}
+nav{display:flex;gap:8px;flex-wrap:wrap;padding:14px 28px;border-bottom:1px solid var(--line)}
+nav button{background:var(--card);border:1px solid var(--line);color:var(--muted);padding:9px 18px;
+  border-radius:999px;cursor:pointer;font-size:14px;transition:.2s}
+nav button:hover{color:var(--txt);border-color:var(--acc)}
+nav button.active{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border-color:transparent}
+main{max-width:1180px;margin:0 auto;padding:26px 20px 80px}
+.panel{display:none}
+.panel.active{display:block;animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.grid{display:grid;grid-template-columns:380px 1fr;gap:20px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);
+  border-radius:16px;padding:20px}
+.card h2{font-size:16px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card h2::before{content:"";width:4px;height:16px;border-radius:2px;background:linear-gradient(var(--acc),var(--acc2))}
+label{display:block;font-size:12.5px;color:var(--muted);margin:12px 0 5px}
+input,select{width:100%;background:var(--inset);border:1px solid var(--line);color:var(--txt);
+  border-radius:10px;padding:10px 12px;font-size:14px;font-family:var(--mono);outline:none;transition:.15s}
+input:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(91,140,255,.15)}
+select{font-family:inherit}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{margin-top:16px;width:100%;padding:12px;border:none;border-radius:10px;cursor:pointer;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;font-size:15px;font-weight:600;transition:.2s}
+.btn:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.7}
+.hint code{background:var(--inset);padding:1px 6px;border-radius:6px;color:var(--codetxt);font-family:var(--mono)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chips span{font-size:12px;background:var(--inset);border:1px solid var(--line);padding:4px 10px;
+  border-radius:999px;cursor:pointer;color:var(--muted);font-family:var(--mono)}
+.chips span:hover{border-color:var(--acc);color:var(--txt)}
+.result{margin-top:16px;padding:14px;border-radius:12px;background:var(--inset);border:1px solid var(--line);
+  font-family:var(--mono);font-size:14px;line-height:1.9;word-break:break-all;white-space:pre-wrap}
+.result .k{color:var(--muted)}
+.result .v{color:var(--good);font-weight:600}
+.result .bad{color:var(--bad)}
+canvas{width:100%;border-radius:12px;background:var(--inset2);border:1px solid var(--line)}
+#g-cv{cursor:crosshair}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px;margin-top:10px}
+th,td{padding:7px 9px;text-align:right;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;background:var(--inset);position:sticky;top:0}
+tr:hover td{background:var(--hoverbg)}
+.twrap{max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:10px;margin-top:10px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:18px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.badge{display:inline-block;font-size:11px;padding:2px 9px;border-radius:999px;margin-left:8px;
+  background:rgba(61,220,151,.15);color:var(--good);border:1px solid rgba(61,220,151,.3)}
+.formula{background:var(--inset);border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+  margin-top:10px;font-family:var(--mono);font-size:14px;line-height:2;overflow-x:auto;white-space:nowrap}
+.steps{font-size:13px;color:var(--muted);line-height:1.9;margin-top:10px}
+.steps b{color:var(--txt)}
+/* 导出/复制小按钮 */
+.toolbar{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.mini{background:transparent;border:1px solid var(--line);color:var(--muted);padding:6px 12px;
+  border-radius:8px;cursor:pointer;font-size:12px;transition:.2s}
+.mini:hover{color:var(--txt);border-color:var(--acc)}
+/* 历史记录 */
+.hitem{display:grid;grid-template-columns:70px 1fr 1fr auto;gap:10px;align-items:center;
+  padding:9px 12px;border:1px solid var(--line);border-radius:10px;margin-top:8px;cursor:pointer;
+  font-size:12.5px;color:var(--muted);background:var(--inset)}
+.hitem:hover{border-color:var(--acc);color:var(--txt)}
+.htag{color:var(--acc);font-weight:600}
+.hexpr{font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hsum{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.htime{font-size:11px}
+@media(max-width:700px){.hitem{grid-template-columns:60px 1fr}.hsum,.htime{display:none}}
+
+/* 帮助弹窗 */
+.mmask{position:fixed;inset:0;background:rgba(5,8,20,.6);backdrop-filter:blur(4px);z-index:100;
+  display:none;align-items:flex-start;justify-content:center;padding:4vh 16px;overflow:auto}
+.mmask.show{display:flex}
+.modal{background:var(--card);border:1px solid var(--line);border-radius:18px;max-width:720px;width:100%;
+  padding:26px 28px;box-shadow:0 24px 60px rgba(0,0,0,.35);animation:fade .25s ease}
+.modal h2{font-size:19px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.modal h3{font-size:15px;margin:18px 0 8px;color:var(--acc)}
+.modal p,.modal li{font-size:13.5px;color:var(--muted);line-height:1.9}
+.modal ul{padding-left:20px}
+.modal code{background:var(--inset);padding:1px 6px;border-radius:6px;color:var(--codetxt);font-family:var(--mono);font-size:12.5px}
+.modal .kgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.modal .kitem{background:var(--inset);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.7;color:var(--muted)}
+.modal .kitem b{color:var(--txt);display:block;margin-bottom:3px;font-size:13px}
+.mclose{position:sticky;top:0;float:right;background:var(--inset);border:1px solid var(--line);color:var(--muted);
+  width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:15px}
+.mclose:hover{color:var(--txt);border-color:var(--acc)}
+.mfoot{margin-top:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.mfoot label{display:flex;align-items:center;gap:8px;margin:0;font-size:13px;color:var(--muted);cursor:pointer}
+.mfoot input{width:auto}
+/* 横竖屏与移动端适配 */
+@media(max-width:900px){
+  .grid{grid-template-columns:1fr}
+  header{padding:12px 16px;flex-wrap:wrap}
+  header h1{font-size:16px}
+  header .sub{display:none}
+  nav{padding:10px 16px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  nav button{white-space:nowrap;flex-shrink:0;padding:8px 14px;font-size:13px}
+  main{padding:16px 12px 60px}
+  .card{padding:16px}
+  .modal .kgrid{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+  .row2{grid-template-columns:1fr 1fr}
+  .twrap{max-height:220px}
+}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:30px 0;border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">∑</div>
+  <div>
+    <h1>方程求解器 <span style="font-weight:400;color:var(--muted)">Equation Solver Pro</span></h1>
+    <div class="sub">数值解 · 解析解 · 迭代过程可视化 · 函数绘图</div>
+  </div>
+  <div class="hbtns">
+    <button class="hbtn" id="btn-ang" title="切换 弧度/角度（影响三角函数）" style="font-size:11px;font-weight:700">RAD</button>
+    <button class="hbtn" id="btn-share" title="复制分享链接（含当前页签、输入、参数与主题）">🔗</button>
+    <button class="hbtn" id="btn-help" title="帮助">?</button>
+    <button class="hbtn" id="btn-theme" title="切换亮色/暗色">☀</button>
+  </div>
+</header>
+
+<!-- ============ 帮助弹窗 ============ -->
+<div class="mmask" id="help-mask">
+  <div class="modal">
+    <button class="mclose" onclick="closeHelp()">✕</button>
+    <h2>📘 使用帮助</h2>
+    <p>方程求解器是一款纯前端数学工具箱：所有计算均在你的浏览器本地完成，无需联网、不会上传任何数据。</p>
+    <h3>功能一览</h3>
+    <div class="kgrid">
+      <div class="kitem"><b>① 方程求根</b>对任意超越方程 f(x)=0 使用二分法、牛顿法、弦截法求解，逐步展示 xₙ、误差与迭代轨迹图；也可一键扫描区间内所有根。</div>
+      <div class="kitem"><b>② 常微分方程</b>求解 dy/dx = f(x,y)，欧拉法与四阶龙格-库塔法（RK4）对比，可填写精确解叠加曲线并比较终点误差。</div>
+      <div class="kitem"><b>③ 定积分</b>辛普森/梯形/中点法，自动做 n 与 2n 收敛测试并给出 Richardson 外推值，积分区域可视化。</div>
+      <div class="kitem"><b>④ 解析解</b>四次及以内多项式方程：求根公式、卡尔达诺公式、费拉里法，输出精确根式与数值近似，可一键复制 LaTeX。</div>
+      <div class="kitem"><b>⑤ 函数绘图</b>多函数叠加绘制，自动网格与坐标刻度；悬停显示坐标、滚轮缩放、拖动平移；求根页的函数可一键带入绘图。</div>
+      <div class="kitem"><b>⑥ 主题与布局</b>右上角 ☀/🌙 切换亮色/暗色，RAD/DEG 切换弧度/角度；自适应横竖屏与手机端。</div>
+      <div class="kitem"><b>⑦ 历史与导出</b>自动保存最近 50 次计算，点击即可回填重算；结果可复制、图表可导出 PNG、数据表可导出 CSV。</div>
+      <div class="kitem"><b>⑧ 快捷键</b>任意输入框内按 <code>Enter</code> 直接求解（绘图页用 <code>Ctrl+Enter</code>）；<code>Esc</code> 关闭帮助。</div>
+      <div class="kitem"><b>⑨ 分享链接</b>点右上角 🔗 一键复制分享网址：当前页签、各输入框表达式、区间/精度/方法、角度制与主题都会编码进链接（<code>#s=…</code>），对方打开即还原为相同状态。</div>
+    </div>
+    <h3>表达式语法</h3>
+    <ul>
+      <li>运算符：<code>+ - * / ^</code>（幂），支持隐式乘法：<code>2x</code>、<code>x(x+1)</code>、<code>2pi</code></li>
+      <li>函数：<code>sin cos tan asin acos atan sinh cosh tanh exp ln log log2 sqrt cbrt abs floor ceil</code></li>
+      <li>常量：<code>pi</code>、<code>e</code>；科学计数法：<code>1e-10</code>；也可写 <code>π</code>、<code>−</code>、<code>×</code>、<code>÷</code></li>
+      <li>等式写法：<code>x^2 = 4</code> 等价于 <code>x^2 - 4</code>（求根与解析解页通用）</li>
+      <li><b>LaTeX 语法</b>：<code>\sqrt{x+1}</code>、<code>\frac{x+1}{x-1}</code>、<code>\pi</code>、<code>\cdot</code>、<code>\lfloor x \rfloor</code>、<code>\sum_{k=1}^{10}{k^2}</code>（各页面通用）</li>
+      <li><b>求和/求积</b>：<code>sum(k,1,100,1/k)</code>（=Σ）、<code>prod(k,1,5,k)</code>（=Π，即阶乘）</li>
+      <li><b>导数求零点</b>：求根页输入 <code>d(x^2)/dx</code> 即求 f′(x)=0 的根（输出 x = 0）</li>
+      <li><b>取整</b>：<code>floor(x)</code> 下取整、<code>ceil(x)</code> 上取整，绘图页可直接画阶梯函数</li>
+      <li>上下限/参数支持表达式，例如上限直接填 <code>pi/2</code>、容限填 <code>1e-8</code></li>
+    </ul>
+    <h3>使用小贴士</h3>
+    <ul>
+      <li><b>二分法</b>要求区间两端函数值异号；<b>牛顿法</b>用 a 作初值；<b>弦截法</b>用 a、b 两个初值</li>
+      <li>不知道根在哪？点「自动扫描 [a, b] 内所有根」，会在区间内采样变号并逐个二分求精（相切重根可能漏检）</li>
+      <li>ODE 页选择「对比」模式可直观看到欧拉法与 RK4 的精度差异；步长越小越精确；填入精确解可量化误差</li>
+      <li>解析解页会自动识别方程次数并提取系数，复根会以 a ± bi 形式给出</li>
+      <li>每个输入框下方的彩色标签是示例，点击即可填入</li>
+      <li>绘图页：鼠标悬停读坐标，滚轮以光标为中心缩放，按住拖动平移视图</li>
+    </ul>
+    <div class="mfoot">
+      <label><input type="checkbox" id="help-nomore"> 下次打开不再自动显示</label>
+      <button class="btn" style="width:auto;margin:0;padding:10px 28px" onclick="closeHelp()">开始使用</button>
+    </div>
+  </div>
+</div>
+<nav>
+  <button class="active" data-p="root">方程求根（牛顿/二分/弦截）</button>
+  <button data-p="ode">常微分方程（欧拉/RK4）</button>
+  <button data-p="int">定积分</button>
+  <button data-p="ana">解析解（≤4次方程）</button>
+  <button data-p="plot">函数绘图</button>
+  <button data-p="hist">历史记录</button>
+</nav>
+<main>
+
+<!-- ============ 求根 ============ -->
+<section id="p-root" class="panel active">
+<div class="grid">
+  <div class="card">
+    <h2>输入与参数</h2>
+    <label>方程 f(x) = 0，输入 f(x)</label>
+    <input id="r-f" value="x^3 - x - 2">
+    <div class="chips">
+      <span onclick="setv('r-f','cos(x)-x')">cos(x)-x</span>
+      <span onclick="setv('r-f','e^x-3x')">e^x-3x</span>
+      <span onclick="setv('r-f','x*ln(x)-1')">x·ln(x)-1</span>
+      <span onclick="setv('r-f','sin(x)-x/2')">sin(x)-x/2</span>
+    </div>
+    <label>求解方法</label>
+    <select id="r-m">
+      <option value="bisect">二分法 Bisection</option>
+      <option value="newton" selected>牛顿法 Newton</option>
+      <option value="secant">弦截法 Secant</option>
+    </select>
+    <div class="row2">
+      <div><label>起点 / 区间左端 a</label><input id="r-a" value="1"></div>
+      <div><label>第二点 / 区间右端 b</label><input id="r-b" value="2"></div>
+    </div>
+    <div class="row2">
+      <div><label>误差容限 ε</label><input id="r-eps" value="1e-10"></div>
+      <div><label>最大迭代次数</label><input id="r-max" value="100"></div>
+    </div>
+    <button class="btn" onclick="solveRoot()">求解</button>
+    <button class="btn ghost" onclick="scanRoots()" style="margin-top:8px">自动扫描 [a, b] 内所有根</button>
+    <div class="hint">说明：二分法要求 f(a)·f(b)&lt;0；牛顿法用 a 作初值；弦截法用 a、b 作两个初值。支持 <b style="color:var(--txt)">LaTeX 语法</b>（如 <code>\sqrt{x}</code>、<code>\frac{1}{x}</code>）、求和求积 <code>sum(k,1,10,k^2)</code>、导数求零点 <code>d(x^2)/dx</code>，函数 <code>sin cos tan exp ln log sqrt abs floor ceil ^</code>，常量 <code>pi e</code>。输入框内按 <b style="color:var(--txt)">Enter</b> 直接求解。</div>
+  </div>
+  <div class="card">
+    <h2>结果与可视化</h2>
+    <div id="r-out" class="result">等待求解…</div>
+    <div class="toolbar">
+      <button class="mini" onclick="copyText(document.getElementById('r-out').innerText,this)">复制结果</button>
+      <button class="mini" onclick="exportPNG('r-cv')">导出 PNG</button>
+      <button class="mini" onclick="exportCSV('r-tb','roots.csv')">导出 CSV</button>
+    </div>
+    <canvas id="r-cv" height="300" style="margin-top:14px"></canvas>
+    <div class="legend"><span><i style="background:#5b8cff"></i>f(x) 曲线</span><span><i style="background:#3ddc97"></i>迭代点 xₙ</span><span><i style="background:#ffb454"></i>(xₙ, f(xₙ)) 点</span></div>
+    <div class="twrap"><table id="r-tb"><thead><tr><th>n</th><th>xₙ</th><th>f(xₙ)</th><th>误差</th></tr></thead><tbody></tbody></table></div>
+  </div>
+</div>
+</section>
+
+<!-- ============ ODE ============ -->
+<section id="p-ode" class="panel">
+<div class="grid">
+  <div class="card">
+    <h2>输入与参数</h2>
+    <label>dy/dx = f(x, y)</label>
+    <input id="o-f" value="y - x^2 + 1">
+    <div class="chips">
+      <span onclick="setv('o-f','x+y')">x+y</span>
+      <span onclick="setv('o-f','-2x*y')">-2xy</span>
+      <span onclick="setv('o-f','sin(x)-y')">sin(x)-y</span>
+      <span onclick="setv('o-f','y*(1-y)')">y(1-y)</span>
+    </div>
+    <div class="row2">
+      <div><label>初值 x₀</label><input id="o-x0" value="0"></div>
+      <div><label>初值 y₀</label><input id="o-y0" value="0.5"></div>
+    </div>
+    <div class="row2">
+      <div><label>终点 x_end</label><input id="o-x1" value="2"></div>
+      <div><label>步长 h</label><input id="o-h" value="0.1"></div>
+    </div>
+    <label>方法</label>
+    <select id="o-m">
+      <option value="both" selected>欧拉法 + 四阶龙格-库塔（对比）</option>
+      <option value="euler">欧拉法 Euler</option>
+      <option value="rk4">四阶龙格-库塔 RK4</option>
+    </select>
+    <label>精确解 y(x)（选填，用于误差对比）</label>
+    <input id="o-ex" placeholder="如 (x+1)^2 - 0.5*e^x">
+    <button class="btn" onclick="solveODE()">求解并绘图</button>
+    <div class="hint">RK4 单步误差 O(h⁵)，欧拉法 O(h²)。选「对比」可直观看到两者差异；填入精确解后会叠加虚线曲线并输出两法的终点误差。</div>
+  </div>
+  <div class="card">
+    <h2>近似解曲线</h2>
+    <div id="o-out" class="result">等待求解…</div>
+    <div class="toolbar">
+      <button class="mini" onclick="copyText(document.getElementById('o-out').innerText,this)">复制结果</button>
+      <button class="mini" onclick="exportPNG('o-cv')">导出 PNG</button>
+      <button class="mini" onclick="exportCSV('o-tb','ode.csv')">导出 CSV</button>
+    </div>
+    <canvas id="o-cv" height="340" style="margin-top:14px"></canvas>
+    <div class="legend"><span><i style="background:#ffb454"></i>欧拉法</span><span><i style="background:#3ddc97"></i>RK4</span><span><i style="background:#8a5bff"></i>精确解（若填写）</span><span><i style="background:#5b8cff"></i>初值点</span></div>
+    <div class="twrap"><table id="o-tb"><thead><tr><th>x</th><th>Euler y</th><th>RK4 y</th><th>|差值|</th></tr></thead><tbody></tbody></table></div>
+  </div>
+</div>
+</section>
+
+<!-- ============ 积分 ============ -->
+<section id="p-int" class="panel">
+<div class="grid">
+  <div class="card">
+    <h2>输入与参数</h2>
+    <label>被积函数 f(x)</label>
+    <input id="i-f" value="sin(x)">
+    <div class="chips">
+      <span onclick="setv('i-f','e^(-x^2)')">e^(−x²)</span>
+      <span onclick="setv('i-f','1/(1+x^2)')">1/(1+x²)</span>
+      <span onclick="setv('i-f','sqrt(1-x^2)')">√(1−x²)</span>
+      <span onclick="setv('i-f','ln(x)/x')">ln(x)/x</span>
+    </div>
+    <div class="row2">
+      <div><label>下限 a</label><input id="i-a" value="0"></div>
+      <div><label>上限 b</label><input id="i-b" value="pi"></div>
+    </div>
+    <div class="row2">
+      <div><label>分段数 n（偶数）</label><input id="i-n" value="1000"></div>
+      <div><label>方法</label><select id="i-m">
+        <option value="simpson" selected>辛普森法 Simpson</option>
+        <option value="trap">梯形法 Trapezoid</option>
+        <option value="mid">中点法 Midpoint</option>
+      </select></div>
+    </div>
+    <button class="btn" onclick="solveInt()">计算积分</button>
+    <div class="hint">自动做「加密收敛测试」：用 n 与 2n 两次结果估计误差阶与收敛值。</div>
+  </div>
+  <div class="card">
+    <h2>结果</h2>
+    <div id="i-out" class="result">等待计算…</div>
+    <div class="toolbar">
+      <button class="mini" onclick="copyText(document.getElementById('i-out').innerText,this)">复制结果</button>
+      <button class="mini" onclick="exportPNG('i-cv')">导出 PNG</button>
+    </div>
+    <canvas id="i-cv" height="320" style="margin-top:14px"></canvas>
+    <div class="legend"><span><i style="background:#5b8cff"></i>f(x)</span><span><i style="background:rgba(91,140,255,.35)"></i>积分区域</span></div>
+  </div>
+</div>
+</section>
+
+<!-- ============ 解析解 ============ -->
+<section id="p-ana" class="panel">
+<div class="grid">
+  <div class="card">
+    <h2>多项式方程（最高四次）</h2>
+    <label>输入多项式方程，如 x^4 - 5x^2 + 4 = 0</label>
+    <input id="a-f" value="x^3 - 6x^2 + 11x - 6">
+    <div class="chips">
+      <span onclick="setv('a-f','x^2-5x+6=0')">x²−5x+6=0</span>
+      <span onclick="setv('a-f','x^3-6x^2+11x-6=0')">三次示例</span>
+      <span onclick="setv('a-f','x^4-10x^2+9=0')">四次示例</span>
+      <span onclick="setv('a-f','2x^4-4x^3-2x^2+4x=0')">含公因子</span>
+    </div>
+    <button class="btn" onclick="solveAna()">求解析解</button>
+    <div class="hint">自动提取各次系数，二次用求根公式、三次用卡尔达诺公式、四次用费拉里法，输出<b style="color:var(--txt)">精确根式表达式</b>（在可化简时）与数值近似。</div>
+  </div>
+  <div class="card">
+    <h2>解析过程与结果</h2>
+    <div id="a-out" class="result">等待求解…</div>
+    <div class="toolbar">
+      <button class="mini" onclick="copyText(document.getElementById('a-out').innerText,this)">复制结果</button>
+      <button class="mini" onclick="copyAnaLatex(this)">复制 LaTeX</button>
+      <button class="mini" onclick="exportPNG('a-cv')">导出 PNG</button>
+    </div>
+    <div id="a-steps" class="steps"></div>
+    <div id="a-forms"></div>
+    <canvas id="a-cv" height="280" style="margin-top:14px"></canvas>
+  </div>
+</div>
+</section>
+
+<!-- ============ 绘图 ============ -->
+<section id="p-plot" class="panel">
+<div class="grid">
+  <div class="card">
+    <h2>函数绘图</h2>
+    <label>函数列表（每行一个 y = f(x)）</label>
+    <textarea id="g-f" rows="4" style="width:100%;background:var(--inset);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:10px 12px;font-family:var(--mono);font-size:14px;outline:none">sin(x)
+x^3-3x
+0.3*e^x</textarea>
+    <div class="row2">
+      <div><label>x_min</label><input id="g-x0" value="-6"></div>
+      <div><label>x_max</label><input id="g-x1" value="6"></div>
+    </div>
+    <div class="row2">
+      <div><label>y_min</label><input id="g-y0" value="-6"></div>
+      <div><label>y_max</label><input id="g-y1" value="6"></div>
+    </div>
+    <button class="btn" onclick="drawPlot()">绘制</button>
+    <button class="btn ghost" onclick="plotFromRoot()" style="margin-top:8px">一键绘制「求根」页的 f(x)</button>
+    <div class="toolbar">
+      <button class="mini" onclick="exportPNG('g-cv')">导出 PNG</button>
+    </div>
+    <div class="hint">支持多函数叠加、自动网格与坐标刻度，函数 <code>sin cos tan asin acos atan exp ln log log2 sqrt cbrt abs floor ceil sum prod ^</code>，常量 <code>pi e</code> 及 LaTeX 语法。<b style="color:var(--txt)">交互</b>：悬停显示坐标与曲线取值、滚轮缩放、按住拖动平移；<code>Ctrl+Enter</code> 快速重绘。</div>
+  </div>
+  <div class="card">
+    <h2>图像</h2>
+    <canvas id="g-cv" height="440"></canvas>
+    <div id="g-lg" class="legend"></div>
+  </div>
+</div>
+</section>
+
+<!-- ============ 历史记录 ============ -->
+<section id="p-hist" class="panel">
+<div class="card">
+  <h2>计算历史（本地保存最近 50 条，点击任意一条回填重算）</h2>
+  <div id="h-list"></div>
+  <button class="btn ghost" onclick="clearHist()" style="margin-top:14px;width:auto;padding:10px 24px">清空历史</button>
+</div>
+</section>
+</main>
+<footer>Equation Solver Pro · 纯前端计算，无需联网 · 牛顿法 / 二分法 / 弦截法 / 欧拉法 / RK4 / Simpson / 卡尔达诺 / 费拉里</footer>
+
+<script>
+/* ================= 表达式解析器（Shunting-Yard → RPN 求值） ================= */
+let ANG=1; // 角度制因子：1=弧度，Math.PI/180=角度（影响三角与反三角函数）
+const FUNCS = {
+  sin:x=>Math.sin(x*ANG), cos:x=>Math.cos(x*ANG), tan:x=>Math.tan(x*ANG),
+  asin:x=>Math.asin(x)/ANG, acos:x=>Math.acos(x)/ANG, atan:x=>Math.atan(x)/ANG,
+  arcsin:x=>Math.asin(x)/ANG, arccos:x=>Math.acos(x)/ANG, arctan:x=>Math.atan(x)/ANG,
+  sinh:Math.sinh, cosh:Math.cosh, tanh:Math.tanh,
+  exp:Math.exp, ln:Math.log, log:Math.log10, log2:Math.log2,
+  sqrt:Math.sqrt, abs:Math.abs, cbrt:Math.cbrt, floor:Math.floor, ceil:Math.ceil,
+};
+/* ---- LaTeX 语法预处理：\sqrt{x} \frac{a}{b} \pi \sum_{k=1}^{n}{...} 等 ---- */
+function readGroup(s,i){ // i 指向 '{'，返回 [内容, 结束位置]
+  let d=0;
+  for(let j=i;j<s.length;j++){ if(s[j]==='{')d++; else if(s[j]==='}'){ d--; if(!d) return [s.slice(i+1,j),j+1]; } }
+  throw new Error('LaTeX 花括号不匹配');
+}
+function latexFix(s){
+  if(!/[\\{}]/.test(s)) return s;
+  let out='', i=0;
+  const skipSp=k=>{ while(s[k]===' ')k++; return k; };
+  const readAtom=k=>{ // 花括号组或单个字母/数字原子
+    k=skipSp(k);
+    if(s[k]==='{') return readGroup(s,k);
+    const m=s.slice(k).match(/^[a-zA-Z]+|^[0-9.]+/);
+    if(m) return [m[0],k+m[0].length];
+    return ['',k];
+  };
+  while(i<s.length){
+    if(s[i]==='\\'){
+      let j=i+1; while(j<s.length&&/[a-zA-Z]/.test(s[j])) j++;
+      const name=s.slice(i+1,j);
+      if(name==='sum'||name==='prod'){ // \sum_{k=a}^{b}{body}（容忍空格、省略花括号、体内嵌套）
+        let k=skipSp(j), vn='', lo='', hi='';
+        if(s[k]==='_'){ const [g,nk]=readAtom(k+1); k=nk;
+          const eq=g.indexOf('=');
+          if(eq<0) throw new Error('\\'+name+' 的下标需形如 _{k=1}');
+          vn=g.slice(0,eq).trim(); lo=g.slice(eq+1).trim(); }
+        k=skipSp(k);
+        if(s[k]==='^'){ const [g,nk]=readAtom(k+1); hi=g.trim(); k=nk; }
+        const [body,nk]=readAtom(k); k=nk;
+        if(!vn||hi===''||body==='') throw new Error('\\'+name+' 需要完整形式 _{变量=下界}^{上界}{通项}');
+        out+=name+'('+vn+','+latexFix(lo)+','+latexFix(hi)+','+latexFix(body)+')'; i=k; continue;
+      }
+      if(name==='frac'){ // \frac{a}{b} → ((a)/(b))
+        let k=skipSp(j);
+        if(s[k]!=='{') throw new Error('\\frac 需要两个花括号参数');
+        const [a,n1]=readGroup(s,k); let m=skipSp(n1);
+        if(s[m]!=='{') throw new Error('\\frac 需要两个花括号参数');
+        const [b,n2]=readGroup(s,m);
+        out+='(('+latexFix(a)+')/('+latexFix(b)+'))'; i=n2; continue;
+      }
+      if(name==='sqrt'){
+        let k=skipSp(j);
+        if(s[k]==='{'){ const [a,n1]=readGroup(s,k); out+='sqrt('+latexFix(a)+')'; i=n1; continue; }
+        const m2=s.slice(k).match(/^[a-zA-Z]+|^[0-9.]+/); // \sqrt x 形式：取一个原子作为参数
+        if(m2){ out+='sqrt('+m2[0]+')'; i=k+m2[0].length; continue; }
+        out+='sqrt'; i=j; continue;
+      }
+      const map={pi:'(pi)',infty:'(inf)',infinity:'(inf)',
+        cdot:'*',times:'*',div:'/',
+        lfloor:'floor(',rfloor:')',lceil:'ceil(',rceil:')',
+        left:'',right:'',quad:'',qquad:'',ldots:'',cdots:'','!':'',',':'',';':'',':':'',' ':'','%':'','&':''};
+      const fnames=['sin','cos','tan','ln','log','exp','arcsin','arccos','arctan','sinh','cosh','tanh'];
+      if(name in map){ out+=map[name]; i=j; continue; }
+      if(fnames.includes(name)){
+        let k=skipSp(j);
+        if(s[k]==='('||s[k]==='{'){ out+=name; i=j; continue; } // 常规调用，括号统一转换
+        // \sin x 形式：取一个原子作为参数
+        const m2=s.slice(k).match(/^[a-zA-Z]+|^[0-9.]+/);
+        if(m2){ out+=name+'('+m2[0]+')'; i=k+m2[0].length; continue; }
+        out+=name; i=j; continue;
+      }
+      out+=name; i=j; continue; // 未知命令按字母名处理
+    }
+    out+=s[i]; i++;
+  }
+  return out.replace(/\{/g,'(').replace(/\}/g,')');
+}
+function tokenize(s){
+  s = latexFix(s);
+  s = s.replace(/\s+/g,'').replace(/−/g,'-').replace(/×/g,'*').replace(/÷/g,'/').replace(/π/g,'pi');
+  const t=[]; let i=0;
+  while(i<s.length){
+    const c=s[i];
+    if(/[0-9.]/.test(c)){ let j=i; while(j<s.length&&/[0-9.]/.test(s[j]))j++;
+      if(/[eE]/.test(s[j]||'')&&/[0-9+\-]/.test(s[j+1]||'')){ let k=j+1;
+        if(/[+\-]/.test(s[k]))k++;
+        if(/[0-9]/.test(s[k]||'')){ while(k<s.length&&/[0-9]/.test(s[k]))k++; j=k; } }
+      const ns=s.slice(i,j);
+      if(!/^(\d+\.?\d*|\.\d+)([eE][+\-]?\d+)?$/.test(ns)) throw new Error('无效的数字: '+ns);
+      t.push({t:'n',v:parseFloat(ns)}); i=j; continue; }
+    if(/[a-zA-Z]/.test(c)){ let j=i; while(j<s.length&&/[a-zA-Z0-9]/.test(s[j]))j++;
+      t.push({t:'id',v:s.slice(i,j)}); i=j; continue; }
+    if('+-*/^(),'.includes(c)){ t.push({t:c,v:c}); i++; continue; }
+    throw new Error('无法识别的字符: '+c);
+  }
+  // 隐式乘法: n(, )(, id(, nid, )( , nid n 等
+  const out=[];
+  for(let k=0;k<t.length;k++){
+    out.push(t[k]);
+    if(k+1<t.length){
+      const a=t[k].t, b=t[k+1].t;
+      const aEnd = a==='n'||a==='id'||a===')';
+      const bStart = b==='n'||b==='id'||b==='(';
+      const idl = a==='id'?t[k].v.toLowerCase():'';
+      const isFuncCall = a==='id'&&b==='('&&(FUNCS[idl]||idl==='sum'||idl==='prod');
+      if(aEnd&&bStart && !isFuncCall) out.push({t:'*',v:'*'});
+    }
+  }
+  return out;
+}
+function toRPN(tok, vars){
+  const out=[], st=[];
+  const prec={'+':1,'-':1,'*':2,'/':2,'u-':2.5,'^':3};
+  let prev=null;
+  for(let ti=0;ti<tok.length;ti++){
+    const tk=tok[ti];
+    if(tk.t==='id'&&(tk.v.toLowerCase()==='sum'||tk.v.toLowerCase()==='prod')&&tok[ti+1]&&tok[ti+1].t==='('){
+      // sum(k, 下界, 上界, 通项) —— 取匹配括号，按顶层逗号拆 4 段
+      let d=0, j=ti+1; const commas=[];
+      for(;j<tok.length;j++){ if(tok[j].t==='(')d++; else if(tok[j].t===')'){d--; if(!d)break;}
+        else if(tok[j].t===','&&d===1) commas.push(j); }
+      if(j>=tok.length) throw new Error('括号不匹配');
+      if(commas.length!==3) throw new Error(tk.v.toLowerCase()+' 需要 4 个参数：sum(变量, 下界, 上界, 通项)');
+      const segs=[tok.slice(ti+2,commas[0]),tok.slice(commas[0]+1,commas[1]),tok.slice(commas[1]+1,commas[2]),tok.slice(commas[2]+1,j)];
+      if(segs[0].length!==1||segs[0][0].t!=='id') throw new Error('sum/prod 第一个参数必须是求和变量名');
+      const vn=segs[0][0].v;
+      out.push({t:tk.v.toLowerCase(), vn, lo:toRPN(segs[1],vars), hi:toRPN(segs[2],vars), body:toRPN(segs[3],vars.concat([vn]))});
+      prev=tok[j]; ti=j; continue;
+    }
+    if(tk.t==='n') out.push(tk);
+    else if(tk.t==='id'){
+      const v=tk.v.toLowerCase();
+      if(FUNCS[v]) st.push({t:'f',v});
+      else if(v==='pi') out.push({t:'n',v:Math.PI});
+      else if(v==='inf'||v==='infinity') out.push({t:'n',v:Infinity});
+      else if(v==='e'&&!vars.includes('e')) out.push({t:'n',v:Math.E});
+      else if(vars.includes(v)) out.push({t:'v',v});
+      else throw new Error('未知标识符: '+tk.v);
+    }
+    else if(tk.t==='(') st.push(tk);
+    else if(tk.t===')'){ while(st.length&&st[st.length-1].t!=='(') out.push(st.pop());
+      if(!st.length) throw new Error('括号不匹配');
+      st.pop(); if(st.length&&st[st.length-1].t==='f') out.push(st.pop()); }
+    else if(tk.t===','){ while(st.length&&st[st.length-1].t!=='(') out.push(st.pop()); }
+    else { // 运算符
+      let op=tk.t;
+      if(op==='-'&&(!prev||['+','-','*','/','^','(',','].includes(prev.t))) op='u-';
+      while(st.length){ const top=st[st.length-1];
+        if(top.t==='f'){ out.push(st.pop()); continue; }
+        if(top.t==='op' && prec[top.v]!==undefined && !(op==='u-'&&top.v==='^') &&
+           (prec[top.v]>prec[op] || (prec[top.v]===prec[op]&&op!=='^'&&op!=='u-'))){ out.push(st.pop()); continue; }
+        break; }
+      st.push({t:'op',v:op});
+    }
+    prev=tk;
+  }
+  while(st.length){ const x=st.pop(); if(x.t==='('||x.t===')') throw new Error('括号不匹配'); out.push(x); }
+  return out;
+}
+function evalRPN(rpn, env){
+  const st=[];
+  for(const tk of rpn){
+    if(tk.t==='n') st.push(tk.v);
+    else if(tk.t==='v'){ const val=env[tk.v]; if(val===undefined) throw new Error('变量 '+tk.v+' 未赋值'); st.push(val); }
+    else if(tk.t==='sum'||tk.t==='prod'){
+      const lo=Math.ceil(evalRPN(tk.lo,env)), hi=Math.floor(evalRPN(tk.hi,env));
+      if(hi-lo>1000000) throw new Error('求和/求积项数过多（>10⁶）');
+      let acc=tk.t==='sum'?0:1;
+      for(let k=lo;k<=hi;k++){ const e2=Object.assign({},env); e2[tk.vn]=k;
+        const v=evalRPN(tk.body,e2); acc=tk.t==='sum'?acc+v:acc*v; }
+      st.push(acc);
+    }
+    else if(tk.t==='f'){ if(!st.length) throw new Error('函数 '+tk.v+' 缺少参数'); const a=st.pop(); st.push(FUNCS[tk.v](a)); }
+    else if(tk.t==='op'){
+      if(tk.v==='u-'){ if(!st.length) throw new Error('表达式不完整'); st.push(-st.pop()); continue; }
+      if(st.length<2) throw new Error('表达式语法错误：运算符缺少操作数');
+      const b=st.pop(), a=st.pop();
+      st.push(tk.v==='+'?a+b:tk.v==='-'?a-b:tk.v==='*'?a*b:tk.v==='/'?a/b:Math.pow(a,b));
+    }
+  }
+  if(st.length!==1) throw new Error('表达式语法错误');
+  return st[0];
+}
+function compile(expr, vars){
+  const rpn = toRPN(tokenize(expr), vars);
+  return (...args)=>{ const env={}; vars.forEach((v,i)=>env[v]=args[i]); return evalRPN(rpn,env); };
+}
+// 找到顶层（不在任何括号内）的 '=' 位置；返回 [次数, 下标]
+function topLevelEq(s){
+  let d=0, cnt=0, idx=-1;
+  for(let i=0;i<s.length;i++){ const c=s[i];
+    if(c==='('||c==='{'||c==='[') d++;
+    else if(c===')'||c==='}'||c===']') d--;
+    else if(c==='='&&d===0){ cnt++; idx=i; } }
+  return [cnt,idx];
+}
+function parseEq(expr, vars){ // 支持 "lhs = rhs"：先做 LaTeX 预处理再按顶层 = 拆分（\sum_{k=1} 内部的 = 不受影响）
+  const s=latexFix(expr);
+  const [cnt,idx]=topLevelEq(s);
+  if(cnt===1) return compile('('+s.slice(0,idx)+')-('+s.slice(idx+1)+')', vars);
+  return compile(s, vars);
+}
+const num = s => compile(s,[])();
+const fmt = (x,d=12)=>{ if(!isFinite(x)) return String(x);
+  const a=Math.abs(x); if(a!==0&&(a>=1e12||a<1e-10)) return x.toExponential(6);
+  return parseFloat(x.toPrecision(d)).toString(); };
+
+/* ================= 通用小工具：复制 / 导出 PNG / 导出 CSV ================= */
+function copyText(t,btn){
+  const done=()=>{ if(btn){ const o=btn.textContent; btn.textContent='已复制 ✓'; setTimeout(()=>btn.textContent=o,1200); } };
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done,()=>fallbackCopy(t,done));
+  else fallbackCopy(t,done);
+}
+function fallbackCopy(t,cb){
+  const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  ta.remove(); cb();
+}
+function exportPNG(cid){
+  const cv=document.getElementById(cid);
+  const off=document.createElement('canvas'); off.width=cv.width; off.height=cv.height;
+  const c=off.getContext('2d');
+  c.fillStyle=cssVar('--inset2')||'#ffffff'; c.fillRect(0,0,off.width,off.height);
+  c.drawImage(cv,0,0);
+  const a=document.createElement('a'); a.download=cid+'.png'; a.href=off.toDataURL('image/png'); a.click();
+}
+function exportCSV(tid,name){
+  const rows=[...document.querySelectorAll('#'+tid+' tr')].map(tr=>[...tr.children].map(td=>td.textContent).join(','));
+  if(rows.length<2) return; // 仅表头，无数据
+  const blob=new Blob(['﻿'+rows.join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.download=name; a.href=URL.createObjectURL(blob); a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ================= 历史记录（localStorage，最近 50 条） ================= */
+const HKEY='es-history';
+const PAGENAMES={root:'求根',ode:'微分方程',int:'定积分',ana:'解析解',plot:'绘图'};
+function pushHist(page,expr,summary){
+  try{ const h=JSON.parse(localStorage.getItem(HKEY)||'[]');
+    h.unshift({t:Date.now(),page,expr,summary});
+    localStorage.setItem(HKEY,JSON.stringify(h.slice(0,50))); }catch(e){}
+  renderHist();
+}
+const escH=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function renderHist(){
+  const box=document.getElementById('h-list'); if(!box) return;
+  let h=[]; try{ h=JSON.parse(localStorage.getItem(HKEY)||'[]'); }catch(e){}
+  if(!Array.isArray(h)) h=[]; // 本地数据被篡改/损坏时兜底
+  if(!h.length){ box.innerHTML='<div class="hint">暂无历史记录。完成一次求解后会自动保存在这里。</div>'; return; }
+  box.innerHTML=h.map((r,i)=>`<div class="hitem" data-i="${i}"><span class="htag">${PAGENAMES[r.page]||escH(r.page)}</span><span class="hexpr">${escH(r.expr)}</span><span class="hsum">${escH(r.summary)}</span><span class="htime">${new Date(r.t).toLocaleString()}</span></div>`).join('');
+  box.querySelectorAll('.hitem').forEach(el=>el.addEventListener('click',()=>{
+    let h2=[]; try{ h2=JSON.parse(localStorage.getItem(HKEY)||'[]'); }catch(e){}
+    if(!Array.isArray(h2)) h2=[];
+    const r=h2[+el.dataset.i]; if(r) restoreHist(r);
+  }));
+}
+let skipRedraw=false; // 历史回填期间阻止 nav 点击触发的重复求解（否则求解两次、历史重复入栈）
+function restoreHist(r){
+  const inputMap={root:'r-f',ode:'o-f',int:'i-f',ana:'a-f',plot:'g-f'};
+  if(inputMap[r.page]) setv(inputMap[r.page],r.expr);
+  const nb=document.querySelector(`nav button[data-p="${r.page}"]`);
+  skipRedraw=true; if(nb) nb.click(); skipRedraw=false;
+  ({root:solveRoot,ode:solveODE,int:solveInt,ana:solveAna,plot:drawPlot}[r.page]||(()=>{}))();
+}
+function clearHist(){ try{ localStorage.removeItem(HKEY); }catch(e){} renderHist(); }
+
+/* ================= 绘图引擎 ================= */
+const COLORS=['#5b8cff','#3ddc97','#ffb454','#ff6b81','#8a5bff','#4dd0e1'];
+function setupCanvas(id){
+  const cv=document.getElementById(id), dpr=window.devicePixelRatio||1;
+  if(!cv.style.height) cv.style.height=cv.height+'px'; // 锁定 CSS 高度，防止高 DPR 下每次重绘高度倍增
+  const w=cv.clientWidth, h=cv.clientHeight||cv.height;
+  cv.width=Math.max(1,Math.round(w*dpr)); cv.height=Math.max(1,Math.round(h*dpr));
+  const ctx=cv.getContext('2d'); ctx.scale(dpr,dpr);
+  return {ctx,w,h};
+}
+function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+function axes(ctx,w,h,x0,x1,y0,y1){
+  const X=v=>(v-x0)/(x1-x0)*w, Y=v=>h-(v-y0)/(y1-y0)*h;
+  ctx.strokeStyle=cssVar('--gridc'); ctx.lineWidth=1; ctx.fillStyle=cssVar('--axestxt'); ctx.font='11px sans-serif';
+  const step=niceStep(Math.max(x1-x0,y1-y0)/8);
+  for(let x=Math.ceil(x0/step)*step;x<=x1;x+=step){
+    const px=X(x); ctx.beginPath();ctx.moveTo(px,0);ctx.lineTo(px,h);ctx.stroke();
+    if(Math.abs(x)>step/2) ctx.fillText(fmt(x,6),px+3,(y0<0&&y1>0)?Y(0)+14:h-5); }
+  for(let y=Math.ceil(y0/step)*step;y<=y1;y+=step){
+    const py=Y(y); ctx.beginPath();ctx.moveTo(0,py);ctx.lineTo(w,py);ctx.stroke();
+    if(Math.abs(y)>step/2) ctx.fillText(fmt(y,6),(x0<0&&x1>0)?X(0)+5:5,py-4); }
+  ctx.strokeStyle=cssVar('--axesc'); ctx.lineWidth=1.4;
+  if(y0<0&&y1>0){ctx.beginPath();ctx.moveTo(0,Y(0));ctx.lineTo(w,Y(0));ctx.stroke();}
+  if(x0<0&&x1>0){ctx.beginPath();ctx.moveTo(X(0),0);ctx.lineTo(X(0),h);ctx.stroke();}
+  return {X,Y};
+}
+function niceStep(r){ const p=Math.pow(10,Math.floor(Math.log10(r))); const m=r/p;
+  return (m<1.5?1:m<3.5?2:m<7.5?5:10)*p; }
+function plotCurve(ctx,X,Y,f,x0,x1,w,color,lw=2){
+  ctx.strokeStyle=color; ctx.lineWidth=lw; ctx.beginPath();
+  let pen=false, prevY=null;
+  for(let i=0;i<=w;i++){
+    const x=x0+(x1-x0)*i/w; let y; try{y=f(x);}catch(e){y=NaN;}
+    if(!isFinite(y)){pen=false;continue;}
+    const py=Y(y);
+    if(pen && prevY!==null && Math.abs(py-prevY)>600){pen=false;}
+    if(py<-800||py>800){pen=false;continue;}
+    if(pen) ctx.lineTo(X(x),py); else ctx.moveTo(X(x),py);
+    pen=true; prevY=py;
+  }
+  ctx.stroke();
+}
+function dot(ctx,X,Y,x,y,color,r=3.5){ctx.fillStyle=color;ctx.beginPath();ctx.arc(X(x),Y(y),r,0,7);ctx.fill();}
+
+/* ================= 求根 ================= */
+// 支持导函数求零点：输入 d(f(x))/dx 或 d/dx(f(x))，求 f'(x)=0 的根
+function makeRootFunc(raw){
+  const m1=raw.match(/^\s*d\s*\((.*)\)\s*\/\s*d\s*x\s*$/i);
+  const m2=raw.match(/^\s*d\s*\/\s*d\s*x\s*\((.*)\)\s*$/i) || raw.match(/^\s*d\s*\/\s*d\s*x\s*(.+)$/i);
+  const inner=m1?m1[1]:(m2?m2[1]:null);
+  if(inner===null) return {f:parseEq(raw,['x']), note:''};
+  const g=parseEq(inner,['x']), h=1e-6;
+  return { f:x=>{ const d=(g(x+h)-g(x-h))/(2*h); return d; },
+           note:`已识别为导函数求零点：求解 d/dx [ ${escH(inner)} ] = 0\n` };
+}
+function solveRoot(){
+  const out=document.getElementById('r-out');
+  try{
+    const rf=makeRootFunc(document.getElementById('r-f').value);
+    const f=rf.f;
+    const m=document.getElementById('r-m').value;
+    const a=num(document.getElementById('r-a').value), b=num(document.getElementById('r-b').value);
+    const eps=num(document.getElementById('r-eps').value);
+    let maxN=parseInt(document.getElementById('r-max').value);
+    if(!isFinite(a)||!isFinite(b)) throw new Error('起点 a、b 需为有限数值');
+    if(!(eps>0)) throw new Error('误差容限 ε 需为正数');
+    if(!(maxN>=1)) throw new Error('最大迭代次数需为正整数');
+    maxN=Math.min(maxN,100000); // 上限保护，防止极端输入导致长时间计算
+    const rows=[]; let root=null, msg='';
+    if(m==='bisect'){
+      let lo=a, hi=b, flo=f(lo), fhi=f(hi);
+      if(!isFinite(flo)||!isFinite(fhi)) throw new Error('函数在区间端点处无定义（NaN/∞），请调整区间');
+      if(Math.abs(flo)<eps){ root=lo; msg='f(a)≈0，端点 a 即根'; }
+      else if(Math.abs(fhi)<eps){ root=hi; msg='f(b)≈0，端点 b 即根'; }
+      else{
+        if(flo*fhi>0) throw new Error('区间两端函数值同号，二分法不适用');
+        let prev=null;
+        for(let n=1;n<=maxN;n++){
+          const mid=(lo+hi)/2, fm=f(mid);
+          if(!isFinite(fm)) throw new Error('函数在迭代点 x='+fmt(mid)+' 处无定义（NaN/∞），二分法中断');
+          const err=prev===null?NaN:Math.abs(mid-prev);
+          rows.push([n,mid,fm,err]);
+          if(Math.abs(fm)<eps||(prev!==null&&err<eps)){root=mid;msg='收敛于第 '+n+' 步';break;}
+          if(flo*fm<0) hi=mid; else {lo=mid;flo=fm;}
+          prev=mid;
+        }
+        if(root===null) msg='达到最大迭代次数';
+      }
+    } else if(m==='newton'){
+      const h=1e-7; let x=a, prev=null;
+      for(let n=1;n<=maxN;n++){
+        const fx=f(x), dfx=(f(x+h)-f(x-h))/(2*h);
+        if(!isFinite(fx)||!isFinite(dfx)) throw new Error('函数在迭代点无定义（NaN/∞），牛顿法失败于 x='+fmt(x));
+        if(Math.abs(dfx)<1e-14) throw new Error('导数接近 0，牛顿法失败于 x='+fmt(x));
+        const xn=x-fx/dfx, err=Math.abs(xn-x);
+        if(!isFinite(xn)) throw new Error('迭代发散（xₙ 超出有限范围），牛顿法失败');
+        rows.push([n,xn,f(xn),err]); x=xn;
+        if(err<eps&&Math.abs(f(x))<eps*10){root=x;msg='收敛于第 '+n+' 步';break;}
+      }
+      if(root===null) msg='达到最大迭代次数';
+    } else {
+      let x0=a,x1=b,f0=f(x0),f1=f(x1);
+      for(let n=1;n<=maxN;n++){
+        const d=f1-f0; if(Math.abs(d)<1e-15) throw new Error('f(x₁)−f(x₀)≈0，弦截法失败');
+        const x2=x1-f1*(x1-x0)/d, err=Math.abs(x2-x1);
+        if(!isFinite(x2)) throw new Error('迭代发散或函数无定义（NaN/∞），弦截法失败');
+        rows.push([n,x2,f(x2),err]);
+        if(err<eps&&Math.abs(f(x2))<eps*10){root=x2;msg='收敛于第 '+n+' 步';break;}
+        x0=x1;f0=f1;x1=x2;f1=f(x2);
+      }
+      if(root===null) msg='达到最大迭代次数';
+    }
+    out.innerHTML = (rf.note?`<span class="k">${rf.note}</span>`:'')+(root!==null
+      ? `<span class="k">方程根 x* ≈ </span><span class="v">${fmt(root)}</span>\n<span class="k">f(x*) = </span><span class="v">${fmt(f(root))}</span>\n<span class="k">${msg}，容限 ε = ${fmt(eps)}</span><span class="badge">成功</span>`
+      : `<span class="bad">${msg}，未收敛。最后 x = ${rows.length?fmt(rows[rows.length-1][1]):'—'}</span>`);
+    if(root!==null) pushHist('root',document.getElementById('r-f').value,'x* ≈ '+fmt(root));
+    // 表格
+    const tb=document.querySelector('#r-tb tbody'); tb.innerHTML='';
+    rows.forEach(r=>{ const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${r[0]}</td><td>${fmt(r[1])}</td><td>${fmt(r[2])}</td><td>${isNaN(r[3])?'—':fmt(r[3])}</td>`; tb.appendChild(tr); });
+    // 绘图：收敛后聚焦零点附近并标注零点坐标；未收敛则展示迭代范围
+    const allx=rows.map(r=>r[1]);
+    let L,R;
+    if(root!==null){
+      const wv=Math.max(1.5, Math.abs(root)*0.8,
+        Math.max(...allx.map(v=>Math.abs(v-root)),0)*1.3, 1e-3);
+      L=root-wv; R=root+wv;
+    } else {
+      L=Math.min(a,b,...allx); R=Math.max(a,b,...allx);
+      const pad=(R-L)*0.25+1e-6; L-=pad; R+=pad;
+    }
+    let yMin=Infinity,yMax=-Infinity;
+    for(let i=0;i<=400;i++){const y=f(L+(R-L)*i/400); if(isFinite(y)){yMin=Math.min(yMin,y);yMax=Math.max(yMax,y);}}
+    if(!isFinite(yMin)||yMin===yMax){yMin=-1;yMax=1;}
+    const yp=(yMax-yMin)*0.15||1; yMin-=yp; yMax+=yp;
+    const {ctx,w,h}=setupCanvas('r-cv'); ctx.clearRect(0,0,w,h);
+    const {X,Y}=axes(ctx,w,h,L,R,yMin,yMax);
+    plotCurve(ctx,X,Y,f,L,R,w,'#5b8cff');
+    ctx.strokeStyle='#ffb454'; ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(0,Y(0)); ctx.lineTo(w,Y(0)); ctx.stroke();
+    // 迭代点（聚焦视图下只画落在窗口内的）
+    rows.slice(0,15).forEach(r=>{
+      if(r[1]<L||r[1]>R) return;
+      dot(ctx,X,Y,r[1],0,'#3ddc97',3.5); dot(ctx,X,Y,r[1],r[2],'#ffb454',2.5);
+      ctx.fillStyle='#3ddc97'; ctx.font='10px sans-serif'; ctx.fillText('x'+r[0],X(r[1])+5,Y(0)-6); });
+    // 零点坐标标注
+    if(root!==null){
+      dot(ctx,X,Y,root,0,'#ff6b81',6);
+      ctx.strokeStyle='#ff6b81'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.moveTo(X(root),Y(yMin)); ctx.lineTo(X(root),Y(yMax)); ctx.stroke();
+      ctx.setLineDash([]);
+      const label=`零点 (${fmt(root,8)}, 0)`;
+      ctx.font='bold 12px sans-serif';
+      const tw=ctx.measureText(label).width;
+      let lx=X(root)+10; if(lx+tw+8>w) lx=X(root)-tw-18;
+      let ly=Y(0)-14; if(ly<14) ly=Y(0)+22;
+      ctx.fillStyle='rgba(255,107,129,.15)';
+      ctx.fillRect(lx-4,ly-13,tw+8,19);
+      ctx.fillStyle='#ff6b81'; ctx.fillText(label,lx,ly);
+    }
+  }catch(e){ out.innerHTML=`<span class="bad">错误：${escH(e.message)}</span>`; }
+}
+/* ---- 自动扫描 [a,b] 内所有根：均匀采样找变号子区间，逐个二分求精 ---- */
+function scanRoots(){
+  const out=document.getElementById('r-out');
+  try{
+    const raw=document.getElementById('r-f').value;
+    const rf=makeRootFunc(raw), f=rf.f;
+    const a=num(document.getElementById('r-a').value), b=num(document.getElementById('r-b').value);
+    if(!(b>a)) throw new Error('请保证 a < b（扫描需要左小右大的区间）');
+    const N=2000, h=(b-a)/N, roots=[];
+    const bisect=(lo,hi,flo)=>{ // 已知 f(lo)·f(lo+h)<0
+      for(let k=0;k<80;k++){ const mid=(lo+hi)/2; let fm; try{fm=f(mid);}catch(e){return null;}
+        if(!isFinite(fm)) return null;
+        if(flo*fm<=0) hi=mid; else {lo=mid;flo=fm;} }
+      return (lo+hi)/2; };
+    let px=a, py; try{py=f(a);}catch(e){py=NaN;}
+    for(let i=1;i<=N;i++){
+      const x=a+i*h; let y; try{y=f(x);}catch(e){y=NaN;}
+      if(isFinite(py)&&isFinite(y)){
+        if(py===0) roots.push(px);
+        else if(py*y<0){ const r=bisect(px,x,py); if(r!==null&&Math.abs(f(r))<1e-6) roots.push(r); }
+      }
+      px=x; py=y;
+    }
+    roots.sort((p,q)=>p-q);
+    const uniq=[]; // 相邻去重
+    for(const r of roots){ if(!uniq.length||Math.abs(r-uniq[uniq.length-1])>1e-6*(1+Math.abs(r))) uniq.push(r); }
+    if(!uniq.length){
+      out.innerHTML=`<span class="bad">在 [${fmt(a)}, ${fmt(b)}] 内未找到变号零点（与 x 轴相切的重根可能漏检，可换牛顿法试初值）。</span>`;
+      return;
+    }
+    out.innerHTML=`<span class="k">在 [${fmt(a)}, ${fmt(b)}] 内共找到 </span><span class="v">${uniq.length}</span><span class="k"> 个根：</span>\n`+
+      uniq.map((r,i)=>`<span class="k">x${i+1} ≈ </span><span class="v">${fmt(r)}</span>`).join('   ')+`<span class="badge">完成</span>`;
+    pushHist('root',raw,'扫描 ['+fmt(a)+', '+fmt(b)+'] → '+uniq.length+' 个根');
+    // 表格列出全部根
+    const tb=document.querySelector('#r-tb tbody'); tb.innerHTML='';
+    uniq.forEach((r,i)=>{ const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${i+1}</td><td>${fmt(r)}</td><td>${fmt(f(r))}</td><td>—</td>`; tb.appendChild(tr); });
+    // 绘图：全区间曲线 + 所有根标注
+    let yMin=Infinity,yMax=-Infinity;
+    for(let i=0;i<=400;i++){ let y; try{y=f(a+(b-a)*i/400);}catch(e){y=NaN;}
+      if(isFinite(y)){yMin=Math.min(yMin,y);yMax=Math.max(yMax,y);} }
+    if(!isFinite(yMin)||yMin===yMax){yMin=-1;yMax=1;}
+    const yp=(yMax-yMin)*0.15||1; yMin-=yp; yMax+=yp;
+    const {ctx,w,h:ch}=setupCanvas('r-cv'); ctx.clearRect(0,0,w,ch);
+    const {X,Y}=axes(ctx,w,ch,a,b,yMin,yMax);
+    plotCurve(ctx,X,Y,f,a,b,w,'#5b8cff');
+    ctx.strokeStyle='#ffb454'; ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(0,Y(0)); ctx.lineTo(w,Y(0)); ctx.stroke();
+    uniq.forEach(r=>{ dot(ctx,X,Y,r,0,'#ff6b81',5.5);
+      ctx.fillStyle='#ff6b81'; ctx.font='bold 11px sans-serif';
+      ctx.fillText('('+fmt(r,6)+', 0)',X(r)+7,Y(0)-8); });
+  }catch(e){ out.innerHTML=`<span class="bad">错误：${escH(e.message)}</span>`; }
+}
+
+/* ================= ODE ================= */
+function solveODE(){
+  const out=document.getElementById('o-out');
+  try{
+    const f=compile(document.getElementById('o-f').value,['x','y']);
+    const x0=num(document.getElementById('o-x0').value), y0=num(document.getElementById('o-y0').value);
+    const x1=num(document.getElementById('o-x1').value), h=Math.abs(num(document.getElementById('o-h').value));
+    const mode=document.getElementById('o-m').value;
+    const exRaw=document.getElementById('o-ex').value.trim();
+    let fex=null;
+    if(exRaw){ fex=compile(exRaw.replace(/^y\s*=/,''),['x']); fex(x0); } // 先试编译
+    if(![x0,y0,x1,h].every(isFinite)) throw new Error('初值/终点/步长需为有限数值');
+    if(h===0) throw new Error('步长 h 不能为 0');
+    const dir=x1>=x0?1:-1, hh=h*dir, need=(x1-x0)/hh;
+    if(!(need>0)) throw new Error('终点需与起点不同');
+    if(need>100000) throw new Error('步数过多（约 '+Math.ceil(need)+' 步 > 10⁵），请增大步长 h');
+    const N=Math.round(need);
+    if(N<1) throw new Error('步长过大：区间内不足一步，请减小步长 h');
+    const euler=[y0], rk4=[y0], xs=[x0];
+    for(let i=0;i<N;i++){
+      const x=xs[i];
+      euler.push(euler[i]+hh*f(x,euler[i]));
+      const k1=f(x,rk4[i]), k2=f(x+hh/2,rk4[i]+hh/2*k1), k3=f(x+hh/2,rk4[i]+hh/2*k2), k4=f(x+hh,rk4[i]+hh*k3);
+      rk4.push(rk4[i]+hh/6*(k1+2*k2+2*k3+k4));
+      xs.push(x+hh);
+    }
+    if((mode!=='rk4'&&!isFinite(euler[N]))||(mode!=='euler'&&!isFinite(rk4[N])))
+      throw new Error('数值解发散（出现 NaN/∞），请减小步长或检查方程');
+    let outHtml=`<span class="k">步数 N = </span><span class="v">${N}</span><span class="k">，步长 h = </span><span class="v">${fmt(hh)}</span>\n`;
+    if(mode!=='rk4') outHtml+=`<span class="k">y(${fmt(x1)}) 欧拉 ≈ </span><span class="v">${fmt(euler[N])}</span>\n`;
+    if(mode!=='euler') outHtml+=`<span class="k">y(${fmt(x1)}) RK4  ≈ </span><span class="v">${fmt(rk4[N])}</span>\n`;
+    if(mode==='both') outHtml+=`<span class="k">两法终点差 = ${fmt(Math.abs(euler[N]-rk4[N]))}</span>`;
+    outHtml+=`<span class="badge">完成</span>`;
+    if(fex){
+      const ye=fex(x1);
+      const errs=[];
+      if(mode!=='rk4') errs.push('欧拉 '+fmt(Math.abs(euler[N]-ye)));
+      if(mode!=='euler') errs.push('RK4 '+fmt(Math.abs(rk4[N]-ye)));
+      outHtml+=`\n<span class="k">精确解 y(${fmt(x1)}) = ${fmt(ye)}；终点误差：${errs.join('，')}</span>`;
+    }
+    out.innerHTML=outHtml;
+    pushHist('ode',document.getElementById('o-f').value,'y('+fmt(x1)+') ≈ '+fmt(mode==='euler'?euler[N]:rk4[N]));
+    // 表头与表格随方法模式变化
+    const head=document.querySelector('#o-tb thead');
+    if(mode==='euler') head.innerHTML='<tr><th>x</th><th>Euler y</th></tr>';
+    else if(mode==='rk4') head.innerHTML='<tr><th>x</th><th>RK4 y</th></tr>';
+    else head.innerHTML='<tr><th>x</th><th>Euler y</th><th>RK4 y</th><th>|差值|</th></tr>';
+    const tb=document.querySelector('#o-tb tbody'); tb.innerHTML='';
+    const stride=Math.max(1,Math.floor(N/60));
+    for(let i=0;i<=N;i+=stride){ const tr=document.createElement('tr');
+      if(mode==='euler') tr.innerHTML=`<td>${fmt(xs[i],8)}</td><td>${fmt(euler[i])}</td>`;
+      else if(mode==='rk4') tr.innerHTML=`<td>${fmt(xs[i],8)}</td><td>${fmt(rk4[i])}</td>`;
+      else tr.innerHTML=`<td>${fmt(xs[i],8)}</td><td>${fmt(euler[i])}</td><td>${fmt(rk4[i])}</td><td>${fmt(Math.abs(euler[i]-rk4[i]))}</td>`;
+      tb.appendChild(tr); }
+    const vals=(mode==='euler'?euler:mode==='rk4'?rk4:euler.concat(rk4));
+    let yMin=Math.min(...vals.filter(isFinite),y0), yMax=Math.max(...vals.filter(isFinite),y0);
+    const L=Math.min(x0,x1), R=Math.max(x0,x1);
+    if(fex){ // 精确解纳入纵轴范围
+      for(let i=0;i<=200;i++){ let y; try{y=fex(L+(R-L)*i/200);}catch(e){y=NaN;}
+        if(isFinite(y)){ yMin=Math.min(yMin,y); yMax=Math.max(yMax,y); } } }
+    const yp=(yMax-yMin)*0.12||1; yMin-=yp; yMax+=yp;
+    const {ctx,w,h:ch}=setupCanvas('o-cv'); ctx.clearRect(0,0,w,ch);
+    const {X,Y}=axes(ctx,w,ch,L,R,yMin,yMax);
+    const draw=(arr,color)=>{ ctx.strokeStyle=color; ctx.lineWidth=2.2; ctx.beginPath();
+      for(let i=0;i<=N;i++){ if(!isFinite(arr[i]))continue;
+        i===0||!isFinite(arr[i-1])?ctx.moveTo(X(xs[i]),Y(arr[i])):ctx.lineTo(X(xs[i]),Y(arr[i])); }
+      ctx.stroke(); };
+    if(mode!=='rk4') draw(euler,'#ffb454');
+    if(mode!=='euler') draw(rk4,'#3ddc97');
+    if(fex){ // 精确解：紫色虚线
+      ctx.strokeStyle='#8a5bff'; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.beginPath();
+      let pen=false;
+      for(let i=0;i<=400;i++){ const x=L+(R-L)*i/400; let y; try{y=fex(x);}catch(e){y=NaN;}
+        if(!isFinite(y)){pen=false;continue;}
+        pen?ctx.lineTo(X(x),Y(y)):ctx.moveTo(X(x),Y(y)); pen=true; }
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    if(N<=60){ for(let i=0;i<=N;i++){ if(mode!=='rk4')dot(ctx,X,Y,xs[i],euler[i],'#ffb454');
+      if(mode!=='euler')dot(ctx,X,Y,xs[i],rk4[i],'#3ddc97'); } }
+    dot(ctx,X,Y,x0,y0,'#5b8cff',5);
+  }catch(e){ out.innerHTML=`<span class="bad">错误：${escH(e.message)}</span>`; }
+}
+
+/* ================= 定积分 ================= */
+function integral(f,a,b,n,m){
+  const h=(b-a)/n; let s=0;
+  if(m==='simpson'){ for(let i=0;i<=n;i++){const x=a+i*h,w=i===0||i===n?1:(i%2?4:2);s+=w*f(x);} return s*h/3; }
+  if(m==='trap'){ s=(f(a)+f(b))/2; for(let i=1;i<n;i++)s+=f(a+i*h); return s*h; }
+  for(let i=0;i<n;i++)s+=f(a+(i+0.5)*h); return s*h; // midpoint
+}
+function solveInt(){
+  const out=document.getElementById('i-out');
+  try{
+    const f=parseEq(document.getElementById('i-f').value,['x']);
+    const a=num(document.getElementById('i-a').value), b=num(document.getElementById('i-b').value);
+    let n=parseInt(document.getElementById('i-n').value);
+    const m=document.getElementById('i-m').value;
+    if(!isFinite(a)||!isFinite(b)) throw new Error('积分上下限需为有限数值');
+    if(a===b) throw new Error('积分上下限相同（结果为 0），请检查输入');
+    if(m==='simpson'&&n%2){n++;document.getElementById('i-n').value=n;}
+    if(!(n>0)) throw new Error('n 必须为正整数');
+    if(n>1000000) throw new Error('n 过大（上限 10⁶），请减小分段数');
+    const I1=integral(f,a,b,n,m), I2=integral(f,a,b,n*2,m);
+    if(!isFinite(I1)||!isFinite(I2)) throw new Error('积分结果不收敛（NaN/∞）：函数在区间内可能存在奇点或发散');
+    const p=m==='simpson'?4:2, rich=I2+(I2-I1)/(Math.pow(2,p)-1);
+    const errEst=Math.abs(I2-I1);
+    out.innerHTML=`<span class="k">∫[${fmt(a)}, ${fmt(b)}] f(x)dx ≈ </span><span class="v">${fmt(I2)}</span>\n`+
+      `<span class="k">n=${n} 时 I = ${fmt(I1)} ；n=${2*n} 时 I = ${fmt(I2)}</span>\n`+
+      `<span class="k">误差估计 ≈ ${fmt(errEst)}，Richardson 外推值 ≈ </span><span class="v">${fmt(rich)}</span><span class="badge">完成</span>`;
+    pushHist('int',document.getElementById('i-f').value,'∫['+fmt(a)+','+fmt(b)+'] ≈ '+fmt(I2));
+    const {ctx,w,h}=setupCanvas('i-cv'); ctx.clearRect(0,0,w,h);
+    let yMin=0,yMax=0;
+    for(let i=0;i<=400;i++){const y=f(a+(b-a)*i/400); if(isFinite(y)){yMin=Math.min(yMin,y);yMax=Math.max(yMax,y);}}
+    const yp=(yMax-yMin)*0.12||1; yMin-=yp; yMax+=yp;
+    const {X,Y}=axes(ctx,w,h,a,b,yMin,yMax);
+    // 填充区域
+    ctx.fillStyle='rgba(91,140,255,.28)'; ctx.beginPath(); ctx.moveTo(X(a),Y(0));
+    for(let i=0;i<=400;i++){const x=a+(b-a)*i/400; const y=f(x); if(isFinite(y))ctx.lineTo(X(x),Y(y));}
+    ctx.lineTo(X(b),Y(0)); ctx.closePath(); ctx.fill();
+    plotCurve(ctx,X,Y,f,a,b,w,'#5b8cff',2.4);
+    ctx.strokeStyle=cssVar('--axesc');
+    [a,b].forEach(v=>{ctx.beginPath();ctx.moveTo(X(v),Y(0));ctx.lineTo(X(v),Y(f(v)));ctx.stroke();});
+  }catch(e){ out.innerHTML=`<span class="bad">错误：${escH(e.message)}</span>`; }
+}
+
+/* ================= 解析解 ================= */
+function polyCoeffs(expr){
+  const f=parseEq(expr,['x']);
+  // 估计次数：对多点采样做有限差分
+  const MAXD=8, xs=[], ys=[];
+  for(let i=0;i<=MAXD;i++){xs.push(i); ys.push(f(i));}
+  if(ys.some(v=>!isFinite(v))) throw new Error('函数在采样点处无定义（非多项式或含奇点）');
+  const scale=Math.max(1,...ys.map(v=>Math.abs(v))); // 相对容差，兼容大系数
+  let d=MAXD, cur=ys.slice();
+  for(let k=1;k<=MAXD;k++){ const nx=[]; for(let i=0;i<cur.length-1;i++)nx.push(cur[i+1]-cur[i]);
+    cur=nx; if(cur.every(v=>Math.abs(v)<1e-9*scale)){d=k-1;break;} }
+  if(d>4) throw new Error('检测到次数为 '+d+'（>4），仅支持四次及以内');
+  if(d===0) throw new Error('常数方程，不是有效多项式方程');
+  // 用 d+1 个点牛顿差商求系数（这里直接用范德蒙求解）
+  const n=d+1, A=[], B=[];
+  for(let i=0;i<n;i++){A.push([]); let xp=1; for(let j=0;j<n;j++){A[i][j]=Math.pow(xs[i],j);} B.push(f(xs[i]));}
+  const c=gauss(A,B);
+  const cs=Math.max(1,...c.map(v=>Math.abs(v)));
+  return c.map(v=>Math.abs(v)<1e-9*cs?0:v);
+}
+function gauss(A,b){
+  const n=b.length;
+  for(let i=0;i<n;i++){ let p=i; for(let j=i+1;j<n;j++)if(Math.abs(A[j][i])>Math.abs(A[p][i]))p=j;
+    [A[i],A[p]]=[A[p],A[i]]; [b[i],b[p]]=[b[p],b[i]];
+    for(let j=i+1;j<n;j++){ const f=A[j][i]/A[i][i];
+      for(let k=i;k<n;k++)A[j][k]-=f*A[i][k]; b[j]-=f*b[i]; } }
+  const x=new Array(n);
+  for(let i=n-1;i>=0;i--){ let s=b[i]; for(let j=i+1;j<n;j++)s-=A[i][j]*x[j]; x[i]=s/A[i][i]; }
+  return x;
+}
+const isInt=v=>Math.abs(v-Math.round(v))<1e-9;
+const sgn=(v)=>v<0?`− ${fmtExact(-v)}`:`+ ${fmtExact(v)}`;
+function fmtNum(v){ if(isInt(v))return String(Math.round(v));
+  const r=Math.round(v*1e10)/1e10; return String(r); }
+/* ---- 符号化常数识别：把浮点系数还原为 分数/根号/π 形式 ---- */
+function ratApprox(x, maxQ=200, tol=1e-10){
+  if(!isFinite(x)) return null;
+  let best=null;
+  for(let q=1;q<=maxQ;q++){ const p=Math.round(x*q);
+    if(Math.abs(x*q-p)<tol*Math.max(1,Math.abs(x*q))){ best=[p,q]; break; } }
+  return best;
+}
+function sqFactor(n){ // n = a²·b，返回 [a,b]，b 无平方因子
+  let a=1,b=n;
+  for(let i=2;i*i<=b;i++){ while(b%(i*i)===0){a*=i;b/=(i*i);} }
+  return [a,b];
+}
+function fmtExact(v){
+  if(!isFinite(v)) return String(v);
+  if(isInt(v)) return String(Math.round(v));
+  const neg=v<0, a=Math.abs(v), sign=neg?'−':'';
+  // 1) 分数 p/q
+  const r=ratApprox(a);
+  if(r&&r[1]>1) return sign+r[0]+'/'+r[1];
+  // 2) 根号形式 v² = p/q → v = a√b/q（限制规模，防止 sqFactor 分解耗时过长）
+  const r2=ratApprox(a*a);
+  if(r2&&r2[0]*r2[1]<=1e12){
+    let [p,q]=r2; const [f,b]=sqFactor(p*q);
+    if(b===1){ // 完全平方 → 分数
+      const val=f/q; return sign+(isInt(val)?String(Math.round(val)):f+'/'+q);
+    }
+    const rad=b===1?'':`√${b}`;
+    const coef=f===1?'':String(f);
+    if(q===1) return sign+coef+rad;
+    return sign+(coef?coef:'')+rad+'/'+q;
+  }
+  // 3) π 的有理倍数
+  const rp=ratApprox(a/Math.PI);
+  if(rp){ const [p,q]=rp;
+    const numS=p===1?'':String(p);
+    return sign+(q===1?numS+'π':(p===1?'π':p+'π')+'/'+q); }
+  // 4) e 的有理倍数
+  const re=ratApprox(a/Math.E);
+  if(re){ const [p,q]=re; return sign+(q===1?(p===1?'':p)+'e':(p===1?'e':p+'e')+'/'+q); }
+  return fmtNum(v);
+}
+function solveQuadraticExact(a,b,c){
+  const D=b*b-4*a*c, s=[];
+  const sD=Math.sqrt(Math.abs(D));
+  const sq=isInt(D)&&isInt(sD);
+  if(D>=0){
+    const mk=(sign)=>{ const nume=-b+sign*sD;
+      if(sq&&isInt(nume)&&isInt(2*a)&&isInt(nume/(2*a))) return fmtNum(nume/(2*a));
+      if(sq) return `(${fmtExact(-b)} ${sign>0?'+':'−'} ${fmtExact(sD)}) / ${fmtExact(2*a)}`;
+      return `(${fmtExact(-b)} ${sign>0?'+':'−'} √(${fmtExact(D)})) / ${fmtExact(2*a)}`; };
+    s.push({ex:mk(1), va:(-b+sD)/(2*a)}, {ex:mk(-1), va:(-b-sD)/(2*a)});
+  } else {
+    s.push({ex:`(${fmtExact(-b)} + i√(${fmtExact(-D)})) / ${fmtExact(2*a)}`, va:null, re:-b/(2*a), im:sD/(2*a)},
+           {ex:`(${fmtExact(-b)} − i√(${fmtExact(-D)})) / ${fmtExact(2*a)}`, va:null, re:-b/(2*a), im:-sD/(2*a)});
+  }
+  return {D, roots:s};
+}
+function solveAna(){
+  const out=document.getElementById('a-out'), steps=document.getElementById('a-steps'), forms=document.getElementById('a-forms');
+  try{
+    const expr=document.getElementById('a-f').value;
+    const c=polyCoeffs(expr); // c[0]+c[1]x+...
+    const d=c.length-1;
+    const names=['a₀(常数)','a₁','a₂','a₃','a₄'];
+    out.innerHTML=`<span class="k">检测到 ${d} 次方程，系数：</span>\n`+
+      c.map((v,i)=>`<span class="k">${names[i]} = </span><span class="v">${fmtExact(v)}</span>`).join('   ');
+    pushHist('ana',expr,d+' 次方程');
+    let html='', fhtml='';
+    const A=c[d], B=c[d-1]||0, C=c[d-2]||0, D3=c[d-3]||0, E=c[d-4]||0;
+    if(d===1){
+      fhtml+=`<div class="formula">x = ${fmtExact(-c[0]/c[1])}</div>`;
+      html+=`<b>一次方程</b> ax+b=0 → x = −b/a`;
+      drawPoly(c,[ -c[0]/c[1] ]);
+    }
+    else if(d===2){
+      const r=solveQuadraticExact(A,B,c[0]);
+      html+=`<b>求根公式</b>：判别式 Δ = b²−4ac = <b>${fmtExact(r.D)}</b> ${r.D>0?'&gt;0，两个不等实根':r.D===0?'=0，重根':'&lt;0，一对共轭复根'}`;
+      fhtml+=`<div class="formula">x = (−b ± √Δ) / 2a</div>`;
+      r.roots.forEach((t,i)=>{ fhtml+=`<div class="formula">x${i+1} = ${t.ex}${t.va!==null?`  ≈ ${fmt(t.va)}`:''}</div>`; });
+      drawPoly(c, r.roots.filter(t=>t.va!==null).map(t=>t.va));
+    }
+    else if(d===3){
+      // 化为缺项三次 t³+pt+q=0, x=t−B/(3A)
+      const p=(3*A*C-B*B)/(3*A*A), q=(2*B**3-9*A*B*C+27*A*A*D3)/(27*A**3), sh=B/(3*A);
+      const dis=(q/2)**2+(p/3)**3;
+      const dTol=1e-12*Math.max(1,(q/2)**2,Math.abs((p/3)**3)); // 相对容差，避免浮点误判
+      html+=`<b>卡尔达诺法</b>：令 x = t − a₂/(3a₃)（平移量 ${fmtExact(sh)}）化为 t³ + pt + q = 0<br>`+
+            `p = ${fmtExact(p)}，q = ${fmtExact(q)}，判别量 Δ = (q/2)² + (p/3)³ = <b>${fmtExact(dis)}</b>`+
+            (dis>dTol?'  &gt;0：一实根两复根':dis<-dTol?'  &lt;0：三个不等实根（三角法）':'  =0：三个实根且有重根');
+      let roots=[];
+      if(dis>dTol){
+        const u=Math.cbrt(-q/2+Math.sqrt(dis)), v=Math.cbrt(-q/2-Math.sqrt(dis));
+        const t1=u+v, omI=Math.sqrt(3)/2;
+        roots=[{ex:`∛(${fmtExact(-q/2)} + √(${fmtExact(dis)})) + ∛(${fmtExact(-q/2)} − √(${fmtExact(dis)})) ${sgn(-sh)}`, va:t1-sh},
+               {ex:`复根 (实部 ${fmtExact((-t1/2)-sh)}, 虚部 ±${fmtExact(Math.abs(t1)*omI)})`, va:null}];
+        fhtml+=`<div class="formula">Δ &gt; 0：x₁ = ∛(−q/2+√Δ) + ∛(−q/2−√Δ) − a₂/3a₃</div>`;
+      } else if(dis>=-dTol){ // Δ=0：三个实根，其中两个相等
+        const u=Math.cbrt(-q/2), t1=2*u;
+        roots=[{ex:`2·∛(${fmtExact(-q/2)}) ${sgn(-sh)}`, va:t1-sh},
+               {ex:`−∛(${fmtExact(-q/2)}) ${sgn(-sh)}（二重根）`, va:-u-sh}];
+        fhtml+=`<div class="formula">Δ = 0：x₁ = 2∛(−q/2) − a₂/3a₃；x₂ = x₃ = −∛(−q/2) − a₂/3a₃（二重根）</div>`;
+      } else {
+        const r=2*Math.sqrt(-p/3), th=Math.acos(Math.max(-1,Math.min(1,-q/(2*Math.sqrt(-((p/3)**3))))));
+        html+=`<br>三角形式：t = 2√(−p/3)·cos(θ/3 − 2kπ/3)，θ = arccos(−q/(2√(−(p/3)³))) = ${fmtNum(th)}`;
+        for(let k=0;k<3;k++) roots.push({ex:`2√(${fmtExact(-p/3)})·cos((${fmt(th,10)} − ${2*k}π)/3) ${sgn(-sh)}`, va:r*Math.cos((th-2*k*Math.PI)/3)-sh});
+      }
+      roots.forEach((t,i)=>{ fhtml+=`<div class="formula">x${i+1} = ${t.ex}${t.va!==null&&t.va!==undefined?`  ≈ ${fmt(t.va)}`:''}</div>`; });
+      drawPoly(c, roots.filter(t=>t.va!==null&&t.va!==undefined).map(t=>t.va));
+    }
+    else { // 四次 Ferrari
+      const res=ferrari(A,B,C,D3,E);
+      html=res.steps;
+      fhtml=res.formulas;
+      drawPoly(c, res.realRoots);
+    }
+    steps.innerHTML=html;
+    forms.innerHTML=fhtml;
+  }catch(e){ out.innerHTML=`<span class="bad">错误：${escH(e.message)}</span>`; steps.innerHTML=''; forms.innerHTML=''; }
+}
+function ferrari(a,b,c,d,e){
+  // 标准费拉里法：缺项化 t⁴+pt²+qt+r=0，预解三次 8u³+8pu²+(2p²−8r)u−q²=0
+  const Bb=b/a, Cc=c/a, Dd=d/a, Ee=e/a;
+  const sh=Bb/4; // x = t − B/4
+  const p=Cc-3*Bb*Bb/8, q=Bb**3/8-Bb*Cc/2+Dd, r=-3*Bb**4/256+Bb*Bb*Cc/16-Bb*Dd/4+Ee;
+  let steps=`<b>费拉里法</b>：首一化 x⁴ + Bx³ + Cx² + Dx + E = 0（B=${fmtExact(Bb)} C=${fmtExact(Cc)} D=${fmtExact(Dd)} E=${fmtExact(Ee)}）<br>`+
+    `代换 x = t − B/4（平移 ${fmtExact(sh)}）化为缺项四次 t⁴ + pt² + qt + r = 0<br>`+
+    `p = ${fmtExact(p)}，q = ${fmtExact(q)}，r = ${fmtExact(r)}`;
+  const eps=1e-10, roots=[], forms=[];
+  const solve2=(A2,B2,C2,tag,shift)=>{
+    const disc=B2*B2-4*A2*C2;
+    if(disc>=-eps){ const s=Math.sqrt(Math.max(0,disc));
+      const t1=(-B2+s)/(2*A2), t2=(-B2-s)/(2*A2);
+      roots.push(t1-shift,t2-shift);
+      forms.push(`<div class="formula">${tag}：t = (${fmtExact(-B2)} ± √(${fmtExact(Math.max(0,disc))}))/${fmtExact(2*A2)} → t ≈ ${fmt(t1)}, ${fmt(t2)}</div>`);
+    } else forms.push(`<div class="formula">${tag}：Δ=${fmtExact(disc)} &lt; 0 → 复根 t ≈ ${fmtExact(-B2/(2*A2)-shift)} ± ${fmtExact(Math.sqrt(-disc)/(2*A2))}i</div>`);
+  };
+  if(Math.abs(q)<eps){ // 双二次 t⁴+pt²+r=0
+    steps+=`<br>q = 0，退化为双二次方程：令 z = t²，z² + pz + r = 0`;
+    const disc=p*p-4*r;
+    if(disc>=0){ const s=Math.sqrt(disc);
+      [(-p+s)/2,(-p-s)/2].forEach(z=>{
+        if(z>=0){ roots.push(Math.sqrt(z)-sh, -Math.sqrt(z)-sh);
+          forms.push(`<div class="formula">z = ${fmtExact(z)} ≥ 0 → t = ±√(${fmtExact(z)}) → x ≈ ${fmt(Math.sqrt(z)-sh)}, ${fmt(-Math.sqrt(z)-sh)}</div>`); }
+        else forms.push(`<div class="formula">z = ${fmtNum(z)} &lt; 0 → 复根 t = ±${fmtExact(Math.sqrt(-z))}i</div>`);
+      });
+    } else forms.push(`<div class="formula">z 的判别式 ${fmtExact(disc)} &lt; 0 → 四个复根</div>`);
+  } else {
+    // 预解三次: u³ + p·u² + (p²−4r)/4·u − q²/8 = 0
+    const u=cubicReal(p,(p*p-4*r)/4,-q*q/8);
+    const uu=Math.abs(u)<eps?eps*Math.sign(q||1):u; // 防退化
+    const R=Math.sqrt(2*Math.abs(uu));
+    steps+=`<br>预解三次方程 8u³ + 8pu² + (2p²−8r)u − q² = 0，取正实根 u = <b>${fmtExact(u)}</b><br>`+
+      `配方 (t² + p/2 + u)² = 2u·(t − q/4u)²，拆为两个二次方程（√(2u) = ${fmtExact(R)}）`;
+    solve2(1,-R, p/2+uu+q/(2*R), '因子 1', sh);
+    solve2(1, R, p/2+uu-q/(2*R), '因子 2', sh);
+  }
+  // 牛顿抛光（对原首一四次）
+  const f=x=>(((x+Bb)*x+Cc)*x+Dd)*x+Ee;
+  const df=x=>((4*x+3*Bb)*x+2*Cc)*x+Dd;
+  const polished=roots.map(r0=>{let x=r0;for(let i=0;i<10;i++){const d=df(x);if(Math.abs(d)<1e-14)break;x-=f(x)/d;}return x;});
+  polished.forEach((r0,i)=>forms.push(`<div class="formula">x${i+1} ≈ ${fmt(r0)}  （残差 ${fmt(Math.abs(f(r0)))}）</div>`));
+  return {steps, formulas:forms.join(''), realRoots:polished};
+}
+function cubicReal(p,q,r){ // 8 已除: y³+py²+qy+r
+  const a=p, b=q, c=r;
+  const P=b-a*a/3, Q=2*a**3/27-a*b/3+c;
+  const dis=(Q/2)**2+(P/3)**3;
+  if(dis>=0) return Math.cbrt(-Q/2+Math.sqrt(dis))+Math.cbrt(-Q/2-Math.sqrt(dis))-a/3;
+  const rr=2*Math.sqrt(-P/3), th=Math.acos(Math.max(-1,Math.min(1,-Q/(2*Math.sqrt(-((P/3)**3))))));
+  return rr*Math.cos(th/3)-a/3;
+}
+/* ---- 解析解结果 → LaTeX 源码（供“复制 LaTeX”） ---- */
+function toLatex(t){
+  let s=t;
+  const sup={'⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9'};
+  s=s.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g,m=>'^{'+[...m].map(c=>sup[c]).join('')+'}');
+  let prev;
+  do{ prev=s; s=s.replace(/√\(([^()]*)\)/g,'\\sqrt{$1}'); }while(s!==prev); // 反复替换以处理嵌套
+  do{ prev=s; s=s.replace(/∛\(([^()]*)\)/g,'\\sqrt[3]{$1}'); }while(s!==prev);
+  s=s.replace(/√(\d+(?:\.\d+)?)/g,'\\sqrt{$1}')
+     .replace(/π/g,'\\pi ').replace(/−/g,'-').replace(/≈/g,'\\approx ')
+     .replace(/Δ/g,'\\Delta ').replace(/θ/g,'\\theta ');
+  return s;
+}
+function copyAnaLatex(btn){
+  const el=document.getElementById('a-forms');
+  const t=(el.innerText||el.textContent||'').trim();
+  if(!t){ if(btn){const o=btn.textContent;btn.textContent='暂无结果';setTimeout(()=>btn.textContent=o,1200);} return; }
+  copyText(toLatex(t),btn);
+}
+function drawPoly(c, roots){
+  const f=x=>c.reduce((s,v,i)=>s+v*Math.pow(x,i),0);
+  let L,R;
+  if(roots.length){L=Math.min(...roots)-1.5; R=Math.max(...roots)+1.5;}
+  else {L=-5;R=5;}
+  if(R-L<2){const m=(L+R)/2;L=m-1.5;R=m+1.5;}
+  let yMin=Infinity,yMax=-Infinity;
+  for(let i=0;i<=300;i++){const y=f(L+(R-L)*i/300);if(isFinite(y)){yMin=Math.min(yMin,y);yMax=Math.max(yMax,y);}}
+  const yp=(yMax-yMin)*0.15||1;
+  const {ctx,w,h}=setupCanvas('a-cv'); ctx.clearRect(0,0,w,h);
+  const {X,Y}=axes(ctx,w,h,L,R,yMin-yp,yMax+yp);
+  plotCurve(ctx,X,Y,f,L,R,w,'#5b8cff',2.2);
+  roots.forEach(r=>{dot(ctx,X,Y,r,0,'#3ddc97',5);
+    ctx.fillStyle='#3ddc97';ctx.font='bold 11px sans-serif';ctx.fillText('('+fmt(r,6)+', 0)',X(r)+7,Y(0)-8);});
+}
+
+/* ================= 多函数绘图（含悬停读数 / 滚轮缩放 / 拖动平移） ================= */
+let gRange=null; // 最近一次绘制的坐标范围
+function drawPlot(cross,quiet){
+  const lines=document.getElementById('g-f').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  try{
+    const fs=lines.map(l=>compile(l.replace(/^y\s*=/,''),['x']));
+    const x0=num(document.getElementById('g-x0').value), x1=num(document.getElementById('g-x1').value);
+    const y0=num(document.getElementById('g-y0').value), y1=num(document.getElementById('g-y1').value);
+    if(!(x1>x0)||!(y1>y0)) throw new Error('请保证 x_min<x_max 且 y_min<y_max');
+    gRange={x0,x1,y0,y1};
+    const {ctx,w,h}=setupCanvas('g-cv'); if(!w) return; // 面板隐藏时跳过绘制
+    ctx.clearRect(0,0,w,h);
+    const {X,Y}=axes(ctx,w,h,x0,x1,y0,y1);
+    fs.forEach((f,i)=>plotCurve(ctx,X,Y,f,x0,x1,w,COLORS[i%COLORS.length],2.2));
+    document.getElementById('g-lg').innerHTML=lines.map((l,i)=>
+      `<span><i style="background:${COLORS[i%COLORS.length]}"></i>${escH(l)}</span>`).join('');
+    if(cross){ // 十字线 + 坐标读数 + 曲线取值点
+      const cx=cross.x, cy=cross.y;
+      if(cx>=0&&cx<=w&&cy>=0&&cy<=h){
+        const xv=x0+(x1-x0)*cx/w, yv=y0+(y1-y0)*(h-cy)/h;
+        ctx.strokeStyle='rgba(150,160,200,.55)'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+        ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx,h); ctx.moveTo(0,cy); ctx.lineTo(w,cy); ctx.stroke();
+        ctx.setLineDash([]);
+        fs.forEach((f,i)=>{ let y; try{y=f(xv);}catch(e){y=NaN;}
+          if(isFinite(y)&&y>=y0&&y<=y1) dot(ctx,X,Y,xv,y,COLORS[i%COLORS.length],3.2); });
+        const label='('+fmt(xv,6)+', '+fmt(yv,6)+')';
+        ctx.font='11px sans-serif'; const tw=ctx.measureText(label).width;
+        let lx=cx+8; if(lx+tw>w) lx=cx-tw-8;
+        let ly=cy-8; if(ly<12) ly=cy+16;
+        ctx.fillStyle=cssVar('--axestxt'); ctx.fillText(label,lx,ly);
+      }
+    }
+  }catch(e){ if(!quiet) alert('绘图错误：'+e.message); }
+}
+(function(){ // 绘图页交互：悬停十字线、滚轮缩放、拖动平移
+  const cv=document.getElementById('g-cv');
+  const pos=e=>{ const r=cv.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; };
+  let gDrag=null;
+  cv.addEventListener('mousemove',e=>{ if(gDrag) return; drawPlot(pos(e),true); });
+  cv.addEventListener('mouseleave',()=>{ if(!gDrag) drawPlot(null,true); });
+  cv.addEventListener('wheel',e=>{
+    e.preventDefault();
+    if(!gRange) return;
+    const p=pos(e), w=cv.clientWidth, h=cv.clientHeight;
+    const {x0,x1,y0,y1}=gRange;
+    const xv=x0+(x1-x0)*p.x/w, yv=y0+(y1-y0)*(h-p.y)/h;
+    const k=e.deltaY>0?1.15:1/1.15; // 以光标为中心缩放
+    setv('g-x0',fmt(xv-(xv-x0)*k,10)); setv('g-x1',fmt(xv+(x1-xv)*k,10));
+    setv('g-y0',fmt(yv-(yv-y0)*k,10)); setv('g-y1',fmt(yv+(y1-yv)*k,10));
+    drawPlot(pos(e),true);
+  },{passive:false});
+  cv.addEventListener('mousedown',e=>{ if(gRange) gDrag={start:pos(e),r:{...gRange}}; });
+  window.addEventListener('mousemove',e=>{
+    if(!gDrag) return;
+    const p=pos(e), w=cv.clientWidth, h=cv.clientHeight, r=gDrag.r;
+    const dx=(p.x-gDrag.start.x)/w*(r.x1-r.x0), dy=(p.y-gDrag.start.y)/h*(r.y1-r.y0);
+    setv('g-x0',fmt(r.x0-dx,10)); setv('g-x1',fmt(r.x1-dx,10));
+    setv('g-y0',fmt(r.y0+dy,10)); setv('g-y1',fmt(r.y1+dy,10));
+    drawPlot(null,true);
+  });
+  window.addEventListener('mouseup',()=>{ gDrag=null; });
+})();
+function plotFromRoot(){
+  const raw=document.getElementById('r-f').value;
+  const m=raw.match(/^\s*d\s*\((.*)\)\s*\/\s*d\s*x\s*$/i)
+       || raw.match(/^\s*d\s*\/\s*d\s*x\s*\((.*)\)\s*$/i)
+       || raw.match(/^\s*d\s*\/\s*d\s*x\s*(.+)$/i);
+  let expr=m?m[1]:raw; // 导数形式则绘制被导函数
+  const s=latexFix(expr);
+  const [cnt,idx]=topLevelEq(s);
+  document.getElementById('g-f').value = cnt===1 ? s.slice(0,idx) : expr; // 等式取左端
+  document.querySelector('nav button[data-p="plot"]').click();
+  drawPlot();
+}
+
+/* ================= 导航 ================= */
+document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('p-'+b.dataset.p).classList.add('active');
+  redrawActive();
+}));
+function setv(id,v){document.getElementById(id).value=v;}
+// 面板切换/主题切换/旋转屏幕时，若已有结果则重算重绘（纯前端计算，幂等安全）
+function redrawActive(){
+  if(skipRedraw) return;
+  const a=document.querySelector('.panel.active'); if(!a)return;
+  const done=(id)=>!document.getElementById(id).textContent.includes('等待');
+  if(a.id==='p-root'&&done('r-out')) solveRoot();
+  if(a.id==='p-ode'&&done('o-out')) solveODE();
+  if(a.id==='p-int'&&done('i-out')) solveInt();
+  if(a.id==='p-ana'&&done('a-out')) solveAna();
+  if(a.id==='p-plot') drawPlot();
+}
+let rszT=null;
+window.addEventListener('resize',()=>{ clearTimeout(rszT); rszT=setTimeout(redrawActive,150); });
+window.addEventListener('orientationchange',()=>setTimeout(redrawActive,250));
+
+/* ================= Enter 快捷求解（绘图页文本框用 Ctrl+Enter） ================= */
+document.querySelectorAll('main input, main select').forEach(el=>{
+  el.addEventListener('keydown',e=>{
+    if(e.key!=='Enter') return;
+    const sec=el.closest('section'); if(!sec) return;
+    const btn=sec.querySelector('.btn:not(.ghost)'); if(btn){ e.preventDefault(); btn.click(); }
+  });
+});
+document.getElementById('g-f').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); drawPlot(); }
+});
+
+/* ================= 主题切换（默认暗色） ================= */
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  document.getElementById('btn-theme').textContent = t==='light'?'🌙':'☀';
+  try{localStorage.setItem('es-theme',t);}catch(e){}
+}
+document.getElementById('btn-theme').addEventListener('click',()=>{
+  const cur=document.documentElement.getAttribute('data-theme')==='light'?'light':'dark';
+  applyTheme(cur==='light'?'dark':'light');
+  redrawActive();
+});
+applyTheme((()=>{try{return localStorage.getItem('es-theme')||'dark';}catch(e){return 'dark';}})());
+
+/* ================= 角度/弧度切换（默认弧度，影响三角函数） ================= */
+function applyAngle(m){
+  ANG = m==='deg' ? Math.PI/180 : 1;
+  document.getElementById('btn-ang').textContent = m==='deg' ? 'DEG' : 'RAD';
+  try{ localStorage.setItem('es-angle',m); }catch(e){}
+}
+document.getElementById('btn-ang').addEventListener('click',()=>{ applyAngle(ANG===1?'deg':'rad'); redrawActive(); });
+applyAngle((()=>{try{return localStorage.getItem('es-angle')||'rad';}catch(e){return 'rad';}})());
+
+/* ================= 分享链接（状态编码进 #s=，打开链接即还原） ================= */
+const SHARE_STR_MAX=4000; // 单字段长度上限，防异常 hash 撑爆输入框
+function buildShareURL(){
+  const g=id=>document.getElementById(id).value;
+  const cur=document.querySelector('nav button.active');
+  const st={
+    p:cur?cur.dataset.p:'root',
+    ang:ANG===1?'rad':'deg',
+    th:document.documentElement.getAttribute('data-theme')==='light'?'light':'dark',
+    'r-f':g('r-f'),'r-m':g('r-m'),'r-a':g('r-a'),'r-b':g('r-b'),'r-eps':g('r-eps'),'r-max':g('r-max'),
+    'o-f':g('o-f'),'o-x0':g('o-x0'),'o-y0':g('o-y0'),'o-x1':g('o-x1'),'o-h':g('o-h'),'o-m':g('o-m'),'o-ex':g('o-ex'),
+    'i-f':g('i-f'),'i-a':g('i-a'),'i-b':g('i-b'),'i-n':g('i-n'),'i-m':g('i-m'),
+    'a-f':g('a-f'),
+    'g-f':g('g-f'),'g-x0':g('g-x0'),'g-y0':g('g-y0'),'g-x1':g('g-x1'),'g-y1':g('g-y1'),
+  };
+  return location.href.split('#')[0]+'#s='+encodeURIComponent(JSON.stringify(st));
+}
+document.getElementById('btn-share').addEventListener('click',function(){ copyText(buildShareURL(),this); });
+// 打开带 #s= 的链接：严格 try/catch + 白名单校验后还原页签/输入/角度制/主题；损坏的 hash 静默忽略
+function restoreShare(){
+  if(!location.hash.startsWith('#s=')) return;
+  let st;
+  try{ st=JSON.parse(decodeURIComponent(location.hash.slice(3))); }catch(e){ return; }
+  if(!st||typeof st!=='object') return;
+  const SEL={'r-m':['bisect','newton','secant'],'o-m':['both','euler','rk4'],'i-m':['simpson','trap','mid']};
+  const STR=['r-f','r-a','r-b','r-eps','r-max','o-f','o-x0','o-y0','o-x1','o-h','o-ex','i-f','i-a','i-b','i-n','a-f','g-f','g-x0','g-y0','g-x1','g-y1'];
+  try{
+    STR.forEach(id=>{ const v=st[id]; if(typeof v==='string'&&v.length<=SHARE_STR_MAX) setv(id,v); });
+    for(const id in SEL){ if(SEL[id].indexOf(st[id])>=0) setv(id,st[id]); }
+    if(st.ang==='deg'||st.ang==='rad') applyAngle(st.ang);
+    if(st.th==='light'||st.th==='dark') applyTheme(st.th);
+    if(['root','ode','int','ana','plot','hist'].indexOf(st.p)>=0){
+      const nb=document.querySelector('nav button[data-p="'+st.p+'"]');
+      skipRedraw=true; if(nb) nb.click(); skipRedraw=false; // 只切换页签，不触发重算
+    }
+  }catch(e){}
+}
+
+/* ================= 帮助弹窗（打开网站先弹出） ================= */
+function setNoHelp(v){ try{ v?localStorage.setItem('es-nohelp','1'):localStorage.removeItem('es-nohelp'); }catch(e){} }
+function closeHelp(){
+  setNoHelp(document.getElementById('help-nomore').checked);
+  document.getElementById('help-mask').classList.remove('show');
+}
+document.getElementById('help-nomore').addEventListener('change',e=>setNoHelp(e.target.checked)); // 勾选/取消勾选都立即持久化
+document.getElementById('btn-help').addEventListener('click',()=>{
+  document.getElementById('help-mask').classList.add('show');
+});
+document.getElementById('help-mask').addEventListener('click',e=>{
+  if(e.target.id==='help-mask') closeHelp();
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeHelp(); });
+let nohelp=false; try{nohelp=localStorage.getItem('es-nohelp')==='1';}catch(e){}
+document.getElementById('help-nomore').checked=nohelp; // 启动时回读勾选状态，避免手动打开帮助时误显示为未勾选
+if(!nohelp) document.getElementById('help-mask').classList.add('show');
+
+// 分享链接还原须早于初始渲染，使首屏计算/绘图直接针对还原后的输入（与首次打开自动求解的惯例一致）
+restoreShare();
+
+// 初始渲染
+solveRoot(); drawPlot(); renderHist();
+</script>
+</body>
+</html>

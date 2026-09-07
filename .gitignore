@@ -1,0 +1,9 @@
+.DS_Store
+Thumbs.db
+desktop.ini
+node_modules/
+.test-tmp/
+.edge-qa*/
+.wrangler/
+.npm-cache/
+

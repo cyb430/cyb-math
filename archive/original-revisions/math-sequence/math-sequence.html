@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数列工具 — Sequence Tools</title>
+<style>
+:root{
+  --bg:#f2f4f9; --card:#ffffff; --border:#e2e6ef; --text:#1c2333; --muted:#6b7280;
+  --accent:#4a5cf0; --accent-hover:#3b4bd8; --accent-soft:#eef0fe; --accent-text:#3f51e0;
+  --err:#e5484d; --err-bg:#fdecec; --err-border:#f5b5b8; --ok:#2f9e6e;
+  --input-bg:#f7f8fc; --shadow:0 1px 3px rgba(20,30,60,.07);
+  --mono:'JetBrains Mono','Cascadia Code',Consolas,Menlo,'Courier New',monospace;
+  --radius:10px;
+}
+[data-theme="dark"]{
+  --bg:#0f1218; --card:#171b24; --border:#282e3b; --text:#e5e8f0; --muted:#8b93a7;
+  --accent:#5b6cff; --accent-hover:#7682ff; --accent-soft:#1f2547; --accent-text:#8f9aff;
+  --err:#ff6b70; --err-bg:#3a1d20; --err-border:#6b2d31; --ok:#3ecf8e;
+  --input-bg:#12151d; --shadow:0 1px 3px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  background:var(--bg); color:var(--text); font-size:14px; display:flex; flex-direction:column; min-height:100vh;
+}
+code{font-family:var(--mono); background:var(--accent-soft); color:var(--accent-text); padding:1px 5px; border-radius:4px; font-size:12.5px}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:6px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ===== 顶栏 ===== */
+.topbar{
+  height:50px; display:flex; align-items:center; justify-content:space-between;
+  padding:0 14px; background:var(--card); border-bottom:1px solid var(--border);
+  position:sticky; top:0; z-index:50; flex-shrink:0;
+}
+.brand{display:flex; align-items:center; gap:9px; min-width:0}
+.logo{
+  width:28px;height:28px;border-radius:8px;background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;flex-shrink:0;
+}
+.brand .title{font-weight:700;font-size:15.5px;white-space:nowrap}
+.brand .subtitle{color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-actions{display:flex;align-items:center;gap:8px}
+.page-name{color:var(--muted);font-size:12px}
+.icon-btn{
+  width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--card);
+  color:var(--text);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;
+  transition:background .15s,border-color .15s;
+}
+.icon-btn:hover{background:var(--accent-soft);border-color:var(--accent)}
+
+/* ===== 布局 ===== */
+.layout{flex:1;display:flex;gap:12px;padding:12px;align-items:flex-start;min-height:0}
+.sidebar{width:352px;flex-shrink:0;display:flex;flex-direction:column;gap:12px}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 14px}
+.card h2{
+  font-size:13.5px;font-weight:700;margin-bottom:9px;display:flex;align-items:center;gap:6px;
+}
+.card h2::before{content:'';width:4px;height:14px;border-radius:2px;background:var(--accent);display:inline-block}
+.hint{color:var(--muted);font-size:12px;line-height:1.65;margin-bottom:8px}
+.hint:last-child{margin-bottom:0;margin-top:8px}
+
+/* ===== 表单控件 ===== */
+input[type=text],input[type=number],input:not([type]),select{
+  width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:7px;
+  background:var(--input-bg);color:var(--text);font-size:13px;outline:none;
+  transition:border-color .15s, box-shadow .15s;
+}
+input.mono,select.mono{font-family:var(--mono)}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+input.invalid{border-color:var(--err)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--err) 16%,transparent)!important;background:var(--err-bg)}
+.row{display:flex;align-items:center;gap:8px;margin-bottom:9px;flex-wrap:wrap}
+.row label{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.row input[type=number]{width:76px}
+.row.btns{margin-bottom:0}
+.check{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);margin:4px 0 10px;cursor:pointer;user-select:none}
+.check input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
+.btn{
+  padding:7px 14px;border-radius:7px;border:1px solid var(--border);background:var(--card);
+  color:var(--text);font-size:13px;cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.btn:hover{border-color:var(--accent);color:var(--accent-text);background:var(--accent-soft)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn.primary:hover{background:var(--accent-hover);border-color:var(--accent-hover);color:#fff}
+.btn.danger-ghost{color:var(--err);border-color:var(--err-border);background:transparent}
+.btn.danger-ghost:hover{background:var(--err-bg);border-color:var(--err);color:var(--err)}
+.btn.block{width:100%;margin-top:4px}
+.btn:active{transform:translateY(1px)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{
+  padding:3px 10px;font-size:12px;border-radius:999px;border:1px solid var(--border);
+  background:var(--accent-soft);color:var(--accent-text);cursor:pointer;transition:all .15s;font-family:var(--mono);
+}
+.chip:hover{border-color:var(--accent);background:var(--accent);color:#fff}
+
+/* ===== 数列条目 ===== */
+.seq-item{border:1px solid var(--border);border-radius:8px;padding:9px 10px;margin-bottom:9px;background:var(--input-bg)}
+.seq-head{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.seq-badge{
+  width:24px;height:24px;border-radius:7px;background:var(--accent);color:#fff;font-weight:700;
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-family:var(--mono);flex-shrink:0;
+}
+.seq-kind{font-size:11.5px;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:1px 8px;white-space:nowrap}
+.seq-kind.ok{color:var(--ok);border-color:var(--ok)}
+.seq-kind.bad{color:var(--err);border-color:var(--err)}
+.seq-del{
+  margin-left:auto;width:22px;height:22px;border:none;background:transparent;color:var(--muted);
+  cursor:pointer;border-radius:6px;font-size:15px;line-height:1;
+}
+.seq-del:hover{background:var(--err-bg);color:var(--err)}
+.seq-item input{margin-bottom:6px;font-family:var(--mono);font-size:12.5px}
+.seq-item input:last-of-type{margin-bottom:0}
+.init-label{font-size:11.5px;color:var(--muted);margin:2px 0 3px}
+.err-msg{
+  display:none;margin-top:6px;font-size:12px;color:var(--err);background:var(--err-bg);
+  border:1px solid var(--err-border);border-radius:6px;padding:6px 9px;line-height:1.55;word-break:break-all;
+}
+.err-msg.show{display:block;animation:shake .25s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+@media (prefers-reduced-motion:reduce){ .err-msg.show{animation:none} .modal{animation:none} #toast{transition:none} }
+
+/* ===== 输出区 ===== */
+.output-card{flex:1;display:flex;flex-direction:column;min-height:420px}
+.output-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:4px;flex-wrap:wrap}
+.output-head h2{margin-bottom:0}
+.global-msg{
+  display:none;margin:8px 0;font-size:12.5px;border-radius:7px;padding:8px 11px;line-height:1.6;
+  border:1px solid var(--err-border);background:var(--err-bg);color:var(--err);word-break:break-all;
+}
+.global-msg.show{display:block}
+.global-msg.warn{border-color:#e8c06a;background:color-mix(in srgb,#e8c06a 14%,var(--card));color:#a8760a}
+[data-theme="dark"] .global-msg.warn{color:#e8c06a}
+.table-wrap{flex:1;overflow:auto;border:1px solid var(--border);border-radius:8px;min-height:200px;background:var(--input-bg)}
+.empty-state{
+  height:100%;min-height:200px;display:flex;align-items:center;justify-content:center;text-align:center;
+  color:var(--muted);font-size:13px;line-height:2;padding:20px;
+}
+table.result{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:13px}
+table.result th{
+  position:sticky;top:0;background:var(--accent-soft);color:var(--accent-text);font-weight:700;
+  padding:8px 14px;text-align:right;border-bottom:2px solid var(--accent);white-space:nowrap;z-index:2;
+}
+table.result th:first-child{text-align:left}
+table.result td{padding:6px 14px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap;color:var(--text)}
+table.result td:first-child{text-align:left;color:var(--muted)}
+table.result tr:nth-child(even) td{background:color-mix(in srgb,var(--accent-soft) 40%,transparent)}
+table.result tr:hover td{background:var(--accent-soft)}
+td.cell-err{color:var(--err);background:var(--err-bg)!important;font-weight:700;cursor:help}
+.sum-result{
+  display:none;margin-top:9px;padding:9px 11px;border-radius:7px;background:var(--accent-soft);
+  border:1px solid var(--accent);font-family:var(--mono);font-size:13px;word-break:break-all;line-height:1.6;
+}
+.sum-result.show{display:block}
+.sum-result .sum-label{color:var(--accent-text);font-weight:700;margin-right:6px}
+
+/* ===== 状态栏 ===== */
+.statusbar{
+  padding:6px 14px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--border);
+  background:var(--card);flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* ===== 帮助弹窗 ===== */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(15,18,26,.55);z-index:100;display:none;
+  align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(3px);
+}
+.modal-overlay.show{display:flex}
+.modal{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 48px rgba(0,0,0,.3);
+  width:100%;max-width:760px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;
+  animation:pop .22s ease;
+}
+@keyframes pop{from{transform:scale(.94) translateY(10px);opacity:0}to{transform:none;opacity:1}}
+.modal-head{
+  display:flex;align-items:center;justify-content:space-between;padding:14px 18px;
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.modal-head h3{font-size:16px;display:flex;align-items:center;gap:8px}
+.modal-body{padding:6px 20px 16px;overflow-y:auto;line-height:1.75;font-size:13.5px}
+.modal-body h4{margin:18px 0 7px;font-size:14px;color:var(--accent-text);display:flex;align-items:center;gap:6px}
+.modal-body h4::before{content:'';width:4px;height:13px;background:var(--accent);border-radius:2px}
+.modal-body p{margin:5px 0;color:var(--text)}
+.modal-body ul{margin:5px 0 5px 20px}
+.modal-body li{margin:3px 0}
+.modal-body table{border-collapse:collapse;width:100%;margin:8px 0;font-size:12.5px}
+.modal-body th,.modal-body td{border:1px solid var(--border);padding:5px 9px;text-align:left;vertical-align:top}
+.modal-body th{background:var(--accent-soft);color:var(--accent-text)}
+.modal-body td code{font-size:12px}
+.modal-foot{
+  padding:11px 18px;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;flex-wrap:wrap;
+}
+.modal-foot .spacer{flex:1}
+.example-box{
+  border:1px solid var(--border);border-radius:8px;padding:9px 12px;margin:8px 0;background:var(--input-bg);
+  font-family:var(--mono);font-size:12.5px;line-height:1.8;word-break:break-all;
+}
+.example-box .ex-title{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;font-weight:700;font-size:12.5px;color:var(--text);margin-bottom:3px}
+.example-box .btn{margin-top:6px;padding:4px 12px;font-size:12px}
+kbd{background:var(--accent-soft);border:1px solid var(--border);border-radius:4px;padding:0 5px;font-size:11.5px;font-family:var(--mono)}
+
+/* ===== Toast ===== */
+#toast{
+  position:fixed;bottom:46px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--text);color:var(--card);padding:9px 20px;border-radius:999px;font-size:13px;
+  opacity:0;pointer-events:none;transition:all .25s;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,.25);
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ===== 响应式：竖屏 / 窄屏 ===== */
+@media (max-width:900px), (orientation:portrait){
+  .layout{flex-direction:column}
+  .sidebar{width:100%}
+  .main{width:100%}
+  .output-card{min-height:340px}
+  .brand .subtitle{display:none}
+  .page-name{display:none}
+  .row input[type=number]{flex:1;min-width:64px}
+  .statusbar{white-space:normal}
+}
+@media (max-width:480px){
+  .layout{padding:8px;gap:8px}
+  .card{padding:10px 11px}
+  table.result td,table.result th{padding:5px 9px}
+}
+/* 窄屏触屏：输入框字号 ≥16px，避免 iOS 聚焦自动放大 */
+@media (max-width:900px){
+  input[type=text],input[type=number],input:not([type]),select{font-size:16px}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">∑</span>
+    <span class="title">数列工具</span>
+    <span class="subtitle">通项 · 递推 · 分类递推 · 多数列交叉引用 · 大整数精确输出</span>
+  </div>
+  <div class="top-actions">
+    <span class="page-name">Sequence Tools</span>
+    <button id="themeBtn" class="icon-btn" title="切换亮色 / 暗色模式" aria-label="切换亮色 / 暗色模式">🌙</button>
+    <button id="helpBtn" class="icon-btn" title="帮助（功能介绍与使用方法）" aria-label="帮助（功能介绍与使用方法）">?</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <section class="card">
+      <h2>数列定义</h2>
+      <p class="hint">支持 LaTeX 与常用写法，如 <code>a_n=n^2-2n</code>、<code>a_{n+1}=2a_n+1</code>、<code>\frac{n}{2}</code></p>
+      <div class="chips">
+        <button class="chip" data-ex="arith">等差通项</button>
+        <button class="chip" data-ex="fib">斐波那契</button>
+        <button class="chip" data-ex="collatz">Collatz 分类递推</button>
+        <button class="chip" data-ex="cross">交叉引用</button>
+        <button class="chip" data-ex="big">大整数 2ⁿ−1</button>
+      </div>
+      <div id="seqList"></div>
+      <button id="addSeqBtn" class="btn primary block">＋ 添加数列</button>
+    </section>
+
+    <section class="card">
+      <h2>范围与输出</h2>
+      <div class="row">
+        <label>起始 n</label><input id="nFrom" type="number" value="1" step="1">
+        <label>终止 n</label><input id="nTo" type="number" value="10" step="1">
+      </div>
+      <label class="check"><input type="checkbox" id="sciToggle"> 使用科学计数法（不勾选则输出完整数字）</label>
+      <button id="calcBtn" class="btn primary block">计 算</button>
+      <p class="hint">整数结果以大整数精确计算，可完整显示任意位数的整数，如 12344321。</p>
+    </section>
+
+    <section class="card">
+      <h2>处理与求和</h2>
+      <div class="row"><label>目标数列</label><select id="procTarget" class="mono"></select></div>
+      <input id="procExpr" class="mono" type="text" placeholder="处理表达式，如 (x)^2 或 x+b_n（x=该项值）">
+      <div class="err-msg" id="procErr"></div>
+      <div class="row btns" style="margin-top:8px">
+        <button id="addProcBtn" class="btn">添加处理列</button>
+        <button id="clearProcBtn" class="btn danger-ghost">清除处理列</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label>求和范围</label><input id="sumFrom" type="number" value="1" step="1"><label>到</label><input id="sumTo" type="number" value="10" step="1">
+        <button id="sumBtn" class="btn primary">求和</button>
+      </div>
+      <div id="sumResult" class="sum-result"></div>
+    </section>
+
+    <section class="card">
+      <h2>输出操作</h2>
+      <div class="row btns">
+        <button id="copyBtn" class="btn primary">📋 复制结果表格</button>
+        <button id="shareBtn" class="btn">🔗 分享当前网址</button>
+        <button id="clearBtn" class="btn danger-ghost">清空结果</button>
+      </div>
+      <p class="hint">所有内容已实时编入网址，直接复制地址栏链接即可完整分享当前页面。</p>
+    </section>
+  </aside>
+
+  <main class="main">
+    <div class="card output-card">
+      <div class="output-head"><h2>计算结果</h2><span id="outputInfo" class="hint"></span></div>
+      <div id="globalMsg" class="global-msg"></div>
+      <div id="tableWrap" class="table-wrap">
+        <div class="empty-state">在左侧定义数列，然后点击「计算」。<br>首次使用？点右上角 <b>?</b> 查看功能介绍与详细用法。</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<footer class="statusbar">分类递推：分支用 ; 分隔，表达式与条件用 , 分隔（最后一个分支可省略条件作为默认） · 整除条件：2 \mid a_n 或 2 \nmid a_n · 交叉引用：a_{n+1}=a_n+b_n · Esc 关闭帮助</footer>
+
+<!-- ===== 帮助弹窗 ===== -->
+<div class="modal-overlay show" id="helpModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3><span class="logo" style="width:24px;height:24px;font-size:14px">?</span> 功能介绍与使用方法</h3>
+      <button class="icon-btn" id="helpClose" title="关闭" aria-label="关闭帮助">✕</button>
+    </div>
+    <div class="modal-body">
+      <h4>一、这是什么</h4>
+      <p>一个数列计算工具箱。你可以定义<b>多个数列</b>（用单个字母命名，如 a、b、c），每个数列可以用<b>通项公式</b>或<b>递推公式</b>（含分类递推）定义，数列之间可以<b>互相引用</b>。计算指定下标范围内的每一项（不必从首项开始显示），支持超大整数精确输出、对结果再加工（如平方）、对任意区间求和，并一键复制结果。</p>
+
+      <h4>二、快速上手</h4>
+      <ul>
+        <li>在「数列定义」卡片中输入公式，点 <b>＋添加数列</b> 可增加 b、c… 更多数列。</li>
+        <li>递推公式必须在「初始项」框给出初始值，如 <code>a_1=1</code>（多个用逗号隔开：<code>a_1=1, a_2=1</code>）。</li>
+        <li>在「范围与输出」中设置起始 / 终止下标，点 <b>计算</b>。显示范围可以任意选（例如从 n=50 看到 n=60）。</li>
+        <li>输入有误时输入框会<b>自动标红</b>并在下方指出具体问题。</li>
+        <li>也可以直接点击侧栏的示例胶囊，一键填入并计算。</li>
+      </ul>
+
+      <h4>三、输入语法（LaTeX + 常用写法）</h4>
+      <table>
+        <tr><th>功能</th><th>写法（任选其一）</th><th>示例</th></tr>
+        <tr><td>下标</td><td><code>a_n</code>、<code>a_{n+1}</code>、<code>a(n+1)</code></td><td><code>a_{n-1}</code></td></tr>
+        <tr><td>乘方</td><td><code>^</code> 或 <code>^{…}</code></td><td><code>2^n</code>、<code>n^{10}</code></td></tr>
+        <tr><td>乘法</td><td><code>*</code>、<code>\cdot</code>、<code>\times</code>、直接连写</td><td><code>2n</code>、<code>3a_n</code>、<code>n(n+1)</code></td></tr>
+        <tr><td>分数</td><td><code>\frac{a}{b}</code> 或 <code>a/b</code></td><td><code>\frac{n(n+1)}{2}</code></td></tr>
+        <tr><td>根号</td><td><code>\sqrt{x}</code> 或 <code>sqrt(x)</code></td><td><code>\sqrt{n}</code></td></tr>
+        <tr><td>下取整</td><td><code>floor(x)</code>、<code>\lfloor x\rfloor</code>、<code>[x]</code></td><td><code>[n/2]</code></td></tr>
+        <tr><td>绝对值</td><td><code>abs(x)</code> 或成对 <code>|x|</code></td><td><code>abs(a_n-10)</code></td></tr>
+        <tr><td>阶乘</td><td><code>!</code></td><td><code>n!</code></td></tr>
+        <tr><td>取余</td><td><code>%</code> 或 <code>mod</code></td><td><code>n%2</code>、<code>n mod 2</code></td></tr>
+        <tr><td>整除 / 不整除</td><td><code>d \mid x</code>、<code>d \nmid x</code>、<code>d|x</code>（奇数个竖线时）</td><td><code>2 \mid a_n</code></td></tr>
+        <tr><td>比较</td><td><code>= == != &lt; &gt; &lt;= &gt;= \neq \leq \geq</code></td><td><code>n&gt;=5</code></td></tr>
+        <tr><td>逻辑</td><td><code>and</code>、<code>or</code></td><td><code>n&gt;2 and 3 \mid n</code></td></tr>
+        <tr><td>函数</td><td colspan="2"><code>sin cos tan asin acos atan sqrt abs floor ceil round ln log lg log2 exp min max gcd lcm sign C(n,k)</code>（ln=自然对数，log 与 lg=常用对数即底 10，log2=底 2）</td></tr>
+        <tr><td>常数</td><td colspan="2"><code>pi</code>、<code>\pi</code>、<code>e</code>、<code>\infty</code>（Infinity）</td></tr>
+      </table>
+      <p>全角标点（，；（））会自动转换；<code>{ }</code> 与 <code>( )</code> 等价；科学计数法字面量如 <code>1.5e3</code> 也可用。数列名是单个字母（<code>e n x C</code> 为保留字不可用）。</p>
+
+      <h4>四、通项公式</h4>
+      <p>形如 <code>a_n = 关于n的表达式</code>，也可以省略左侧只写表达式（默认当前行数列）。支持分段通项：分支用 <code>;</code> 分隔，表达式与条件用 <code>,</code> 分隔，最后一个分支可省略条件作为默认：</p>
+      <div class="example-box"><div class="ex-title">分段通项</div>a_n = n^2, n&lt;5; 2n, n&gt;=5</div>
+
+      <h4>五、递推公式（含分类递推）</h4>
+      <p>左侧下标为 <code>n+k</code>（k≥1），右侧可引用 <code>a_n</code>、<code>a_{n-1}</code> 等更早的项（也可以引用其他数列）。分类递推按「表达式, 条件; 表达式, 条件」书写，从上往下匹配第一个满足的分支：</p>
+      <div class="example-box"><div class="ex-title">Collatz（冰雹）数列</div>a_{n+1}=a_n/2, 2 \mid a_n; 3a_n+1, 2 \nmid a_n<br>初始项：a_1=27</div>
+      <div class="example-box"><div class="ex-title">斐波那契（二阶递推）</div>a_{n+2}=a_{n+1}+a_n<br>初始项：a_1=1, a_2=1</div>
+      <p>注意：递推沿下标增大方向进行，初始项的下标必须 ≤ 你想看的第一个下标，否则更早的项会显示「✕」。</p>
+
+      <h4>六、多数列与交叉引用</h4>
+      <p>点「＋添加数列」得到 b、c… 任意公式里都可以引用其他数列的任意整数下标项，例如：</p>
+      <div class="example-box"><div class="ex-title">交叉引用</div>a_{n+1}=a_n+b_n　（初始项 a_1=1）<br>b_n=2n+1</div>
+
+      <h4>七、输出格式与复制</h4>
+      <ul>
+        <li>不勾选「科学计数法」：完整输出每一位数字（整数用任意精度计算，例如 2¹⁰⁰−1 会显示全部 31 位）。</li>
+        <li>勾选「科学计数法」：超长数字以 <code>1.234567e30</code> 形式显示。</li>
+        <li>「📋 复制结果表格」把整张表（含表头，Tab 分隔）复制到剪贴板，可直接粘贴到 Excel / 文本编辑器。</li>
+      </ul>
+
+      <h4>八、处理与求和</h4>
+      <ul>
+        <li><b>添加处理列</b>：对某数列的每一项再算一个表达式并追加成新列。表达式里 <code>x</code> 表示该项的值，也可以用 <code>n</code> 和其他数列，如 <code>(x)^2</code>、<code>x/(n+1)</code>、<code>x-b_n</code>。</li>
+        <li><b>求和</b>：选定目标（数列或处理列）与起止下标，计算 Σ。整数求和同样精确到每一位。</li>
+      </ul>
+
+      <h4>九、分享与协作</h4>
+      <p>页面上的所有内容——每个数列的公式与初始项、起止范围、科学计数法开关、处理列与求和范围——都会<b>实时编码进网址</b>（地址栏 <code>#s=…</code> 部分）。直接复制地址栏链接发给他人，或点「🔗 分享当前网址」，对方打开即看到与你完全相同的页面与计算结果，无需任何账号。</p>
+
+      <h4>十、常见问题</h4>
+      <ul>
+        <li><b>输入框变红</b>：把鼠标停在下方红色提示上阅读原因，常见为括号不配对、数列名下标缺失、递推缺少初始项等。</li>
+        <li><b>表格里出现 ✕</b>：鼠标悬停或点击（触屏）可查看该项的错误原因（如除数为 0、没有匹配的分类条件、初始项之前无法递推）。</li>
+        <li><b>保留字</b>：<code>e、n、x、C</code> 不能作为数列名。</li>
+        <li><b>竖线歧义</b>：成对的 <code>|x|</code> 视为绝对值；奇数个 <code>|</code> 视为整除。建议整除统一写 <code>\mid</code> / <code>\nmid</code>。</li>
+      </ul>
+    </div>
+    <div class="modal-foot">
+      <label class="check" style="margin:0"><input type="checkbox" id="noAutoHelp"> 下次打开不再自动弹出</label>
+      <span class="spacer"></span>
+      <button class="btn primary" id="helpStart">开始使用</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* =====================================================
+ * 数列工具 —— 解析与计算引擎
+ * ===================================================== */
+class ParseErr extends Error{}
+class EvalErr extends Error{}
+class Fallback extends Error{}   // 内部信号：大整数模式不可算，回退浮点
+class Need extends Error{        // 内部信号：依赖项尚未 memo，压入显式工作栈（避免递归爆栈）
+  constructor(seq,idx){ super(); this.seq=seq; this.idx=idx; }
+}
+
+const FUNCS = new Set(['sin','cos','tan','asin','acos','atan','sqrt','abs','floor','ceil','round','ln','log','lg','log2','exp','min','max','gcd','lcm','sign','C']);
+const CONSTS = new Set(['pi','e','Infinity']);
+const RESERVED = new Set(['e','n','x','C']);
+
+/* ---------- 顶层切分（括号感知） ---------- */
+function splitTop(s, seps){
+  const parts=[]; let depth=0, cur='';
+  for(const ch of s){
+    if(ch==='(') depth++;
+    else if(ch===')'){ depth--; if(depth<0) throw new ParseErr('括号不匹配：多了一个 ")"'); }
+    if(depth===0 && seps.includes(ch)){ parts.push(cur); cur=''; }
+    else cur+=ch;
+  }
+  if(depth!==0) throw new ParseErr('括号不匹配：缺少 ")"');
+  parts.push(cur);
+  return parts;
+}
+function findTopEq(s){
+  let d=0;
+  for(let i=0;i<s.length;i++){
+    const c=s[i];
+    if(c==='(')d++; else if(c===')')d--;
+    else if(c==='='&&d===0){
+      if(s[i-1]==='='||s[i+1]==='='||s[i-1]==='<'||s[i-1]==='>'||s[i-1]==='!') continue;
+      return i;
+    }
+  }
+  return -1;
+}
+function readBraced(s,i){ // s[i]==='{' → [内容, 结束后的位置]
+  let depth=0;
+  for(let j=i;j<s.length;j++){
+    if(s[j]==='{')depth++;
+    else if(s[j]==='}'){depth--; if(depth===0)return [s.slice(i+1,j),j+1];}
+  }
+  throw new ParseErr('花括号 { } 不匹配');
+}
+
+/* ---------- LaTeX / 非标准写法 → 内部语法 ---------- */
+function preprocess(src){
+  if(!src||!src.trim()) throw new ParseErr('输入为空');
+  if(src.length>2000) throw new ParseErr('输入过长（上限 2000 字符）');
+  // 单词运算符须在去除空白前替换，避免与相邻标识符粘连；\bmod/\mod 为 LaTeX 高频写法
+  src=src.replace(/\\bmod(?![a-zA-Z])/g,' % ').replace(/\\mod(?![a-zA-Z])/g,' % ')
+         .replace(/\bmod\b/g,' % ').replace(/\band\b/g,' ∧ ').replace(/\bor\b/g,' ∨ ');
+  let s=src.replace(/\s+/g,'').replace(/\$/g,'');
+  // 全角数字与字母 → 半角
+  s=s.replace(/[０-９Ａ-Ｚａ-ｚ]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
+  const uni=[['×','*'],['⋅','*'],['✕','*'],['÷','/'],['−','-'],['–','-'],['π','pi'],['∞','Infinity'],
+             ['≤','<='],['≥','>='],['≠','!='],['≡','=='],['＝','='],['（','('],['）',')'],['，',','],['；',';'],['：',':'],
+             ['｛','{'],['｝','}']];
+  for(const [a,b] of uni) s=s.split(a).join(b);
+  s=s.replace(/\\nmid/g,'∤').replace(/\\mid/g,'∣');
+  s=s.replace(/\\infty/g,'Infinity');   // \infty 须在通用 \word 剥离前单独映射
+  s=s.replace(/\\leq|\\le/g,'<=').replace(/\\geq|\\ge/g,'>=').replace(/\\neq|\\ne/g,'!=');
+  s=s.replace(/\\cdot|\\times|\\ast/g,'*').replace(/\\div/g,'/');
+  s=s.replace(/\\lfloor/g,'⌊').replace(/\\rfloor/g,'⌋');
+  s=s.replace(/\\left|\\right|\\[Bb]igg?|\\limits|\\displaystyle/g,'');
+  for(let g=0;s.includes('\\frac');){
+    if(++g>300) throw new ParseErr('\\frac 嵌套过深');
+    const i=s.indexOf('\\frac'); let j=i+5;
+    if(s[j]!=='{') throw new ParseErr('\\frac 后应为 {分子}{分母}');
+    const [num,e1]=readBraced(s,j);
+    if(s[e1]!=='{') throw new ParseErr('\\frac 缺少 {分母}');
+    const [den,e2]=readBraced(s,e1);
+    s=s.slice(0,i)+'(('+num+')/('+den+'))'+s.slice(e2);
+  }
+  for(let g=0;s.includes('\\binom');){
+    if(++g>300) throw new ParseErr('\\binom 嵌套过深');
+    const i=s.indexOf('\\binom'); let j=i+6;
+    if(s[j]!=='{') throw new ParseErr('\\binom 后应为 {n}{k}');
+    const [n1,e1]=readBraced(s,j);
+    if(s[e1]!=='{') throw new ParseErr('\\binom 缺少 {k}');
+    const [k1,e2]=readBraced(s,e1);
+    s=s.slice(0,i)+'C('+n1+','+k1+')'+s.slice(e2);
+  }
+  for(let g=0;s.includes('\\sqrt');){
+    if(++g>300) throw new ParseErr('\\sqrt 嵌套过深');
+    const i=s.indexOf('\\sqrt'); let j=i+5;
+    if(s[j]==='{'){ const [c,e]=readBraced(s,j); s=s.slice(0,i)+'sqrt('+c+')'+s.slice(e); }
+    else if(j<s.length&&/[0-9a-zA-Z(]/.test(s[j])){ s=s.slice(0,i)+'sqrt('+s[j]+')'+s.slice(j+1); }
+    else throw new ParseErr('\\sqrt 后缺少内容');
+  }
+  s=s.replace(/\\([a-zA-Z]+)/g,'$1');      // 其余 \word 指令 → 单词（如 \ln \gcd \min）
+  if(s.includes('\\')) throw new ParseErr('存在无法识别的反斜杠符号');
+  s=s.replace(/\{/g,'(').replace(/\}/g,')');
+  s=s.replace(/⌊/g,'floor(').replace(/⌋/g,')');
+  if(s.includes('[')||s.includes(']')){
+    const l=(s.match(/\[/g)||[]).length, r=(s.match(/\]/g)||[]).length;
+    if(l!==r) throw new ParseErr('下取整括号 [ ] 不匹配');
+    s=s.replace(/\[/g,'floor(').replace(/\]/g,')');
+  }
+  const pipes=(s.match(/\|/g)||[]).length;
+  if(pipes){
+    if(pipes%2===1){ s=s.replace(/\|/g,'∣'); }         // 奇数个 | → 整除
+    else{ let open=true; s=s.replace(/\|/g,()=>{const r=open?'abs(':')';open=!open;return r;}); }
+  }
+  return s;
+}
+
+/* ---------- 词法分析 ---------- */
+function tokenize(s){
+  const t=[]; let i=0;
+  const isDig=c=>c>='0'&&c<='9';
+  while(i<s.length){
+    const c=s[i];
+    if(isDig(c)||(c==='.'&&isDig(s[i+1]))){
+      let j=i; while(j<s.length&&(isDig(s[j])||s[j]==='.'))j++;
+      if(s[j]==='e'){
+        if(s[j+1]&&(isDig(s[j+1])||((s[j+1]==='+'||s[j+1]==='-')&&isDig(s[j+2])))){
+          let k=j+1; if(s[k]==='+'||s[k]==='-')k++; while(k<s.length&&isDig(s[k]))k++;
+          t.push({t:'num',v:s.slice(i,k)}); i=k; continue;
+        }
+        throw new ParseErr(`"${s.slice(i,j)}e" 的科学计数法缺少指数（如 1.5e3）；若想乘常数 e 请写成 *e`);
+      }
+      const v=s.slice(i,j);
+      if(!/^(\d+(\.\d+)?|\.\d+)$/.test(v)) throw new ParseErr(`数字 "${v}" 格式不正确`);
+      t.push({t:'num',v}); i=j; continue;
+    }
+    if(/[a-zA-Z]/.test(c)){
+      let j=i; while(j<s.length&&/[a-zA-Z]/.test(s[j]))j++;
+      const name=s.slice(i,j); i=j;
+      if(name==='log'&&s[i]==='2'){ t.push({t:'id',name:'log2'}); i++; continue; } // log2 含数字，需特判（字母词法会把它切碎）
+      if(s[i]==='_'){
+        if(s[i+1]==='('){
+          let depth=0,k=i+1;
+          for(;k<s.length;k++){ if(s[k]==='(')depth++; else if(s[k]===')'){depth--; if(!depth)break;} }
+          if(depth) throw new ParseErr(`数列 ${name} 的下标括号不匹配`);
+          t.push({t:'seq',name,idx:s.slice(i+2,k)}); i=k+1; continue;
+        }
+        if(isDig(s[i+1])){ let k=i+1; while(k<s.length&&isDig(s[k]))k++; t.push({t:'seq',name,idx:s.slice(i+1,k)}); i=k; continue; }
+        if(s[i+1]&&/[a-zA-Z]/.test(s[i+1])){ t.push({t:'seq',name,idx:s[i+1]}); i+=2; continue; }
+        throw new ParseErr(`"${name}_" 后缺少下标`);
+      }
+      t.push({t:'id',name}); continue;
+    }
+    if(c==='<'){ if(s[i+1]==='='){t.push({t:'<='});i+=2;}else{t.push({t:'<'});i++;} continue; }
+    if(c==='>'){ if(s[i+1]==='='){t.push({t:'>='});i+=2;}else{t.push({t:'>'});i++;} continue; }
+    if(c==='='){ if(s[i+1]==='='){t.push({t:'=='});i+=2;}else{t.push({t:'='});i++;} continue; }
+    if(c==='!'){ if(s[i+1]==='='){t.push({t:'!='});i+=2;}else{t.push({t:'!'});i++;} continue; }
+    if(c==='∣'){ t.push({t:'dvd',neg:false}); i++; continue; }
+    if(c==='∤'){ t.push({t:'dvd',neg:true}); i++; continue; }
+    if(c==='∧'){ t.push({t:'id',name:'and'}); i++; continue; }
+    if(c==='∨'){ t.push({t:'id',name:'or'}); i++; continue; }
+    if('+-*/%^(),'.includes(c)){ t.push({t:c}); i++; continue; }
+    throw new ParseErr(`无法识别的字符 "${c}"`);
+  }
+  return t;
+}
+
+/* ---------- 语法分析（递归下降） ---------- */
+function parseExpr(src){
+  if(!src||!src.length) throw new ParseErr('表达式为空');
+  const p=new Parser(tokenize(src));
+  const ast=p.parseOr();
+  if(p.i<p.t.length) throw new ParseErr(`在 "${p.t[p.i].name||p.t[p.i].v||p.t[p.i].t}" 附近无法继续解析，请检查是否缺少运算符`);
+  return ast;
+}
+class Parser{
+  constructor(t){this.t=t;this.i=0;}
+  peek(){return this.t[this.i];}
+  next(){return this.t[this.i++];}
+  expect(tt,msg){ const p=this.next(); if(!p||p.t!==tt) throw new ParseErr(msg||`此处应为 "${tt}"`); }
+  parseOr(){
+    let l=this.parseAnd();
+    while(this.peek()&&this.peek().t==='id'&&this.peek().name==='or'){ this.next(); l={k:'or',l,r:this.parseAnd()}; }
+    return l;
+  }
+  parseAnd(){
+    let l=this.parseCmp();
+    while(this.peek()&&this.peek().t==='id'&&this.peek().name==='and'){ this.next(); l={k:'and',l,r:this.parseCmp()}; }
+    return l;
+  }
+  parseCmp(){
+    let l=this.parseAdd();
+    const p=this.peek();
+    if(p&&['<','<=','>','>=','==','=','!='].includes(p.t)){ this.next(); return {k:'cmp',op:p.t==='='?'==':p.t,l,r:this.parseAdd()}; }
+    if(p&&p.t==='dvd'){ this.next(); return {k:'dvd',neg:p.neg,l,r:this.parseAdd()}; }
+    return l;
+  }
+  parseAdd(){
+    let l=this.parseMul();
+    for(;;){
+      const p=this.peek();
+      if(p&&(p.t==='+'||p.t==='-')){ this.next(); l={k:'bin',op:p.t,l,r:this.parseMul()}; }
+      else break;
+    }
+    return l;
+  }
+  startsFactor(p){ return p.t==='num'||p.t==='seq'||p.t==='('||(p.t==='id'&&p.name!=='and'&&p.name!=='or'&&p.name!=='mod'); }
+  parseMul(){
+    let l=this.parseUnary();
+    for(;;){
+      const p=this.peek();
+      if(!p) break;
+      if(p.t==='*'||p.t==='/'||p.t==='%'){ this.next(); l={k:'bin',op:p.t,l,r:this.parseUnary()}; continue; }
+      if(p.t==='id'&&p.name==='mod'){ this.next(); l={k:'bin',op:'%',l,r:this.parseUnary()}; continue; }
+      if(this.startsFactor(p)){ l={k:'bin',op:'*',l,r:this.parseUnary()}; continue; } // 省略乘号：2n、)(、n(n+1)
+      break;
+    }
+    return l;
+  }
+  parseUnary(){
+    const p=this.peek();
+    if(p&&p.t==='-'){ this.next(); return {k:'un',e:this.parseUnary()}; }
+    if(p&&p.t==='+'){ this.next(); return this.parseUnary(); }
+    return this.parsePow();
+  }
+  parsePow(){
+    const base=this.parsePostfix();
+    const p=this.peek();
+    if(p&&p.t==='^'){ this.next(); return {k:'bin',op:'^',l:base,r:this.parseUnary()}; }
+    return base;
+  }
+  parsePostfix(){
+    let e=this.parsePrimary();
+    while(this.peek()&&this.peek().t==='!'){ this.next(); e={k:'fact',e}; }
+    return e;
+  }
+  parsePrimary(){
+    const p=this.next();
+    if(!p) throw new ParseErr('表达式意外结束，似乎缺少内容');
+    if(p.t==='num') return {k:'num',v:p.v};
+    if(p.t==='seq'){
+      if(p.name.length>1) throw new ParseErr(`数列名只能是单个字母（"${p.name}" 请改用单字母），与左侧写法口径一致`);
+      if(RESERVED.has(p.name)) throw new ParseErr(`"${p.name}" 是保留字，不能作为数列名`);
+      return {k:'seq',name:p.name,idx:parseExpr(p.idx)};
+    }
+    if(p.t==='('){ const e=this.parseOr(); this.expect(')','括号不匹配：缺少 ")"'); return e; }
+    if(p.t==='id'){
+      const name=p.name;
+      if(FUNCS.has(name)){
+        this.expect('(',`函数 ${name} 后应为 "("`);
+        const args=[];
+        if(this.peek()&&this.peek().t===')'){ this.next(); throw new ParseErr(`函数 ${name} 缺少参数`); }
+        args.push(this.parseOr());
+        while(this.peek()&&this.peek().t===','){ this.next(); args.push(this.parseOr()); }
+        this.expect(')','括号不匹配：缺少 ")"');
+        return {k:'func',name,args};
+      }
+      if(CONSTS.has(name)) return {k:'const',name};
+      if(name==='n') return {k:'var',name:'n'};
+      if(name==='x') return {k:'var',name:'x'};
+      if(name.length===1){
+        if(RESERVED.has(name)) throw new ParseErr(`"${name}" 是保留字，不能作为数列名`);
+        if(this.peek()&&this.peek().t==='('){
+          this.next(); const idx=this.parseOr(); this.expect(')','括号不匹配：缺少 ")"');
+          return {k:'seq',name,idx};
+        }
+        throw new ParseErr(`数列 "${name}" 缺少下标，请写成 ${name}_n 或 ${name}_{n+1}`);
+      }
+      if(name==='and'||name==='or') throw new ParseErr(`"${name}" 位置不正确`);
+      throw new ParseErr(`无法识别的名称 "${name}"（函数请写全名，数列名只能是单个字母）`);
+    }
+    throw new ParseErr(`此处不应出现符号 "${p.t}"`);
+  }
+}
+
+/* ---------- 求值（bigint 精确 / float 双模式） ---------- */
+let _factMax=1n,_factVal=1n; // 大整数阶乘跨格缓存：_factVal = _factMax!（升序逐格计算时增量复用）
+function fact(v,B){
+  if(B){
+    if(v<0n) throw new EvalErr('负数没有阶乘');
+    if(v>5000n) throw new EvalErr('阶乘过大（上限 5000!）');
+    if(v>_factMax){ let r=_factVal; for(let i=_factMax+1n;i<=v;i++)r*=i; _factMax=v; _factVal=r; return r; }
+    let r=1n; for(let i=2n;i<=v;i++)r*=i; return r;
+  }
+  if(!Number.isInteger(v)||v<0) throw new EvalErr('阶乘只支持非负整数');
+  if(v>170) return Infinity;
+  let r=1; for(let i=2;i<=v;i++)r*=i; return r;
+}
+function digits10(x){ return (x<0n?-x:x).toString().length; } // 十进制位数（大整数乘法防爆估算；操作数均已过幂/阶乘上限，转换代价有界）
+function binop(op,l,r,B){
+  switch(op){
+    case '+': return l+r;
+    case '-': return l-r;
+    case '*':
+      if(B){ if(digits10(l)+digits10(r)>60000) throw new EvalErr('计算结果过大（超过约 5 万位）'); return l*r; }
+      return l*r;
+    case '/':
+      if(B){ if(r===0n) throw new EvalErr('除数为 0'); if(l%r!==0n) throw new Fallback(); return l/r; }
+      if(r===0) throw new EvalErr('除数为 0');
+      return l/r;
+    case '%':
+      if(B){ if(r===0n) throw new EvalErr('对 0 取余'); return ((l%r)+r)%r; }  // 数学模：结果与除数同号
+      if(r===0) throw new EvalErr('对 0 取余');
+      return ((l%r)+r)%r;
+    case '^':
+      if(B){
+        if(r<0n) throw new Fallback();
+        if(r>100000n) throw new EvalErr('指数过大（上限 100000）');
+        const rn=Number(r);
+        if(l!==0n&&l!==1n&&l!==-1n){
+          const est=Math.ceil(rn*Math.log10(Math.abs(Number(l))))+1; // 结果位数估算：位数≈exp·log10|base|+1
+          if(est>50000) throw new EvalErr('计算结果过大（超过约 5 万位）');
+        }
+        return l**r;
+      }
+      return Math.pow(l,r);
+  }
+  throw new EvalErr('未知运算符 '+op);
+}
+function cmpop(op,l,r){
+  switch(op){
+    case '<':return l<r; case '<=':return l<=r; case '>':return l>r;
+    case '>=':return l>=r; case '==':return l===r; case '!=':return l!==r;
+  }
+}
+function gcdBig(a,b){ a=a<0n?-a:a; b=b<0n?-b:b; while(b){ [a,b]=[b,a%b]; } return a; }
+function evalFunc(node,ctx,mode){
+  const B=mode==='bigint';
+  const args=node.args.map(a=>ev(a,ctx,mode));
+  const name=node.name;
+  const need=n=>{ if(args.length!==n) throw new EvalErr(`函数 ${name} 需要 ${n} 个参数`); };
+  if(['sqrt','ln','log','lg','log2','exp','sin','cos','tan','asin','acos','atan'].includes(name)){
+    if(B) throw new Fallback();
+    need(1);
+    const v=args[0];
+    const fn={sqrt:Math.sqrt,ln:Math.log,log:Math.log10,lg:Math.log10,log2:Math.log2,exp:Math.exp,sin:Math.sin,cos:Math.cos,tan:Math.tan,asin:Math.asin,acos:Math.acos,atan:Math.atan}[name];
+    const r=fn(v);
+    if(Number.isNaN(r)) throw new EvalErr(`函数 ${name} 在该处无定义`);
+    return r;
+  }
+  if(name==='abs'){ need(1); return args[0]<0?-args[0]:args[0]; }
+  if(name==='sign'){ need(1); const v=args[0]; if(B) return v>0n?1n:(v<0n?-1n:0n); return v>0?1:(v<0?-1:0); }
+  if(name==='floor'||name==='ceil'||name==='round'){ need(1); if(B) return args[0]; return Math[name](args[0]); }
+  if(name==='min'||name==='max'){
+    if(!args.length) throw new EvalErr(`函数 ${name} 需要参数`);
+    return args.reduce((a,b)=>name==='min'?(a<b?a:b):(a>b?a:b));
+  }
+  if(name==='gcd'||name==='lcm'){
+    need(2);
+    if(B){
+      const g=gcdBig(args[0],args[1]);
+      if(name==='gcd') return g;
+      if(g===0n) return 0n;
+      return (args[0]/g)*args[1];
+    }
+    if(!Number.isInteger(args[0])||!Number.isInteger(args[1])) throw new EvalErr(`函数 ${name} 需要整数参数`);
+    let a=Math.abs(args[0]),b=Math.abs(args[1]);
+    while(b){ [a,b]=[b,a%b]; }
+    return name==='gcd'?a:(a===0?0:Math.abs(args[0]*args[1])/a);
+  }
+  if(name==='C'){
+    need(2);
+    if(B){
+      let n=args[0],k=args[1];
+      if(k<0n||k>n) throw new EvalErr('C(n,k) 需要 0≤k≤n');
+      if(k>n-k)k=n-k;
+      if(k>100000n) throw new EvalErr('C(n,k) 的 k 过大');
+      let r=1n;
+      for(let i=1n;i<=k;i++) r=r*(n-k+i)/i;
+      return r;
+    }
+    const n=args[0],k=args[1];
+    if(!Number.isInteger(n)||!Number.isInteger(k)||k<0||k>n) throw new EvalErr('C(n,k) 需要整数且 0≤k≤n');
+    let kk=Math.min(k,n-k),r=1;
+    for(let i=1;i<=kk;i++) r=r*(n-kk+i)/i;
+    return Math.round(r);
+  }
+  throw new EvalErr('未知函数 '+name);
+}
+function ev(node,ctx,mode){
+  const B=mode==='bigint';
+  switch(node.k){
+    case 'num':{
+      const v=node.v;
+      if(/[.e]/.test(v)){ if(B) throw new Fallback(); return parseFloat(v); }
+      return B?BigInt(v):parseFloat(v);
+    }
+    case 'const':
+      if(B) throw new Fallback();
+      return node.name==='pi'?Math.PI:(node.name==='e'?Math.E:Infinity);
+    case 'var':
+      if(node.name==='x'){
+        if(ctx.x===undefined) throw new EvalErr('变量 x 只能在「处理表达式」中使用');
+        return ctx.x;
+      }
+      if(ctx.n===undefined) throw new EvalErr('此处不能使用变量 n');
+      return ctx.n;
+    case 'seq':{
+      const iv=ev(node.idx,ctx,mode);
+      let idxN;
+      if(typeof iv==='bigint'){
+        if(iv>1000000n||iv< -1000000n) throw new EvalErr(`数列 ${node.name} 的下标超出可计算范围`);
+        idxN=Number(iv);
+      }else{
+        if(!Number.isInteger(iv)) throw new EvalErr(`数列 ${node.name} 的下标不是整数`);
+        if(iv>1000000||iv<-1000000) throw new EvalErr(`数列 ${node.name} 的下标超出可计算范围`);
+        idxN=iv;
+      }
+      const val=ctx.getSeq(node.name,idxN);
+      if(B){
+        if(typeof val==='bigint') return val;
+        if(Number.isInteger(val)) return BigInt(val);
+        throw new Fallback();
+      }
+      return typeof val==='bigint'?Number(val):val;
+    }
+    case 'un': return -ev(node.e,ctx,mode);
+    case 'fact': return fact(ev(node.e,ctx,mode),B);
+    case 'bin': return binop(node.op,ev(node.l,ctx,mode),ev(node.r,ctx,mode),B);
+    case 'cmp': return cmpop(node.op,ev(node.l,ctx,mode),ev(node.r,ctx,mode));
+    case 'dvd':{
+      const l=ev(node.l,ctx,mode), r=ev(node.r,ctx,mode);
+      if(B){
+        if(l===0n) throw new EvalErr('整除关系中除数为 0');
+        const res=(r%l)===0n; return node.neg?!res:res;
+      }
+      if(l===0) throw new EvalErr('整除关系中除数为 0');
+      const res=Math.abs(r%l)<1e-9; return node.neg?!res:res;
+    }
+    case 'and': return ev(node.l,ctx,mode)&&ev(node.r,ctx,mode);
+    case 'or': return ev(node.l,ctx,mode)||ev(node.r,ctx,mode);
+    case 'func': return evalFunc(node,ctx,mode);
+  }
+  throw new EvalErr('未知表达式');
+}
+/* 遍历 AST */
+function walk(node,fn){
+  fn(node);
+  for(const key of ['l','r','e','idx']) if(node[key]) walk(node[key],fn);
+  if(node.args) node.args.forEach(a=>walk(a,fn));
+}
+
+/* ---------- 左侧下标形态分析：n / 常数 / n±k ---------- */
+function analyzeIdx(ast,what){
+  const bad=()=>{ throw new ParseErr((what||'左侧')+'下标只能是 n、n+k（k 为整数）或常数，如 a_n、a_{n+1}、a_1'); };
+  if(ast.k==='var'&&ast.name==='n') return {type:'n',off:0};
+  if(ast.k==='num'&&!/[.e]/.test(ast.v)) return {type:'const',val:parseInt(ast.v)};
+  if(ast.k==='bin'&&ast.op==='+'){
+    const a=ast.l,b=ast.r;
+    if(a.k==='var'&&a.name==='n'&&b.k==='num'&&!/[.e]/.test(b.v)) return {type:'n',off:parseInt(b.v)};
+    if(b.k==='var'&&b.name==='n'&&a.k==='num'&&!/[.e]/.test(a.v)) return {type:'n',off:parseInt(a.v)};
+  }
+  if(ast.k==='bin'&&ast.op==='-'&&ast.l.k==='var'&&ast.l.name==='n'&&ast.r.k==='num'&&!/[.e]/.test(ast.r.v))
+    return {type:'n',off:-parseInt(ast.r.v)};
+  bad();
+}
+function parseLHS(lhs){
+  let m,name,idxStr;
+  if(m=lhs.match(/^([a-zA-Z])_\((.*)\)$/s)){ name=m[1]; idxStr=m[2]; }
+  else if(m=lhs.match(/^([a-zA-Z])_(.)$/s)){ name=m[1]; idxStr=m[2]; }
+  else if(m=lhs.match(/^([a-zA-Z])\((.*)\)$/s)){ name=m[1]; idxStr=m[2]; }
+  else if(m=lhs.match(/^([a-zA-Z])$/)){ name=m[1]; idxStr='n'; }
+  else throw new ParseErr(`左侧 "${lhs}" 格式不正确，应为如 a_n、a_{n+1}、a_1`);
+  if(RESERVED.has(name)) throw new ParseErr(`"${name}" 是保留字（常数/变量），不能作为数列名`);
+  return {name,idxAST:parseExpr(idxStr),idxRaw:idxStr};
+}
+
+/* ---------- 构建数列定义 ---------- */
+function buildSequence(rowName,formulaRaw,initRaw){
+  const s=preprocess(formulaRaw);
+  const pieceStrs=splitTop(s,';');
+  let lhsInfo=null;
+  const pieces=[];
+  pieceStrs.forEach((p,pi)=>{
+    if(!p) throw new ParseErr('存在空分支（可能多写了 ; ）');
+    const cs=splitTop(p,',');
+    if(cs.length>2) throw new ParseErr('每个分支最多一个逗号，格式为「表达式, 条件」');
+    let exprStr=cs[0], condStr=(cs[1]!==undefined&&cs[1]!=='')?cs[1]:null;
+    const eq=findTopEq(exprStr);
+    if(eq>=0){
+      const lhs=exprStr.slice(0,eq), rhs=exprStr.slice(eq+1);
+      if(!rhs) throw new ParseErr('等号右边不能为空');
+      const li=parseLHS(lhs);
+      if(lhsInfo){
+        if(li.name!==lhsInfo.name||li.idxRaw!==lhsInfo.idxRaw)
+          throw new ParseErr(`第 ${pi+1} 个分支的左侧 "${lhs}" 与第一个分支不一致`);
+      }else lhsInfo=li;
+      exprStr=rhs;
+    }else if(pi>0&&lhsInfo===null){
+      // 分段通项的分支，无 LHS，允许
+    }
+    if(!exprStr) throw new ParseErr(`第 ${pi+1} 个分支缺少表达式`);
+    const expr=parseExpr(exprStr);
+    const cond=condStr?parseExpr(condStr):null;
+    pieces.push({expr,cond,raw:exprStr});
+  });
+  // 无 LHS → 通项，使用行名
+  let name=rowName,kind='explicit',k=0,isInitLine=false;
+  if(lhsInfo){
+    name=lhsInfo.name;
+    const info=analyzeIdx(lhsInfo.idxAST,'左侧');
+    if(info.type==='const'){
+      isInitLine=true;
+    }else if(info.off===0){ kind='explicit'; }
+    else if(info.off>0){ kind='recurrence'; k=info.off; }
+    else throw new ParseErr('递推左侧下标应为 n+k（k≥1），如 a_{n+1}；若想定义通项请用 a_n');
+  }
+  if(isInitLine){
+    if(pieces.length>1||pieces[0].cond)
+      throw new ParseErr(`"${lhsInfo.name}_${lhsInfo.idxRaw}=…" 是初始项写法，请填入「初始项」框`);
+    throw new ParseErr(`"${lhsInfo.name}_${lhsInfo.idxRaw}=…" 是初始项写法，请填入「初始项」框，公式框填写通项或递推公式`);
+  }
+  // 分支条件顺序检查
+  for(let i=0;i<pieces.length-1;i++){
+    if(!pieces[i].cond) throw new ParseErr(`第 ${i+1} 个分支没有条件，其后的分支永远不会被执行`);
+  }
+  // 变量 x 禁止
+  pieces.forEach(p=>{
+    walk(p.expr,n=>{ if(n.k==='var'&&n.name==='x') throw new ParseErr('数列公式中不能使用 x（x 仅用于「处理表达式」）'); });
+    if(p.cond) walk(p.cond,n=>{ if(n.k==='var'&&n.name==='x') throw new ParseErr('条件中不能使用变量 x'); });
+  });
+  // 顶层结果为判断式（比较/整除/逻辑）时给出明确报错——判断式应写在逗号后的条件位
+  pieces.forEach(p=>{
+    if(['cmp','dvd','and','or'].includes(p.expr.k))
+      throw new ParseErr('公式的计算结果应为数值；比较、整除、逻辑判断请用于分段的条件部分（"表达式, 条件" 逗号之后）');
+  });
+  // 递推：自引用必须更早
+  if(kind==='recurrence'){
+    pieces.forEach(p=>{
+      const check=n=>{
+        if(n.k==='seq'&&n.name===name){
+          let info;
+          try{ info=analyzeIdx(n.idx,'引用自身'); }
+          catch(e){ throw new ParseErr(`递推中引用自身时下标只能是 n±j 或常数（不支持 "${n.idx? '复合下标':''}" 这类形式）`); }
+          if(info.type==='n'&&info.off>=k)
+            throw new ParseErr(`递推右侧不能引用 ${name}_{n${info.off?('+'+info.off):''}}（不能引用同期或未来的项）`);
+        }
+      };
+      walk(p.expr,check); if(p.cond) walk(p.cond,check);
+    });
+  }else{
+    pieces.forEach(p=>{
+      const check=n=>{
+        if(n.k==='seq'&&n.name===name)
+          throw new ParseErr(`通项公式中引用了自身 ${name}，请改用递推写法（左侧 ${name}_{n+1}=…）并给出初始项`);
+      };
+      walk(p.expr,check); if(p.cond) walk(p.cond,check);
+    });
+  }
+  return {name,kind,k,pieces,inits:new Map(),memo:new Map(),baseIdx:null};
+}
+function parseInits(initRaw,seqName){
+  const map=new Map();
+  if(!initRaw||!initRaw.trim()) return map;
+  const s=preprocess(initRaw);
+  for(const entry of splitTop(s,',')){
+    if(!entry) throw new ParseErr('初始项中存在空项（多余的逗号）');
+    const eq=findTopEq(entry);
+    if(eq<0) throw new ParseErr(`初始项 "${entry}" 缺少等号，格式如 ${seqName}_1=1`);
+    const li=parseLHS(entry.slice(0,eq));
+    if(li.name!==seqName) throw new ParseErr(`初始项的数列名应为 ${seqName}（当前写的是 ${li.name}）`);
+    const info=analyzeIdx(li.idxAST,'初始项');
+    if(info.type!=='const') throw new ParseErr('初始项下标必须是常数，如 a_1=1');
+    const ast=parseExpr(entry.slice(eq+1));
+    walk(ast,n=>{
+      if(n.k==='var') throw new ParseErr('初始项中不能使用变量 n 或 x');
+    });
+    if(map.has(info.val)) throw new ParseErr(`初始项 ${seqName}_${info.val} 重复定义`);
+    map.set(info.val,ast);
+  }
+  return map;
+}
+
+/* ---------- 计算引擎（记忆化 + 显式工作栈 + 循环检测） ---------- */
+let _termCancel=null,_termBeat=0; // 取消心跳钩子（UI 分片计算时注入）
+/* 单格双模式尝试：返回 {value}|{need}|{err}，不向外抛 */
+function tryEvalTerm(seqs,seq,idx){
+  try{ return {value:evalTerm(seqs,seq,idx,'bigint')}; }
+  catch(e){
+    if(e instanceof Need) return {need:e};
+    if(e instanceof Fallback){
+      try{ return {value:evalTerm(seqs,seq,idx,'float')}; }
+      catch(e2){
+        if(e2 instanceof Need) return {need:e2};
+        return {err:e2};
+      }
+    }
+    return {err:e};
+  }
+}
+/* 迭代式求值：未 memo 的依赖压入工作栈而非递归调用，回溯到初始项后自底向上填 memo，
+   深层递推（如从 n=2000 起看斐波那契）不再触发调用栈溢出；循环引用检测行为不变 */
+function computeTerm(seqs,seq,idx,visiting){
+  if(seq.memo.has(idx)) return seq.memo.get(idx);
+  const stack=[{seq,idx}];
+  const inStack=new Set(visiting);
+  inStack.add(seq.name+':'+idx);
+  let err=null;
+  while(stack.length){
+    if(_termCancel&&((++_termBeat)&1023)===0&&_termCancel()) throw new EvalErr('计算已取消'); // 取消心跳
+    const top=stack[stack.length-1];
+    if(top.seq.memo.has(top.idx)){ inStack.delete(top.seq.name+':'+top.idx); stack.pop(); continue; }
+    const r=tryEvalTerm(seqs,top.seq,top.idx);
+    if(r.need){
+      const key=r.need.seq.name+':'+r.need.idx;
+      if(inStack.has(key)){ err=new EvalErr(`数列 "${r.need.seq.name}" 存在循环引用`); break; }
+      inStack.add(key); stack.push({seq:r.need.seq,idx:r.need.idx}); continue;
+    }
+    if(r.err){ err=r.err; break; }
+    top.seq.memo.set(top.idx,r.value);
+    inStack.delete(top.seq.name+':'+top.idx);
+    stack.pop();
+  }
+  if(err) throw err;
+  return seq.memo.get(idx);
+}
+function evalTerm(seqs,seq,idx,mode){
+  const getSeq=(name,i)=>{
+    const target=seqs.get(name);
+    if(!target) throw new EvalErr(`未定义的数列 "${name}"`);
+    if(!target.memo.has(i)) throw new Need(target,i);
+    return target.memo.get(i);
+  };
+  if(seq.inits.has(idx))
+    return ev(seq.inits.get(idx),{n:undefined,getSeq},mode);
+  if(seq.kind==='explicit')
+    return evPieces(seq.pieces,{n:mode==='bigint'?BigInt(idx):idx,getSeq},mode,idx);
+  if(idx<seq.baseIdx) throw new EvalErr(`下标 ${idx} 早于初始项 ${seq.name}_${seq.baseIdx}，无法向前递推`);
+  if(idx-seq.baseIdx>100000) throw new EvalErr(`与初始项相距超过 100000 项，递推链过长`);
+  const n0=idx-seq.k;
+  return evPieces(seq.pieces,{n:mode==='bigint'?BigInt(n0):n0,getSeq},mode,idx);
+}
+function evPieces(pieces,ctx,mode,idx){
+  for(const p of pieces){
+    if(!p.cond) return ev(p.expr,ctx,mode);
+    const c=ev(p.cond,ctx,mode);
+    if(typeof c!=='boolean') throw new EvalErr('条件部分应为判断式（如 2\\mid a_n、n>3），而不是一个数值表达式');
+    if(c) return ev(p.expr,ctx,mode);
+  }
+  throw new EvalErr(`第 ${idx} 项没有匹配的分类条件（可添加一个不带条件的分支作为默认）`);
+}
+
+/* ---------- 数字格式化 ---------- */
+function expandExp(s){
+  const m=s.match(/^(-?)(\d)(?:\.(\d+))?[eE]([+-]?\d+)$/);
+  if(!m) return s;
+  const sign=m[1],exp=parseInt(m[4]);
+  const point=1+exp, dig=(m[2]+(m[3]||''));
+  if(point<=0) return sign+'0.'+'0'.repeat(-point)+dig;
+  if(point>=dig.length) return sign+dig+'0'.repeat(point-dig.length);
+  return sign+dig.slice(0,point)+'.'+dig.slice(point);
+}
+function sciFmt(v){ return v.toExponential(6).replace(/(\.\d*?)0+e/,'$1e').replace(/\.e/,'e').replace('e+','e'); }
+function fmt(v,sci){
+  if(typeof v==='bigint'){
+    const s=v.toString();
+    if(!sci) return s;
+    const neg=s.startsWith('-'), d=neg?s.slice(1):s;
+    if(d.length<=12) return s;
+    let mant=d[0]+'.'+d.slice(1,8).replace(/0+$/,'');
+    if(mant.endsWith('.')) mant=mant.slice(0,-1);
+    return (neg?'-':'')+mant+'e'+(d.length-1);
+  }
+  if(typeof v!=='number'||Number.isNaN(v)) return 'NaN';
+  if(!isFinite(v)) return v>0?'∞':'-∞';
+  if(v===0) return '0';
+  const a=Math.abs(v);
+  if(sci&&(a>=1e12||a<1e-6)) return sciFmt(v);
+  if(Number.isInteger(v)){
+    if(a<=Number.MAX_SAFE_INTEGER) return String(v);
+    return sciFmt(v); // 浮点超出安全整数范围，用科学计数法，不展开伪造精度
+  }
+  let s=v.toPrecision(12);
+  if(s.includes('e')||s.includes('E')) s=expandExp(s);
+  if(s.includes('.')) s=s.replace(/0+$/,'').replace(/\.$/,'');
+  return s;
+}
+
+/* =====================================================
+ * UI 层
+ * ===================================================== */
+const $=id=>document.getElementById(id);
+const NAME_POOL='abcdfghijklmopqrstuvwyz'.split('');
+const state={ rows:[], procCols:[], computed:null, lastTable:null, rowSeq:0 };
+let _computeJob=null; // 当前分片计算任务（用于取消）
+
+function nextName(){
+  for(const c of NAME_POOL) if(!state.rows.some(r=>r.name===c)) return c;
+  return 'a'+Math.random().toString(36).slice(2,4);
+}
+function toast(msg){
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._tm); t._tm=setTimeout(()=>t.classList.remove('show'),2200);
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ---------- 数列行 ---------- */
+function addSeqRow(name,formula,init){
+  name=name||nextName();
+  const id=++state.rowSeq;
+  const el=document.createElement('div');
+  el.className='seq-item';
+  el.innerHTML=
+    '<div class="seq-head"><span class="seq-badge">'+name+'</span>'+
+    '<span class="seq-kind">未识别</span>'+
+    '<button class="seq-del" title="删除该数列" aria-label="删除该数列">×</button></div>'+
+    '<input type="text" class="f-input" spellcheck="false" placeholder="公式：'+name+'_n=n^2 或 '+name+'_{n+1}=2'+name+'_n+1">'+
+    '<div class="init-label">初始项（递推必填，多个用逗号分隔）</div>'+
+    '<input type="text" class="i-input" spellcheck="false" placeholder="'+name+'_1=1">'+
+    '<div class="err-msg"></div>';
+  const row={ id, name, el,
+    f:el.querySelector('.f-input'), i:el.querySelector('.i-input'),
+    err:el.querySelector('.err-msg'), kind:el.querySelector('.seq-kind') };
+  if(formula!==undefined) row.f.value=formula;
+  if(init!==undefined) row.i.value=init;
+  el.querySelector('.seq-del').onclick=()=>{
+    state.rows=state.rows.filter(r=>r!==row); el.remove();
+    // 标记引用该数列的处理列为失效（保留列与 proc: 下标，同名数列重建后自动恢复）
+    state.procCols.forEach(pc=>{ if(pc.target==='seq:'+row.name) pc.dead='目标数列 '+row.name+' 已删除'; });
+    if(!state.rows.length) addSeqRow();
+  };
+  let tm=null;
+  const onInput=()=>{ clearTimeout(tm); tm=setTimeout(()=>{ validateRow(row); syncURL(); },320); };
+  row.f.addEventListener('input',onInput);
+  row.i.addEventListener('input',onInput);
+  row.f.addEventListener('keydown',e=>{ if(e.key==='Enter') compute(); });
+  row.i.addEventListener('keydown',e=>{ if(e.key==='Enter') compute(); });
+  $('seqList').appendChild(el);
+  state.rows.push(row);
+  return row;
+}
+function rowError(row,msg){
+  row.f.classList.add('invalid');
+  row.err.textContent='⚠ '+msg; row.err.classList.add('show');
+  row.kind.textContent='有误'; row.kind.className='seq-kind bad';
+}
+function rowClear(row){
+  row.f.classList.remove('invalid'); row.i.classList.remove('invalid');
+  row.err.classList.remove('show'); row.err.textContent='';
+}
+function validateRow(row){
+  rowClear(row);
+  const fRaw=row.f.value.trim();
+  if(!fRaw){
+    if(row.i.value.trim()){ row.kind.textContent='缺公式'; row.kind.className='seq-kind bad';
+      row.i.classList.add('invalid'); row.err.textContent='⚠ 有初始项但缺少公式'; row.err.classList.add('show'); }
+    else { row.kind.textContent='未识别'; row.kind.className='seq-kind'; }
+    return null;
+  }
+  try{
+    const seq=buildSequence(row.name,fRaw,row.i.value);
+    const inits=parseInits(row.i.value,seq.name);
+    if(seq.name!==row.name) throw new ParseErr(`公式左侧数列名 "${seq.name}" 与本行 "${row.name}" 不一致`);
+    if(seq.kind==='recurrence'&&!inits.size){
+      row.i.classList.add('invalid');
+      row.err.textContent='⚠ 递推公式需要至少一个初始项，如 '+row.name+'_1=1';
+      row.err.classList.add('show');
+      row.kind.textContent='递推'; row.kind.className='seq-kind bad';
+      return null;
+    }
+    // 交叉引用检查（含初始项，与 compute 口径一致）
+    const names=new Set(state.rows.map(r=>r.name));
+    const missing=new Set();
+    const chk=n=>{ if(n.k==='seq'&&n.name!==seq.name&&!names.has(n.name)) missing.add(n.name); };
+    seq.pieces.forEach(p=>{ walk(p.expr,chk); if(p.cond) walk(p.cond,chk); });
+    inits.forEach(a=>walk(a,chk));
+    if(missing.size) throw new ParseErr('引用了未定义的数列：'+[...missing].join('、')+'（可先添加该数列）');
+    let kindTxt=seq.kind==='recurrence'?('递推 (k='+seq.k+')'):(seq.pieces.length>1?'分段通项':'通项');
+    if(seq.kind==='explicit'&&inits.size) kindTxt+=' · ⚠初始项会覆盖对应项';
+    row.kind.textContent=kindTxt;
+    row.kind.className='seq-kind ok';
+    return seq;
+  }catch(e){
+    if(e instanceof ParseErr){ rowError(row,e.message); return null; }
+    rowError(row,'内部错误：'+e.message); return null;
+  }
+}
+
+/* ---------- 范围读取 ---------- */
+function readRange(fromEl,toEl){
+  const a=Number(fromEl.value), b=Number(toEl.value);
+  if(fromEl.value.trim()===''||toEl.value.trim()==='') throw new ParseErr('请填写起止下标');
+  if(!Number.isInteger(a)||!Number.isInteger(b)) throw new ParseErr('起止下标必须是整数');
+  if(Math.abs(a)>1000000||Math.abs(b)>1000000) throw new ParseErr('下标范围过大（±1000000 以内）');
+  if(a>b) throw new ParseErr('起始下标不能大于终止下标');
+  if(b-a+1>5000) throw new ParseErr('一次最多计算 5000 项');
+  return [a,b];
+}
+
+/* ---------- 主计算 ---------- */
+function compute(){
+  const gm=$('globalMsg'); gm.className='global-msg'; gm.textContent='';
+  $('sumResult').classList.remove('show'); // 旧求和结果随新计算失效
+  let nFrom,nTo;
+  try{ [nFrom,nTo]=readRange($('nFrom'),$('nTo')); $('nFrom').classList.remove('invalid'); $('nTo').classList.remove('invalid'); }
+  catch(e){
+    $('nFrom').classList.add('invalid'); $('nTo').classList.add('invalid');
+    gm.className='global-msg show'; gm.textContent='⚠ 范围设置：'+e.message; return;
+  }
+  const seqs=new Map(); let hasErr=false; const active=[];
+  for(const row of state.rows){
+    row._seq=null; // 防止本行校验失败后交叉引用检查用到上一次构建的旧定义
+    if(!row.f.value.trim()){
+      if(row.i.value.trim()){ rowError(row,'有初始项但缺少公式'); hasErr=true; }
+      else rowClear(row);
+      continue;
+    }
+    active.push(row);
+    try{
+      const seq=buildSequence(row.name,row.f.value,row.i.value);
+      if(seq.name!==row.name) throw new ParseErr(`公式左侧数列名 "${seq.name}" 与本行 "${row.name}" 不一致`);
+      seq.inits=parseInits(row.i.value,seq.name);
+      if(seq.kind==='recurrence'){
+        if(!seq.inits.size) throw new ParseErr('递推公式需要至少一个初始项，如 '+row.name+'_1=1');
+        seq.baseIdx=Math.min(...seq.inits.keys());
+      }
+      seqs.set(row.name,seq); row._seq=seq; rowClear(row);
+      let kindTxt=seq.kind==='recurrence'?('递推 (k='+seq.k+')'):(seq.pieces.length>1?'分段通项':'通项');
+      if(seq.kind==='explicit'&&seq.inits.size) kindTxt+=' · ⚠初始项会覆盖对应项';
+      row.kind.textContent=kindTxt;
+      row.kind.className='seq-kind ok';
+    }catch(e){ rowError(row,e.message); hasErr=true; }
+  }
+  if(!active.length){
+    gm.className='global-msg show'; gm.textContent='⚠ 请至少为一个数列填写公式'; return;
+  }
+  // 交叉引用存在性检查
+  for(const row of active){
+    const seq=row._seq; if(!seq) continue;
+    const missing=new Set();
+    const chk=n=>{ if(n.k==='seq'&&n.name!==seq.name&&!seqs.has(n.name)) missing.add(n.name); };
+    seq.pieces.forEach(p=>{ walk(p.expr,chk); if(p.cond) walk(p.cond,chk); });
+    seq.inits.forEach(a=>walk(a,chk));
+    if(missing.size){ rowError(row,'引用了未定义的数列：'+[...missing].join('、')); hasErr=true; }
+  }
+  if(hasErr){
+    gm.className='global-msg show';
+    gm.textContent='⚠ 部分数列定义有误（已在对应输入框标红），请修正后重新计算。';
+    return;
+  }
+  // 逐格计算（分片异步：每个 tick 限时 24ms 后让出主线程，按钮变为「取消」）
+  const sci=$('sciToggle').checked;
+  const seqList=[...seqs.values()];
+  const errInfo=[];
+  const grid=new Map(); // name -> Map idx -> {v}|{err}
+  const jobs=[];
+  for(const seq of seqList){
+    const m=new Map(); grid.set(seq.name,m);
+    for(let idx=nFrom;idx<=nTo;idx++) jobs.push([seq,m,idx]);
+  }
+  if(_computeJob) _computeJob.cancelled=true; // 取消上一次未完成的计算
+  const job={cancelled:false}; _computeJob=job;
+  _termCancel=()=>job.cancelled;              // 引擎心跳：单格巨算也能被取消
+  const btn=$('calcBtn');
+  btn.textContent='取 消';
+  btn.onclick=()=>{ job.cancelled=true; };
+  const total=jobs.length; let i=0;
+  const restore=()=>{ if(_computeJob!==job) return; _computeJob=null; _termCancel=null; btn.textContent='计 算'; btn.onclick=compute; };
+  const finish=()=>{
+    restore();
+    state.computed={seqs,seqList,nFrom,nTo,grid};
+    // 处理列（逐列隔离，单列失败不影响表格渲染）
+    for(const pc of state.procCols){
+      try{ computeProcCol(pc); }
+      catch(e){
+        pc.values=new Map();
+        for(let idx=nFrom;idx<=nTo;idx++) pc.values.set(idx,{err:'处理列计算失败：'+e.message});
+      }
+    }
+    renderTable(sci);
+    if(errInfo.length){
+      gm.className='global-msg show warn';
+      gm.innerHTML='⚠ 部分项未能计算（单元格已标红，悬停或点击查看原因）：'+
+        errInfo.map(x=>`<b>${esc(x.name)}</b> 第 ${x.idx} 项：${esc(x.msg)}`).join('；');
+    }
+    $('outputInfo').textContent=`n ∈ [${nFrom}, ${nTo}] · 共 ${nTo-nFrom+1} 项 · ${seqList.length+state.procCols.length} 列`;
+    $('sumFrom').value=nFrom; $('sumTo').value=nTo;
+    refreshProcTargets();
+    syncURL();
+  };
+  const step=()=>{
+    if(job.cancelled){ if(_computeJob!==job) return; restore(); $('outputInfo').textContent=''; gm.className='global-msg show warn'; gm.textContent='⚠ 已取消（未生成结果）'; return; }
+    const t0=Date.now();
+    while(i<total&&!job.cancelled&&Date.now()-t0<24){
+      const [seq,m,idx]=jobs[i++];
+      try{ m.set(idx,{v:computeTerm(seqs,seq,idx,new Set())}); }
+      catch(e){
+        if(job.cancelled) break;
+        const msg=(e instanceof EvalErr)?e.message:('内部错误：'+e.message);
+        m.set(idx,{err:msg});
+        if(!errInfo.some(x=>x.name===seq.name)) errInfo.push({name:seq.name,idx,msg});
+      }
+    }
+    if(i<total){ $('outputInfo').textContent=`计算中… ${i}/${total}`; setTimeout(step,0); }
+    else finish();
+  };
+  step();
+}
+
+/* ---------- 表格渲染 ---------- */
+function renderTable(sci){
+  const c=state.computed;
+  const wrap=$('tableWrap');
+  if(!c){ wrap.innerHTML='<div class="empty-state">在左侧定义数列，然后点击「计算」。<br>首次使用？点右上角 <b>?</b> 查看功能介绍与详细用法。</div>'; return; }
+  const headers=['n',...c.seqList.map(s=>s.name+'_n'),...state.procCols.map(p=>p.label)];
+  const rows=[];
+  for(let idx=c.nFrom;idx<=c.nTo;idx++){
+    const cells=[String(idx)];
+    for(const s of c.seqList){
+      const cell=c.grid.get(s.name).get(idx);
+      cells.push(cell.err?{err:cell.err}:fmt(cell.v,sci));
+    }
+    for(const pc of state.procCols){
+      const cell=pc.values.get(idx);
+      cells.push(!cell?'':(cell.err?{err:cell.err}:fmt(cell.v,sci)));
+    }
+    rows.push(cells);
+  }
+  state.lastTable={headers,rows};
+  let html='<table class="result"><thead><tr>'+headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr></thead><tbody>';
+  for(const r of rows){
+    html+='<tr>'+r.map(cell=>{
+      if(typeof cell==='object'&&cell.err) return '<td class="cell-err" title="'+esc(cell.err)+'">✕</td>';
+      return '<td>'+esc(cell)+'</td>';
+    }).join('')+'</tr>';
+  }
+  html+='</tbody></table>';
+  wrap.innerHTML=html;
+}
+
+/* ---------- 处理列 ---------- */
+function refreshProcTargets(){
+  const sel=$('procTarget'); const old=sel.value;
+  sel.innerHTML='';
+  if(state.computed){
+    for(const s of state.computed.seqList){
+      const o=document.createElement('option'); o.value='seq:'+s.name; o.textContent=s.name+'_n'; sel.appendChild(o);
+    }
+  }
+  state.procCols.forEach((p,i)=>{
+    const o=document.createElement('option'); o.value='proc:'+i; o.textContent=p.label; sel.appendChild(o);
+  });
+  if(old&&[...sel.options].some(o=>o.value===old)) sel.value=old;
+}
+function computeProcCol(pc){
+  pc.values=new Map();
+  const c=state.computed; if(!c) return;
+  const target=pc.target;
+  // 目标数列被删除后该列标记为失效；若同名数列被重新建立则自动恢复
+  if(pc.dead){
+    if(target.startsWith('seq:')&&c.grid.has(target.slice(4))) pc.dead=null;
+    else{ for(let idx=c.nFrom;idx<=c.nTo;idx++) pc.values.set(idx,{err:pc.dead}); return; }
+  }
+  for(let idx=c.nFrom;idx<=c.nTo;idx++){
+    let base;
+    if(target.startsWith('seq:')){
+      const g=c.grid.get(target.slice(4));
+      const cell=g&&g.get(idx);
+      if(!cell){ pc.values.set(idx,{err:'目标数列不存在或已删除'}); continue; }
+      if(cell.err){ pc.values.set(idx,{err:'目标项无法计算'}); continue; }
+      base=cell.v;
+    }else{
+      const src=state.procCols[Number(target.slice(5))];
+      const cell=src&&src.values.get(idx);
+      if(!cell){ pc.values.set(idx,{err:'目标列无此项'}); continue; }
+      if(cell.err){ pc.values.set(idx,{err:'目标项无法计算'}); continue; }
+      base=cell.v;
+    }
+    const visiting=new Set();
+    const getSeq=(name,i)=>{
+      const t=c.seqs.get(name);
+      if(!t) throw new EvalErr(`未定义的数列 "${name}"`);
+      return computeTerm(c.seqs,t,i,visiting);
+    };
+    try{
+      let v;
+      try{
+        if(typeof base!=='bigint'&&!Number.isInteger(base)) throw new Fallback();
+        v=ev(pc.ast,{n:BigInt(idx),x:typeof base==='bigint'?base:BigInt(base),getSeq},'bigint');
+      }catch(e){
+        if(e instanceof Fallback)
+          v=ev(pc.ast,{n:idx,x:typeof base==='bigint'?Number(base):base,getSeq},'float');
+        else throw e;
+      }
+      if(typeof v==='boolean') throw new EvalErr('处理表达式应得到数值，而不是判断式');
+      pc.values.set(idx,{v});
+    }catch(e){
+      pc.values.set(idx,{err:(e instanceof EvalErr)?e.message:('内部错误：'+e.message)});
+    }
+  }
+}
+function addProcCol(){
+  const errEl=$('procErr'); errEl.classList.remove('show');
+  const err=addProcColCore($('procTarget').value,$('procExpr').value.trim());
+  if(err){
+    if(!state.computed){ errEl.textContent='⚠ '+err; errEl.classList.add('show'); return; }
+    $('procExpr').classList.add('invalid'); errEl.textContent='⚠ '+err; errEl.classList.add('show'); return;
+  }
+  $('procExpr').classList.remove('invalid');
+  afterProcChange('已添加处理列');
+}
+function addProcColCore(target,raw){
+  if(!state.computed) return '请先点击「计算」生成数列';
+  if(!raw) return '请输入处理表达式，如 (x)^2';
+  if(!target) return '请选择目标数列';
+  let ast;
+  try{ ast=parseExpr(preprocess(raw)); }catch(e){ return e.message; }
+  const missing=new Set();
+  walk(ast,n=>{ if(n.k==='seq'&&!state.computed.seqs.has(n.name)) missing.add(n.name); });
+  if(missing.size) return '引用了未定义的数列：'+[...missing].join('、');
+  if(target.startsWith('proc:')&&!state.procCols[Number(target.slice(5))]) return '目标处理列不存在';
+  const tName=target.startsWith('seq:')?target.slice(4)+'_n':state.procCols[Number(target.slice(5))].label;
+  const pc={target,raw,ast,label:raw+' ['+tName+']',values:new Map()};
+  computeProcCol(pc);
+  state.procCols.push(pc);
+  return null;
+}
+function afterProcChange(msg){
+  renderTable($('sciToggle').checked);
+  refreshProcTargets();
+  if(state.computed) $('outputInfo').textContent=$('outputInfo').textContent.replace(/\d+ 列/,state.computed.seqList.length+state.procCols.length+' 列');
+  if(msg) toast(msg);
+  syncURL();
+}
+
+/* ---------- 求和 ---------- */
+function doSum(){
+  const el=$('sumResult'); el.classList.remove('show');
+  if(!state.computed){ el.classList.add('show'); el.innerHTML='<span class="sum-label">⚠</span>请先点击「计算」生成数列'; return; }
+  try{
+    const [a,b]=readRange($('sumFrom'),$('sumTo'));
+    $('sumFrom').classList.remove('invalid'); $('sumTo').classList.remove('invalid');
+    const target=$('procTarget').value;
+    if(!target) throw new ParseErr('请选择目标数列');
+    let acc=null, allBig=true, errs=0, firstErr='';
+    for(let i=a;i<=b;i++){
+      let cell;
+      if(target.startsWith('seq:')){ const g=state.computed.grid.get(target.slice(4)); cell=g&&g.get(i); }
+      else{ const pc=state.procCols[Number(target.slice(5))]; cell=pc&&pc.values.get(i); }
+      if(!cell||cell.err){ errs++; if(!firstErr) firstErr=cell?cell.err:'无此项'; continue; }
+      const v=cell.v;
+      if(typeof v==='bigint'){ acc=allBig?(acc===null?0n:acc)+v:acc+Number(v); }
+      else{ if(allBig){ acc=(acc===null?0:Number(acc)); allBig=false; } acc+=v; }
+    }
+    if(acc===null) throw new EvalErr('范围内没有可求和的项'+(firstErr?('：'+firstErr):''));
+    const label=$('procTarget').selectedOptions[0].textContent;
+    const sci=$('sciToggle').checked;
+    let html='<span class="sum-label">Σ</span>'+esc(label)+'，n = '+a+' … '+b+'　=　<b>'+esc(fmt(acc,sci))+'</b>';
+    if(!allBig) html+='　<span style="opacity:.7">（含小数，浮点近似）</span>';
+    if(errs) html+='　<span style="color:var(--err)">（跳过 '+errs+' 个无法计算的项）</span>';
+    el.innerHTML=html; el.classList.add('show');
+  }catch(e){
+    $('sumFrom').classList.add('invalid'); $('sumTo').classList.add('invalid');
+    el.innerHTML='<span class="sum-label">⚠</span>'+esc(e.message); el.classList.add('show');
+  }
+}
+
+/* ---------- 复制 / 清空 / 分享 ---------- */
+function copyText(text,okMsg){
+  const done=()=>toast(okMsg);
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text,done));
+  }else fallbackCopy(text,done);
+}
+
+/* ---------- 网址分享：页面状态 ⇄ 地址栏 hash ---------- */
+function syncURL(){
+  try{
+    const st={v:1,
+      seqs:state.rows.map(r=>[r.f.value,r.i.value]).filter(p=>p[0].trim()||p[1].trim()),
+      from:$('nFrom').value, to:$('nTo').value,
+      sci:$('sciToggle').checked?1:0,
+      sf:$('sumFrom').value, so:$('sumTo').value,
+      procs:state.procCols.map(p=>[p.target,p.raw])};
+    if(!st.seqs.length){ history.replaceState(null,'',location.pathname+location.search); return; }
+    const b=btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(st))))
+      .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    history.replaceState(null,'','#s='+b);
+  }catch(e){}
+}
+function loadStateFromHash(){
+  const m=location.hash.match(/#s=([A-Za-z0-9\-_]+)/);
+  if(!m) return null;
+  try{
+    let b=m[1].replace(/-/g,'+').replace(/_/g,'/'); while(b.length%4)b+='=';
+    const st=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b),c=>c.charCodeAt(0))));
+    return (st&&typeof st==='object')?st:null;
+  }catch(e){ return null; }
+}
+function applyState(st){
+  state.rows.slice().forEach(r=>r.el.remove()); state.rows=[];
+  let list=Array.isArray(st.seqs)?st.seqs.filter(p=>Array.isArray(p)):[];
+  if(!list.length) list=[['','']];
+  list.forEach(p=>addSeqRow(undefined,String(p[0]||''),String(p[1]||'')));
+  if(st.from!==undefined) $('nFrom').value=st.from;
+  if(st.to!==undefined) $('nTo').value=st.to;
+  $('sciToggle').checked=!!st.sci;
+  if(st.sf!==undefined) $('sumFrom').value=st.sf;
+  if(st.so!==undefined) $('sumTo').value=st.so;
+  state.rows.forEach(r=>validateRow(r));
+  compute();
+  if(Array.isArray(st.procs)) for(const p of st.procs){ if(Array.isArray(p)) addProcColCore(String(p[0]),String(p[1])); }
+  if(state.procCols.length) afterProcChange();
+}
+function copyTable(){
+  if(!state.lastTable){ toast('还没有计算结果可复制'); return; }
+  const t=state.lastTable;
+  const text=t.headers.join('\t')+'\n'+t.rows.map(r=>r.map(c=>typeof c==='object'?'✕':c).join('\t')).join('\n');
+  copyText(text,'已复制 '+t.rows.length+' 行 × '+t.headers.length+' 列');
+}
+function fallbackCopy(text,done){
+  const ta=document.createElement('textarea');
+  ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); done(); }catch(e){ toast('复制失败，请手动选择文本'); }
+  document.body.removeChild(ta);
+}
+function clearAll(){
+  state.computed=null; state.lastTable=null; state.procCols=[];
+  renderTable(false);
+  $('outputInfo').textContent=''; $('sumResult').classList.remove('show');
+  const gm=$('globalMsg'); gm.className='global-msg'; gm.textContent='';
+  refreshProcTargets();
+  try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){}
+  toast('已清空结果');
+}
+
+/* ---------- 示例 ---------- */
+const EXAMPLES={
+  arith:{ seqs:[['a_n = 3n - 2','']], from:1, to:10 },
+  fib:{ seqs:[['a_{n+2} = a_{n+1} + a_n','a_1=1, a_2=1']], from:1, to:15 },
+  collatz:{ seqs:[['a_{n+1} = a_n/2, 2 \\mid a_n; 3a_n+1, 2 \\nmid a_n','a_1=27']], from:1, to:30 },
+  cross:{ seqs:[['a_{n+1} = a_n + b_n','a_1=1'],['b_n = 2n+1','']], from:1, to:10 },
+  big:{ seqs:[['a_{n+1} = 2a_n + 1','a_1=1']], from:1, to:100 }
+};
+function loadExample(key){
+  const ex=EXAMPLES[key]; if(!ex) return;
+  state.rows.slice().forEach(r=>{ r.el.remove(); });
+  state.rows=[];
+  ex.seqs.forEach(([f,i])=>addSeqRow(undefined,f,i));
+  $('nFrom').value=ex.from; $('nTo').value=ex.to;
+  state.rows.forEach(r=>validateRow(r));
+  compute();
+}
+document.querySelectorAll('[data-ex]').forEach(b=>b.addEventListener('click',()=>loadExample(b.dataset.ex)));
+
+/* ---------- 主题 ---------- */
+function setTheme(t){
+  document.documentElement.dataset.theme=t;
+  $('themeBtn').textContent=t==='dark'?'☀️':'🌙';
+  try{ localStorage.setItem('seqTheme',t); }catch(e){}
+}
+(function initTheme(){
+  let t='light';
+  try{ t=localStorage.getItem('seqTheme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'); }catch(e){}
+  setTheme(t);
+})();
+$('themeBtn').onclick=()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
+
+/* ---------- 帮助弹窗 ---------- */
+function openHelp(){ $('helpModal').classList.add('show'); }
+function closeHelp(){
+  $('helpModal').classList.remove('show');
+  try{
+    if($('noAutoHelp').checked) localStorage.setItem('seqNoHelp','1');
+    else localStorage.removeItem('seqNoHelp');
+  }catch(e){}
+}
+$('helpBtn').onclick=openHelp;
+$('helpClose').onclick=closeHelp;
+$('helpStart').onclick=closeHelp;
+$('helpModal').addEventListener('click',e=>{ if(e.target===$('helpModal')) closeHelp(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeHelp(); });
+(function autoHelp(){
+  let saved=false; try{ saved=localStorage.getItem('seqNoHelp')==='1'; }catch(e){}
+  $('noAutoHelp').checked=saved; // 同步复选框状态，避免打开再关闭帮助时误清「不再弹出」偏好
+  let no=saved; if(location.search.includes('nohelp')) no=true;
+  if(no) $('helpModal').classList.remove('show');
+})();
+
+/* ---------- 事件绑定与初始化 ---------- */
+$('addSeqBtn').onclick=()=>{ const r=addSeqRow(); r.f.focus(); };
+$('calcBtn').onclick=compute;
+$('copyBtn').onclick=copyTable;
+$('clearBtn').onclick=clearAll;
+$('addProcBtn').onclick=addProcCol;
+$('clearProcBtn').onclick=()=>{
+  state.procCols=[]; $('procExpr').value=''; $('procExpr').classList.remove('invalid');
+  $('procErr').classList.remove('show');
+  renderTable($('sciToggle').checked); refreshProcTargets();
+  if(state.computed) $('outputInfo').textContent=$('outputInfo').textContent.replace(/\d+ 列/,state.computed.seqList.length+' 列');
+  syncURL();
+  toast('已清除处理列');
+};
+$('sumBtn').onclick=doSum;
+$('sciToggle').addEventListener('change',()=>{ if(state.computed) renderTable($('sciToggle').checked); syncURL(); });
+['nFrom','nTo','sumFrom','sumTo'].forEach(id=>$(id).addEventListener('change',syncURL));
+$('shareBtn').onclick=()=>{
+  if(!state.rows.some(r=>r.f.value.trim()||r.i.value.trim())){ toast('还没有可分享的内容，请先定义数列'); return; }
+  syncURL(); copyText(location.href,'链接已复制，发送给对方即可看到相同页面');
+};
+// ✕ 错误单元格：触屏无悬停，点击/触摸弹 toast 显示原因
+$('tableWrap').addEventListener('click',e=>{
+  const td=e.target.closest('td.cell-err');
+  if(td&&td.title) toast(td.title);
+});
+$('procExpr').addEventListener('input',()=>{ $('procExpr').classList.remove('invalid'); $('procErr').classList.remove('show'); });
+
+addSeqRow('a');
+// 从网址 hash 还原分享的页面状态
+const _shared=loadStateFromHash();
+if(_shared){ try{ applyState(_shared); }catch(e){ console.warn('网址状态还原失败',e); } }
+</script>
+</body>
+</html>

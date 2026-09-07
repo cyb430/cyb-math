@@ -1,0 +1,3424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>函数图像绘制器 v3.1</title>
+<script>
+/* 尽早恢复深色主题，避免页面闪烁 */
+try { document.documentElement.dataset.theme = localStorage.getItem("plotter-theme") || "light"; } catch (e) {}
+</script>
+<style>
+/* ============================================================
+   主题变量（与桌面版配色一致）
+   ============================================================ */
+:root {
+  --bg: #f2f4f8;
+  --card: #ffffff;
+  --card-border: #e6e9f0;
+  --text: #1a1f2b;
+  --subtle: #68717f;
+  --accent: #4c6ef5;
+  --accent-dark: #3b5bdb;
+  --border: #dfe3ec;
+  --grid: #e8ebf2;
+  --danger-bg: #fdecec;
+  --danger: #c0392b;
+  --danger-hover: #f9dada;
+  --field-bg: #ffffff;
+  --toolbar-bg: #ffffff;
+  --btn-bg: #e7ecf5;
+  --btn-hover: #dbe3f0;
+  --btn-active: #ced7e8;
+  --chip-bg: #eef1f7;
+  --chip-hover-bg: #e0e9ff;
+  --chip-hover-border: #c4d5ff;
+  --list-sel: #dbe4ff;
+  --tool-on-bg: #e0e9ff;
+  --scroll: #c6cdd9;
+  --invalid-bg: #fff5f5;
+  --panel-w: 384px;          /* 横屏时左侧面板宽度 */
+  --portrait-stage-h: 52dvh; /* 竖屏时画布占屏高度 */
+  --status-h: 34px;
+  --mono: "SF Mono", Consolas, "Courier New", monospace;
+  --sans: -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", "Segoe UI", sans-serif;
+}
+
+/* ---- 深色主题：只覆盖变量，布局不动 ---- */
+[data-theme="dark"] {
+  --bg: #14171d;
+  --card: #1f232b;
+  --card-border: #2e3440;
+  --text: #e6e9f0;
+  --subtle: #9aa3b2;
+  --accent: #6b8afd;
+  --accent-dark: #4c6ef5;
+  --border: #333945;
+  --grid: #262b34;
+  --danger-bg: #3a2426;
+  --danger: #e08080;
+  --danger-hover: #4a2c2e;
+  --field-bg: #1a1e26;
+  --toolbar-bg: #1f232b;
+  --btn-bg: #2a2f3a;
+  --btn-hover: #343a47;
+  --btn-active: #3e4553;
+  --chip-bg: #262b34;
+  --chip-hover-bg: #2f3a5c;
+  --chip-hover-border: #3b5bdb;
+  --list-sel: #2f3a5c;
+  --tool-on-bg: #2f3a5c;
+  --scroll: #3a4150;
+  --invalid-bg: #3a2426;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+/* ============================================================
+   主布局 —— 默认（横屏）：左侧控制面板 + 右侧画布
+   ============================================================ */
+#app {
+  flex: 1;
+  display: flex;
+  flex-direction: row;       /* 横屏：左右排列 */
+  min-height: 0;
+}
+
+/* ---- 左侧面板 ---- */
+#panel {
+  width: var(--panel-w);
+  flex: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg);
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll) transparent;
+}
+#panel::-webkit-scrollbar { width: 6px; }
+#panel::-webkit-scrollbar-thumb { background: var(--scroll); border-radius: 3px; }
+
+/* ---- 右侧画布区 ---- */
+#stage {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px;
+  gap: 8px;
+}
+
+/* ============================================================
+   面板内容
+   ============================================================ */
+.brand { padding: 10px 14px 8px; }
+.brand-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.logo {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  font-family: Georgia, serif; font-style: italic; font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+  flex: none;
+}
+.brand h1 { font-size: 17px; font-weight: 700; letter-spacing: .01em; }
+.tagline { font-size: 11px; color: var(--subtle); }
+.accent-bar { height: 3px; background: var(--accent); border-radius: 2px; margin-top: 8px; }
+
+.panel-body { padding: 2px 12px 14px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.card-head {
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 12px 0;
+}
+.card-head .tick { width: 3px; height: 12px; background: var(--accent); border-radius: 2px; flex: none; }
+.card-head h2 { font-size: 13px; font-weight: 700; }
+.card-head { border-bottom: 1px solid var(--grid); padding-bottom: 7px; }
+.card-body { padding: 9px 12px 11px; }
+
+.hint { font-size: 11px; color: var(--subtle); line-height: 1.5; margin-bottom: 6px; }
+
+input[type="text"], input[type="number"], select {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--field-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 9px;
+  outline: none;
+  width: 100%;
+  transition: border-color .15s;
+}
+input:focus, select:focus { border-color: var(--accent); }
+input.invalid { border-color: var(--danger) !important; background: var(--invalid-bg); }
+
+/* 示例快捷填入 */
+.chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0; }
+.chip {
+  font-family: var(--mono); font-size: 11px;
+  background: var(--chip-bg); color: var(--subtle);
+  border: 1px solid var(--border); border-radius: 20px;
+  padding: 3px 9px; cursor: pointer;
+  transition: all .15s;
+}
+.chip:hover { background: var(--chip-hover-bg); color: var(--accent-dark); border-color: var(--chip-hover-border); }
+select { font-family: var(--sans); width: auto; padding: 5px 8px; }
+
+.row { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+
+.btn {
+  font-family: var(--sans);
+  font-size: 13px;
+  border: none; border-radius: 6px;
+  background: var(--btn-bg); color: var(--text);
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background .15s;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--btn-hover); }
+.btn:active { background: var(--btn-active); }
+.btn.accent { background: var(--accent); color: #fff; padding: 9px 16px; }
+.btn.accent:hover { background: var(--accent-dark); }
+.btn.danger { background: var(--danger-bg); color: var(--danger); }
+.btn.danger:hover { background: var(--danger-hover); }
+.btn.block { width: 100%; }
+
+.check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; user-select: none; }
+.check input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
+
+/* 函数列表 */
+#funcList {
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--field-bg);
+  max-height: 96px;
+  overflow: auto;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+#funcList:empty::after {
+  content: "（尚未添加函数）";
+  display: block; padding: 8px 10px; color: var(--subtle);
+  font-family: var(--sans);
+}
+#funcList li {
+  padding: 5px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+#funcList li::-webkit-scrollbar { display: none; }
+#funcList li.selected { background: var(--list-sel); }
+
+/* 样式设置行 */
+.style-grid { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.style-grid:first-child { margin-top: 0; }
+.style-grid label { font-size: 13px; color: var(--text); }
+#colorBtn {
+  width: 34px; height: 24px; border-radius: 5px;
+  border: 1px solid rgba(0,0,0,.15);
+  cursor: pointer; padding: 0;
+}
+#sizeInput { width: 58px; }
+.coord-input { width: 56px !important; padding: 5px 7px !important; }
+
+/* 范围输入 */
+.range-grid {
+  display: grid;
+  grid-template-columns: auto 1fr auto 1fr;
+  gap: 6px 8px;
+  align-items: center;
+}
+.range-grid label { font-family: var(--mono); font-size: 12px; color: var(--subtle); }
+.range-grid input { padding: 5px 7px; font-size: 12px; }
+
+/* 吸附滑杆 */
+.snap-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.snap-row label { font-size: 13px; flex: none; }
+input[type="range"] {
+  flex: 1; accent-color: var(--accent); cursor: pointer; min-width: 0;
+}
+#snapVal { font-family: var(--mono); font-size: 12px; width: 24px; text-align: right; }
+
+/* ============================================================
+   工具栏 + 画布
+   ============================================================ */
+#toolbar {
+  background: var(--toolbar-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  flex-wrap: wrap;
+  flex: none;
+}
+.tbtn {
+  font-family: var(--sans); font-size: 12px;
+  border: none; border-radius: 5px;
+  background: transparent; color: var(--text);
+  padding: 6px 11px; cursor: pointer;
+  transition: background .15s;
+  white-space: nowrap;
+}
+.tbtn:hover { background: var(--btn-hover); }
+.tbtn:active { background: var(--btn-active); }
+.tbtn.on { background: var(--tool-on-bg); color: var(--accent-dark); font-weight: 700; }
+.tbtn:disabled { opacity: .4; cursor: default; }
+.tbtn:disabled:hover { background: transparent; }
+#toolbar .sep { width: 1px; height: 18px; background: var(--border); margin: 0 4px; flex: none; }
+.tb-title { margin-left: auto; font-size: 11px; color: var(--subtle); padding-right: 6px; }
+
+#canvasWrap {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  background: var(--field-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* 画布右下角悬浮操作组：保存 PNG / 导出 SVG / 分享链接 */
+.fab-row {
+  position: absolute;
+  right: 12px; bottom: 12px;
+  display: flex; gap: 8px;
+  z-index: 5;
+}
+.fab {
+  font-family: var(--sans); font-size: 12px;
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  background: var(--toolbar-bg); color: var(--text);
+  box-shadow: 0 2px 10px rgba(20, 25, 40, .18);
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.fab:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(20, 25, 40, .24); }
+.fab.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.fab.primary:hover { background: var(--accent-dark); }
+
+/* 功能说明弹窗 */
+.help-mask { position: fixed; inset: 0; background: rgba(15, 20, 30, .45);
+  display: flex; align-items: center; justify-content: center; z-index: 60; padding: 14px; }
+.help-mask[hidden] { display: none; }
+.help-card { background: var(--card); color: var(--text); border: 1px solid var(--card-border);
+  border-radius: 14px; width: min(740px, 100%); max-height: 86dvh; display: flex; flex-direction: column;
+  box-shadow: 0 14px 44px rgba(10, 15, 30, .32); }
+.help-head { display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 20px; border-bottom: 1px solid var(--card-border); flex: none; }
+.help-head h2 { margin: 0; font-size: 16px; }
+.help-head button { border: none; background: none; color: var(--subtle); font-size: 17px;
+  cursor: pointer; padding: 2px 8px; border-radius: 7px; }
+.help-head button:hover { background: var(--btn-hover); color: var(--text); }
+.help-body { overflow: auto; padding: 4px 20px 20px; font-size: 13px; line-height: 1.8; }
+.help-body h3 { font-size: 13.5px; margin: 18px 0 4px; color: var(--accent); }
+.help-body h3:first-child { margin-top: 10px; }
+.help-body p { margin: 4px 0; }
+.help-body table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 4px 0; }
+.help-body td { padding: 4px 8px 4px 0; border-bottom: 1px solid var(--card-border); vertical-align: top; }
+.help-body td:first-child { font-family: var(--mono); white-space: nowrap; color: var(--accent-dark); width: 1%; padding-right: 14px; }
+.help-body kbd { background: var(--field-bg); border: 1px solid var(--card-border); border-radius: 4px;
+  padding: 0 5px; font: 11px var(--mono); }
+.help-foot { display: flex; align-items: center; gap: 10px; padding: 11px 20px;
+  border-top: 1px solid var(--card-border); flex: none; flex-wrap: wrap; }
+.help-foot label { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--subtle); cursor: pointer; }
+.help-foot input { accent-color: var(--accent); }
+
+/* 积分结果行 */
+.int-sel { flex: 1; min-width: 0; max-width: 45%; }
+.int-result {
+  margin-top: 7px;
+  font-family: var(--mono); font-size: 12px;
+  color: var(--accent-dark);
+  word-break: break-all;
+}
+.int-result:empty { display: none; }
+#plot {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  display: block;
+  touch-action: none;   /* 触屏手势交给 JS 处理 */
+  cursor: crosshair;
+}
+#plot.panning { cursor: grab; }
+#plot.panning.active { cursor: grabbing; }
+#plot.boxzoom { cursor: zoom-in; }
+
+#zoomRect {
+  position: absolute;
+  border: 1.5px dashed var(--accent);
+  background: rgba(76, 110, 245, .08);
+  pointer-events: none;
+  border-radius: 2px;
+}
+
+/* 画布顶部内联消息条（替代 alert：错误红、提示蓝），点击可关闭 */
+#msgBar {
+  position: absolute;
+  top: 10px; left: 50%; transform: translateX(-50%);
+  max-width: min(92%, 540px);
+  z-index: 8;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12.5px; line-height: 1.55;
+  white-space: pre-line;
+  cursor: pointer;
+  background: var(--card);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  box-shadow: 0 6px 20px rgba(20, 25, 40, .18);
+}
+#msgBar.err { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
+
+/* ============================================================
+   底部状态栏
+   ============================================================ */
+#statusbar {
+  flex: none;
+  height: var(--status-h);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 14px;
+  font-size: 11px;
+  color: var(--subtle);
+  background: var(--bg);
+}
+#hintText { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#coord { margin-left: auto; font-family: var(--mono); font-size: 11px; white-space: nowrap; }
+
+/* ============================================================
+   响应式：竖屏 —— 画布在上、面板在下滚动
+   ============================================================ */
+@media (orientation: portrait) {
+  #app { flex-direction: column; }
+  #stage {
+    order: -1;                  /* 画布提到面板之前 */
+    flex: none;
+    height: var(--portrait-stage-h);
+    padding: 6px 8px;
+    gap: 6px;
+  }
+  #panel {
+    width: auto;                /* 面板占满整宽 */
+    flex: 1;
+    min-height: 0;
+  }
+  .panel-body { padding-bottom: 20px; }
+  .tb-title { display: none; }  /* 竖屏省空间，隐藏工具栏标题 */
+}
+
+/* 窄屏（不论横竖）进一步压缩 */
+@media (max-width: 640px) {
+  :root { --portrait-stage-h: 46dvh; }
+  .brand h1 { font-size: 15px; }
+  .tagline { flex-basis: 100%; }
+  .btn { padding: 7px 11px; font-size: 12px; }
+  .tbtn { padding: 6px 8px; font-size: 11px; }
+  #statusbar { font-size: 10px; padding: 0 10px; gap: 8px; }
+  #funcList { max-height: 80px; }
+  /* 面板卡片在手机上可两列平铺更省滚动距离（可选，注释掉即单列） */
+  /* .panel-body { columns: 2; column-gap: 8px; } .card { break-inside: avoid; } */
+}
+
+/* 超宽横屏：面板适度加宽，避免画布比例失调 */
+@media (min-width: 1600px) and (orientation: landscape) {
+  :root { --panel-w: 420px; }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- ============ 左侧控制面板 ============ -->
+  <aside id="panel">
+    <header class="brand">
+      <div class="brand-top">
+        <div class="logo">ƒ</div>
+        <h1>函数图像绘制器</h1>
+        <span class="tagline">LaTeX · 多函数 · 点吸附 · 圆锥曲线</span>
+      </div>
+      <div class="accent-bar"></div>
+    </header>
+
+    <div class="panel-body">
+      <!-- 输入 -->
+      <section class="card">
+        <div class="card-head"><span class="tick"></span><h2>输入函数</h2></div>
+        <div class="card-body">
+          <p class="hint">支持: y=f(x) · x=f(y) · 不等式 · 隐函数 · \frac · \sqrt · \sum/\prod（或 Σ/Π）· [x] 下取整 · |x|</p>
+          <div class="chips">
+            <button class="chip" tabindex="0" data-expr="y=x^2-2x">y=x²-2x</button>
+            <button class="chip" tabindex="0" data-expr="x=sin(y)">x=sin(y)</button>
+            <button class="chip" tabindex="0" data-expr="y>1/x">y&gt;1/x</button>
+            <button class="chip" tabindex="0" data-expr="x²+y²=4">x²+y²=4</button>
+            <button class="chip" tabindex="0" data-expr="y=[x]+0.5">下取整 [x]</button>
+            <button class="chip" tabindex="0" data-expr="y=Σ_{k=1}^{5}{k*x}">Σ 求和</button>
+            <button class="chip" tabindex="0" data-expr="y=Π_{k=1}^{4}{(x-k)}">Π 求积</button>
+          </div>
+          <input id="exprInput" type="text" placeholder="在此输入函数表达式，例如: y=x^2-2x"
+                 autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go">
+          <div class="row">
+            <button id="addBtn" class="btn accent">＋ 添加函数</button>
+            <label class="check"><input id="derivCheck" type="checkbox"><span>同时绘制导函数</span></label>
+          </div>
+        </div>
+      </section>
+
+      <!-- 函数列表 -->
+      <section class="card">
+        <div class="card-head"><span class="tick"></span><h2>函数列表</h2></div>
+        <div class="card-body">
+          <ul id="funcList" tabindex="0"></ul>
+          <div class="row">
+            <button id="removeBtn" class="btn">删除选中</button>
+            <button id="clearBtn" class="btn danger">清空全部</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 样式设置 -->
+      <section class="card">
+        <div class="card-head"><span class="tick"></span><h2>选中函数样式</h2></div>
+        <div class="card-body">
+          <div class="style-grid">
+            <label>颜色</label>
+            <button id="colorBtn" title="选择函数颜色"></button>
+            <input id="colorPicker" type="color" hidden>
+            <label style="margin-left:6px">标签字号</label>
+            <input id="sizeInput" type="number" min="6" max="30" value="11">
+          </div>
+          <div class="style-grid">
+            <label>标签位置</label>
+            <select id="labelMode">
+              <option>图例(右侧)</option>
+              <option>曲线旁</option>
+              <option>手动坐标</option>
+            </select>
+            <label>x:</label><input id="labelX" class="coord-input" type="text">
+            <label>y:</label><input id="labelY" class="coord-input" type="text">
+            <button id="applyBtn" class="btn">应用</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 定积分 / 曲线间面积 -->
+      <section class="card">
+        <div class="card-head"><span class="tick"></span><h2>定积分 / 曲线间面积</h2></div>
+        <div class="card-body">
+          <div class="style-grid">
+            <label>f(x)</label><select id="intF" class="int-sel"></select>
+            <label>g(x)</label><select id="intG" class="int-sel"></select>
+          </div>
+          <div class="style-grid">
+            <label>下限</label><input id="intA" class="coord-input" type="text" value="0">
+            <label>上限</label><input id="intB" class="coord-input" type="text" value="1">
+            <button id="intCalcBtn" class="btn">计算并标注</button>
+            <button id="intClearBtn" class="btn danger">清除</button>
+          </div>
+          <p class="hint" style="margin:6px 0 0">g(x) 选“（无）”时计算 ∫f dx；否则计算两曲线间面积 ∫|f−g| dx（仅 y=f(x) 类型，区间支持表达式如 pi/2）</p>
+          <div id="intResult" class="int-result"></div>
+        </div>
+      </section>
+
+      <!-- 圆锥曲线分析器 -->
+      <section class="card">
+        <div class="card-head"><span class="tick"></span><h2>圆锥曲线分析器</h2></div>
+        <div class="card-body">
+          <p class="hint">输入一般二次方程 Ax²+Bxy+Cy²+Dx+Ey+F=0，自动识别椭圆/双曲线/抛物线，计算中心、焦点、准线、渐近线并绘图标注</p>
+          <div class="chips">
+            <button class="chip" data-conic="x^2/4+y^2=1">椭圆</button>
+            <button class="chip" data-conic="x^2-y^2/4=1">双曲线</button>
+            <button class="chip" data-conic="y^2=4x">抛物线</button>
+            <button class="chip" data-conic="(x-1)^2/4+(y+2)^2/9=1">平移椭圆</button>
+            <button class="chip" data-conic="x^2+2xy+y^2-4x+4y=0">旋转抛物线</button>
+            <button class="chip" data-conic="xy=1">旋转双曲线</button>
+          </div>
+          <input id="conicInput" type="text" placeholder="例如: 3x^2+2xy+3y^2-4x+2y-1=0"
+                 autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go">
+          <div class="row">
+            <button id="conicBtn" class="btn accent">分析并绘制</button>
+            <button id="conicClearBtn" class="btn danger">清除</button>
+          </div>
+          <label class="check" style="margin-top:7px"><input id="conicElems" type="checkbox" checked><span>标注中心/焦点/准线/渐近线</span></label>
+          <div id="conicResult" class="int-result" style="white-space:pre-line;line-height:1.8"></div>
+        </div>
+      </section>
+
+      <!-- 绘图范围 -->
+      <section class="card">
+        <div class="card-head"><span class="tick"></span><h2>绘图范围</h2></div>
+        <div class="card-body">
+          <div class="range-grid">
+            <label>x_min</label><input id="xMin" type="text" value="-10">
+            <label>x_max</label><input id="xMax" type="text" value="10">
+            <label>y_min</label><input id="yMin" type="text" value="-10">
+            <label>y_max</label><input id="yMax" type="text" value="10">
+          </div>
+          <div class="row">
+            <button id="applyRangeBtn" class="btn">应用范围</button>
+            <button id="zoomInBtn" class="btn">放大</button>
+            <button id="zoomOutBtn" class="btn">缩小</button>
+            <button id="resetBtn" class="btn">重置</button>
+            <label class="check"><input id="aspectCheck" type="checkbox" checked><span>1:1</span></label>
+          </div>
+        </div>
+      </section>
+
+      <!-- 点吸附 -->
+      <section class="card">
+        <div class="card-head"><span class="tick"></span><h2>点吸附</h2></div>
+        <div class="card-body">
+          <label class="check"><input id="snapCheck" type="checkbox" checked><span>启用吸附（整数点/零点/极值/焦点）</span></label>
+          <div class="snap-row">
+            <label>吸附半径</label>
+            <input id="snapRadius" type="range" min="5" max="60" value="20">
+            <span id="snapVal">20</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </aside>
+
+  <!-- ============ 右侧画布 ============ -->
+  <main id="stage">
+    <div id="toolbar">
+      <button class="tbtn" id="tbHome">主页</button>
+      <button class="tbtn" id="tbBack">← 后退</button>
+      <button class="tbtn" id="tbFwd">前进 →</button>
+      <span class="sep"></span>
+      <button class="tbtn" id="tbPan">✥ 平移</button>
+      <button class="tbtn" id="tbZoom">▢ 框选</button>
+      <button class="tbtn" id="tbTangent" title="点击曲线上的点，画出该点切线并显示斜率">∕ 切线</button>
+      <button class="tbtn" id="tbArea" title="面积模式：单击画布求不等式交区域或两曲线间面积（触屏替代双击的入口）">◫ 面积</button>
+      <span class="sep"></span>
+      <button class="tbtn" id="tbTheme" title="切换深色/浅色主题">🌙</button>
+      <button class="tbtn" id="tbHelp" title="功能说明（首次打开自动显示）">?</button>
+      <span class="tb-title">函数图像绘制器 v3.1</span>
+    </div>
+    <div id="canvasWrap">
+      <div id="msgBar" hidden></div>
+      <canvas id="plot" role="img" aria-label="函数图像画布：显示坐标网格、函数曲线、标记点与切线，可用鼠标滚轮缩放、拖拽平移"></canvas>
+      <div id="zoomRect" hidden></div>
+      <div class="fab-row">
+        <button class="fab" id="fabShare" title="复制链接，打开即可还原当前图形">🔗 分享</button>
+        <button class="fab" id="fabSvg" title="导出矢量图，适合插入课件论文">🧾 SVG</button>
+        <button class="fab primary" id="fabPng" title="保存为 PNG 图片">💾 PNG</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<footer id="statusbar">
+  <span id="hintText">滚轮=缩放 · 左键=标记点(吸附) · 右键=清除标注 · 双击/面积模式=求面积(不等式交区域/两曲线交点间) · 切线模式=点画切线 · Esc=退出模式</span>
+  <span id="coord"></span>
+</footer>
+
+<!-- ============ 功能说明弹窗 ============ -->
+<div id="helpMask" class="help-mask" hidden>
+  <div class="help-card" role="dialog" aria-label="功能说明">
+    <div class="help-head"><h2>功能说明 · 函数图像绘制器 v3.1</h2><button id="helpClose" title="关闭（Esc）">✕</button></div>
+    <div class="help-body">
+      <h3>快速上手</h3>
+      <p>在输入框键入 <kbd>y=x^2-2x</kbd> 回车即出图；点输入框上方的示例标签可一键填入。左侧面板管理函数列表与样式，右下悬浮按钮负责分享与导出。</p>
+
+      <h3>表达式语法</h3>
+      <table>
+        <tr><td>y=x^2-2x</td><td>普通函数，也支持上标 <kbd>x²</kbd>、隐式乘法 <kbd>2x</kbd>、<kbd>2sin(x)</kbd></td></tr>
+        <tr><td>x=sin(y)</td><td>x=f(y) 形式的横向曲线</td></tr>
+        <tr><td>y&gt;1/x</td><td>不等式区域（y&gt; y&lt; x&gt; x&lt;），严格不等式边界为虚线</td></tr>
+        <tr><td>x^2+y^2=4</td><td>隐函数（等号两边都含变量），如圆、椭圆</td></tr>
+        <tr><td>\frac{1}{x}</td><td>分数；也可直接写 <kbd>1/x</kbd></td></tr>
+        <tr><td>sqrt(x) · |x|</td><td>根号与绝对值（<kbd>\sqrt{x}</kbd>、<kbd>abs(x)</kbd> 亦可）</td></tr>
+        <tr><td>[x]</td><td>下取整（高斯函数），支持嵌套 <kbd>[2*[x]]</kbd>，也认 \lfloor\rfloor</td></tr>
+        <tr><td>Σ_{k=1}^{5}{k*x}</td><td>求和（\sum）；求积用 <kbd>Π_{k=1}^{4}{(x-k)}</kbd>（\prod）</td></tr>
+        <tr><td>sin cos tan …</td><td>三角/反三角/双曲、sec csc cot、ln（自然对数）、log 或 lg（常用对数，底 10）、log_{2}(x) 换底、exp、max min</td></tr>
+        <tr><td>pi · e</td><td>常量；范围框里也能写表达式，如 <kbd>2*pi</kbd>、<kbd>-sqrt(2)</kbd></td></tr>
+      </table>
+
+      <h3>画布交互</h3>
+      <table>
+        <tr><td>滚轮</td><td>以指针为锚点缩放</td></tr>
+        <tr><td>拖拽 / 双指捏合</td><td>平移视野 / 触屏缩放，曲线会按新视野自动重采样</td></tr>
+        <tr><td>左键单击</td><td>打标记点，自动吸附最近的整数点、零点、极值、焦点、交点（半径可调，也可关闭）</td></tr>
+        <tr><td>右键 / 触屏长按</td><td>清除全部标记与切线</td></tr>
+        <tr><td>双击 / 面积模式</td><td>求面积：不等式交区域内双击算交区域；两条曲线相邻交点之间双击自动算曲线间面积并阴影标注。触屏双击不可靠，可点工具栏<kbd>◫ 面积</kbd>后单击画布，效果相同</td></tr>
+        <tr><td>Esc</td><td>退出平移/框选/切线/面积模式，或关闭本窗口</td></tr>
+      </table>
+
+      <h3>工具栏</h3>
+      <p><kbd>主页</kbd> 回到初始视野；<kbd>←/→</kbd> 视野历史前进后退；<kbd>✥ 平移</kbd> <kbd>▢ 框选</kbd> <kbd>∕ 切线</kbd> <kbd>◫ 面积</kbd> 四种模式（切线模式下单点曲线即画出该点切线并标注斜率，支持竖直切线）；<kbd>🌙</kbd> 深色模式；<kbd>?</kbd> 打开本说明。</p>
+
+      <h3>定积分 / 曲线间面积</h3>
+      <p>左侧卡片选择 f(x)（可选 g(x)）与上下限，Simpson 数值积分并阴影标注；选 g(x) 时算两曲线间面积 ∫|f−g|dx。上下限支持表达式；区间跨过间断点会自动跳过并提示；非法输入会标红。</p>
+
+      <h3>圆锥曲线分析器</h3>
+      <p>输入一般二次方程 <kbd>Ax²+Bxy+Cy²+Dx+Ey+F=0</kbd>（含交叉项 xy 的旋转二次曲线亦可），点「分析并绘制」：自动识别椭圆/圆/双曲线/抛物线及退化情形（点、两条直线、无轨迹），给出标准方程、中心/顶点、焦点、离心率、准线与渐近线，并在画布上叠加绘制曲线本体（粉色）、焦点（橙点）、准线与渐近线（虚线）。分析后视野自动适配；中心/焦点/顶点并入点吸附；要素标注可用复选框关闭，PNG/SVG 导出均包含这些标注。</p>
+
+      <h3>标注与样式</h3>
+      <p>选中列表中的函数后可改颜色、标签字号与位置（右侧图例 / 曲线旁 / 手动坐标），并可叠加绘制导函数（虚线）。为避免堆叠，标记点只保留最近 12 个、切线只留最近 6 条。</p>
+
+      <h3>分享、导出与数据</h3>
+      <p><kbd>🔗 分享</kbd> 复制链接，函数、视野、主题都编码在链接里，打开即还原。<kbd>💾 PNG</kbd> 存位图、<kbd>🧾 SVG</kbd> 存矢量图（适合课件论文）。函数列表与主题自动保存在<strong>本机浏览器</strong>（localStorage），刷新不丢；清除浏览器数据会重置。</p>
+
+      <h3>常见问题</h3>
+      <table>
+        <tr><td>表达式报错</td><td>弹窗红字会指出原因（未识别符号、括号不配对等）；引号与分号不允许输入</td></tr>
+        <tr><td>加了函数却没图像</td><td>可能在当前视野外（如 sqrt(x-10)）——添加时会有体检提示，调整视野即可见</td></tr>
+        <tr><td>网格/曲线范围</td><td>二者始终跟随当前可见范围，缩放平移后自动重绘，无需手动改范围</td></tr>
+      </table>
+    </div>
+    <div class="help-foot">
+      <label><input type="checkbox" id="helpNoMore"> 下次打开不再自动弹出</label>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+ * 函数图像绘制器 v2.1 —— 网页版
+ * 功能与桌面 Python 版一致：
+ * LaTeX 输入 / y=f(x)、x=f(y)、不等式、隐函数 / 多函数同图
+ * 颜色与标签设置 / 点击吸附（整数点、零点、极值、焦点、交点）
+ * 导函数 / 平移、框选、滚轮缩放 / 双击求交区域面积 / 保存图像
+ * ============================================================ */
+
+/* ---------------- 配色（浅/深双主题） ---------------- */
+const COLORS = ["#3b82f6", "#ef4444", "#22c55e", "#a855f7", "#f59e0b",
+                "#06b6d4", "#ec4899", "#14b8a6", "#84cc16", "#64748b"];
+/* 颜色白名单校验：分享链接/localStorage 里的颜色可被篡改，SVG 导出会直接拼接进
+ * 文件文本，必须限制为 #hex 或常见具名色，非法值回退默认色 */
+const NAMED_COLORS = new Set(["black", "white", "red", "green", "blue", "yellow", "orange", "purple",
+  "pink", "brown", "gray", "grey", "cyan", "magenta", "lime", "teal", "navy", "olive", "maroon"]);
+function safeColor(c, fallback) {
+  if (typeof c === "string" && (/^#[0-9a-f]{3,8}$/i.test(c) || NAMED_COLORS.has(c.toLowerCase()))) return c;
+  return fallback || COLORS[0];
+}
+const THEMES = {
+  light: {
+    canvasBg: "#ffffff", grid: "#e8ebf2", axis: "#555555", tick: "#4b5563",
+    spine: "#9aa3b2", text: "#1a1f2b", legendBg: "#ffffff", legendBorder: "#e3e6ee",
+    labelBg: "rgba(255,255,255,0.7)", deriv: "#8b8b8b",
+  },
+  dark: {
+    canvasBg: "#161a21", grid: "#2a3039", axis: "#8a93a5", tick: "#9aa3b2",
+    spine: "#4a5262", text: "#e6e9f0", legendBg: "#1f232b", legendBorder: "#333945",
+    labelBg: "rgba(31,35,43,0.78)", deriv: "#9aa3b2",
+  },
+};
+let theme = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+const TC = () => THEMES[theme];
+
+/* ============================================================
+ * LaTeX -> JS 表达式转换（移植自桌面版 latex_to_python）
+ * ============================================================ */
+function expandSumProd(s) {
+  /* 将 \sum_{k=lo}^{hi}{body} / \prod 展开为 JS 回调形式 */
+  let out = "", i = 0;
+  const n = s.length;
+  while (i < n) {
+    const m = /^\\(sum|prod)(?:\\limits|\\nolimits)?/.exec(s.slice(i));
+    if (!m) { out += s[i]; i++; continue; }
+    const op = m[1];
+    let j = i + m[0].length;
+    const m2 = /^_\{([a-zA-Z])\s*=\s*([^{}]+)\}\^\{?([^{}]+)\}?/.exec(s.slice(j));
+    if (!m2) { out += s[i]; i++; continue; }
+    const varName = m2[1], lo = m2[2], hi = m2[3];
+    j += m2[0].length;
+    let body;
+    if (j < n && s[j] === "{") {
+      let depth = 0, k = j;
+      while (k < n) {
+        if (s[k] === "{") depth++;
+        else if (s[k] === "}") { depth--; if (depth === 0) break; }
+        k++;
+      }
+      body = s.slice(j + 1, k); j = k + 1;
+    } else {
+      let k = j, depth = 0;
+      while (k < n) {
+        const c = s[k];
+        if (c === "(" || c === "{") depth++;
+        else if (c === ")" || c === "}") depth--;
+        else if ((c === "+" || c === "-") && depth === 0) break;
+        k++;
+      }
+      body = s.slice(j, k); j = k;
+    }
+    body = body.trim() || "0";
+    const bodyJs = latexToJS(body);
+    const loJs = latexToJS(lo);
+    const hiJs = latexToJS(hi);
+    const fn = op === "sum" ? "__sum" : "__prod";
+    out += fn + "((" + loJs + "),(" + hiJs + "),(" + varName + ")=>(" + bodyJs + "))";
+    i = j;
+  }
+  return out;
+}
+
+function readBraced(expr, i) {
+  if (i < expr.length && expr[i] === "{") {
+    let depth = 0; const start = i;
+    while (i < expr.length) {
+      if (expr[i] === "{") depth++;
+      else if (expr[i] === "}") { depth--; if (depth === 0) return [expr.slice(start + 1, i), i + 1]; }
+      i++;
+    }
+    return [expr.slice(start + 1), i];
+  }
+  return [i < expr.length ? expr[i] : "", i + 1];
+}
+
+function parseFrac(expr) {
+  let i = 0, out = "";
+  while (i < expr.length) {
+    const m = /^\\d?frac/.exec(expr.slice(i));
+    if (m) {
+      i += m[0].length;
+      let num, den;
+      [num, i] = readBraced(expr, i);
+      [den, i] = readBraced(expr, i);
+      out += "((" + num + ")/(" + den + "))";
+    } else {
+      out += expr[i]; i++;
+    }
+  }
+  return out;
+}
+
+/* JS 语法修正：`-x**(2)` 在 JS 中是语法错误（一元运算符不能紧跟 **），
+ * 需改写为 `(0-(x**(2)))`，语义与 Python 的 -x**2 = -(x**2) 一致。 */
+function fixPowerUnary(s) {
+  let out = s;
+  for (let i = 0; i < out.length - 1; i++) {
+    if (out[i] !== "*" || out[i + 1] !== "*") continue;
+    // 向左找 base 起点
+    let bs, j = i - 1;
+    if (out[j] === ")") {
+      let depth = 0;
+      while (j >= 0) {
+        if (out[j] === ")") depth++;
+        else if (out[j] === "(") { depth--; if (depth === 0) break; }
+        j--;
+      }
+      bs = j;
+      let k = bs - 1;
+      while (k >= 0 && /[a-zA-Z0-9_]/.test(out[k])) k--;
+      if (k < bs - 1) bs = k + 1;  // 函数调用 sin(...) 把函数名并入 base
+    } else {
+      let k = j;
+      while (k >= 0 && /[a-zA-Z0-9_.]/.test(out[k])) k--;
+      bs = k + 1;
+    }
+    // 检查 base 前是否有“一元”正负号（前一个字符是开头/左括号/逗号/运算符）
+    let u = bs - 1, um = -1, sign = 1, hasUnary = false;
+    while (u >= 0 && (out[u] === "-" || out[u] === "+")) {
+      const prev = u - 1;
+      if (prev < 0 || "(,+-*/".indexOf(out[prev]) >= 0) {
+        hasUnary = true;
+        if (out[u] === "-") sign = -sign;
+        um = u; u--;
+      } else break;
+    }
+    // 向右找指数终点（本转换器产生的指数恒为括号形式）
+    let ee;
+    if (out[i + 2] === "(") {
+      let depth = 0, k = i + 2;
+      while (k < out.length) {
+        if (out[k] === "(") depth++;
+        else if (out[k] === ")") { depth--; if (depth === 0) break; }
+        k++;
+      }
+      ee = k + 1;
+    } else {
+      let k = i + 2;
+      while (k < out.length && /[a-zA-Z0-9_.]/.test(out[k])) k++;
+      ee = k;
+    }
+    if (hasUnary) {
+      const base = out.slice(bs, i);
+      const expn = out.slice(i + 2, ee);
+      const rep = sign < 0 ? "(0-(" + base + "**(" + expn + ")))"
+                           : "(" + base + "**(" + expn + "))";
+      out = out.slice(0, um) + rep + out.slice(ee);
+      i = um + rep.length - 1;
+    } else {
+      i = ee - 1;
+    }
+  }
+  return out;
+}
+
+/* [expr] -> floor(expr)（下取整，支持嵌套）；未闭合的括号留给编译阶段报错 */
+function convertFloorBrackets(s) {
+  while (s.includes("[")) {
+    const i = s.indexOf("[");
+    let depth = 0, j = i;
+    for (; j < s.length; j++) {
+      if (s[j] === "[") depth++;
+      else if (s[j] === "]") { depth--; if (depth === 0) break; }
+    }
+    if (j >= s.length) break;
+    s = s.slice(0, i) + "floor(" + s.slice(i + 1, j) + ")" + s.slice(j + 1);
+  }
+  return s;
+}
+
+function latexToJS(s) {
+  s = s.trim();
+  s = s.replace(/X/g, "x").replace(/Y/g, "y");            // 大写变量归一为小写（与 detectType 左端一致）
+  s = s.replace(/Σ/g, "\\sum").replace(/Π/g, "\\prod");   // Unicode 求和/求积
+  s = convertFloorBrackets(s);                            // [x] 下取整
+  s = s.replace(/−/g, "-").replace(/×/g, "*").replace(/÷/g, "/");
+  s = s.replace(/（/g, "(").replace(/）/g, ")");
+  s = s.replace(/²/g, "**(2)").replace(/³/g, "**(3)");
+  s = s.replace(/\$/g, "").replace(/ /g, "");
+  s = s.replace(/\\left/g, "").replace(/\\right/g, "");
+  s = s.replace(/\\limits/g, "").replace(/\\displaystyle/g, "");
+  s = s.replace(/\\cdot/g, "*").replace(/\\times/g, "*").replace(/\\div/g, "/");
+
+  s = expandSumProd(s);
+
+  /* 科学计数法整体占位保护（1e3、1.5e-3、2E10）：必须赶在 e 常数替换与
+   * 隐式乘法之前，否则 1e3 会被拆成 1*e*3 ≈ 8.15。
+   * 注意必须放在 expandSumProd 之后：Σ/Π 的上下限与循环体是递归调用
+   * 本函数转换的，每次调用用自己的 sciNums 占位表才能自洽还原。 */
+  const sciNums = [];
+  s = s.replace(/\d+(?:\.\d+)?[eE][+-]?\d+/g, m => "\x03" + (sciNums.push(m) - 1) + "\x04");
+
+  const funcMap = [
+    ["\\arcsin", "asin"], ["\\arccos", "acos"], ["\\arctan", "atan"],
+    ["\\sinh", "sinh"], ["\\cosh", "cosh"], ["\\tanh", "tanh"],
+    ["\\sin", "sin"], ["\\cos", "cos"], ["\\tan", "tan"],
+    ["\\sec", "sec"], ["\\csc", "csc"], ["\\cot", "cot"],
+    ["\\ln", "ln"], ["\\log", "log10"], ["\\lg", "lg"], ["\\exp", "exp"],
+    ["\\sqrt", "sqrt"], ["\\abs", "abs"], ["\\max", "max"], ["\\min", "min"],
+  ];
+  for (const [k, v] of funcMap) s = s.split(k).join(v);
+
+  // \log_{a}(x) -> (log(x)/log(a))（换底公式，比值与 log 的底无关；参数允许嵌套括号，如 log_{2}(sin(x))）
+  s = s.replace(/\blog(?:10)?_\{?([^{}]+)\}?\(((?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\)/g,
+                (m, a, x) => "(log(" + x + ")/log(" + a + "))");
+  // \lfloor x \rfloor -> floor(x)
+  s = s.replace(/\\lfloor\s*(.*?)\s*\\rfloor/g, "floor($1)");
+  s = s.replace(/\\lceil\s*(.*?)\s*\\rceil/g, "ceil($1)");
+
+  s = s.replace(/\\pi/g, "pi").replace(/π/g, "pi");
+  s = s.replace(/\\e(?![a-zA-Z])/g, "e");
+  s = s.replace(/\\infty/g, "inf");
+
+  // \cos^2(x) 与规范写法 \cos^{2}(x) -> ((cos(x))**2)
+  s = s.replace(/(sin|cos|tan|asin|acos|atan|sinh|cosh|tanh|sec|csc|cot|log10|log2|log|ln|lg|exp|sqrt)\^\{?(\d+)\}?\(([^()]*)\)/g,
+                (m, f, d, a) => "((" + f + "(" + a + "))**" + d + ")");
+
+  while (s.includes("\\frac") || s.includes("\\dfrac")) s = parseFrac(s);
+
+  s = s.replace(/\^\{([^{}]*)\}/g, "**($1)");
+  /* ^(…) 括号指数（允许嵌套，循环至收敛）：x^(2+1) -> x**(2+1)、e^(-x) -> e**(-x) */
+  let prevPow;
+  do { prevPow = s; s = s.replace(/\^\(((?:[^()]|\([^()]*\))*)\)/g, "**($1)"); } while (s !== prevPow);
+  /* ^-x、^-1、^2、^x 原子指数；链式幂右结合：2^3^2 -> 2**(3**(2)) = 512。
+   * 首段带负号时数学语义是 -(a^b^…)，整体包成 (0-(…)) 形式，
+   * 避免生成 JS 语法错误的 -x**(2)（一元运算符不能紧跟 **） */
+  s = s.replace(/\^(-?[0-9a-zA-Z.]+(?:\^-?[0-9a-zA-Z.]+)*)/g, (m, g) => {
+    const parts = g.split("^");
+    let negHead = false;
+    if (parts[0][0] === "-") { negHead = true; parts[0] = parts[0].slice(1); }
+    let inner = parts[parts.length - 1];
+    for (let i = parts.length - 2; i >= 0; i--) inner = parts[i] + "**(" + inner + ")";
+    return negHead ? "**((0-(" + inner + ")))" : "**(" + inner + ")";
+  });
+  s = s.replace(/\{/g, "(").replace(/\}/g, ")");
+
+  // 绝对值 |x| -> abs(x)；函数直接跟绝对值时包进去: log|x| -> log(abs(x))
+  const absRe = /(?:(sin|cos|tan|asin|acos|atan|sinh|cosh|tanh|sec|csc|cot|log10|log2|log|ln|lg|exp|sqrt|abs)\b)?\|([^|]+)\|/;
+  while (s.includes("|")) {
+    const ns = s.replace(absRe, (m, fn, inner) => fn ? fn + "(abs(" + inner + "))" : "abs(" + inner + ")");
+    if (ns === s) break;
+    s = ns;
+  }
+
+  const FNAMES = "sin|cos|tan|asin|acos|atan|sinh|cosh|tanh|sec|csc|cot|log10|log2|log|ln|lg|exp|sqrt|abs|sign|floor|ceil|max|min|sum|prod|range|int";
+  // 字母/数字/右括号后紧跟函数名时补 *（前置为 a/A 时不补，避免拆散 asin/acos/atan）。
+  // 用捕获组回调实现，不用 lookbehind——Safari 16.4 以下不支持后行断言，会直接运行不了
+  s = s.replace(new RegExp("([0-9a-zA-Z)]?)(" + FNAMES + ")\\(", "g"), (m, pre, f) => {
+    if (!pre || pre === "a" || pre === "A") return m;
+    return pre + "*" + f + "(";
+  });
+
+  // 函数名整体占位替换（名称换成索引令牌，而非原位包裹——原位包裹挡不住
+  // 名字内部的字母-数字规则，log10 仍会被拆成 log*10）：防止隐式乘法拆散函数名
+  const fnTokens = [];
+  s = s.replace(new RegExp("\\b(" + FNAMES + ")(?=\\()", "g"), (m, f) => "\x01" + (fnTokens.push(f) - 1) + "\x02");
+  // 保护函数调用名，防止隐式乘法插入到函数名与括号之间（对 __sum/__prod 等仍生效）
+  s = s.replace(new RegExp("(" + FNAMES + ")\\(", "g"), (m, f) => f + "\x00(");
+
+  // 隐式乘法: 2x -> 2*x, )( -> )*(, x( -> x*(
+  s = s.replace(/(\d)([a-zA-Z(])/g, "$1*$2");
+  s = s.replace(/\bpi(?=[a-zA-Z(])/g, "pi*");
+  s = s.replace(/([a-zA-Z0-9.)])(\()/g, "$1*$2");
+  s = s.replace(/(\))([a-zA-Z0-9(])/g, "$1*$2");
+  s = s.replace(/([a-zA-Z])(\d)/g, "$1*$2");
+
+  // __sum/__prod 是 expandSumProd 生成的内部函数，名字里的字母串不能被下面的规则拆开
+  s = s.replace(/__(?:sum|prod)/g, m => "\x01" + (fnTokens.push(m) - 1) + "\x02");
+  // 字母×字母隐式乘法：xy -> x*y、xe^x -> x*e**(x)。
+  // 此时函数名/常量 e 之外的合法标识符只剩单字母变量（多字母的会被白名单拒绝），拆分安全；
+  // pi、inf 是合法多字母常量，抠出来保留（xpix -> x*pi*x）
+  s = s.replace(/[a-zA-Z]+/g, run => {
+    if (run.length === 1 || run === "pi" || run === "inf") return run;
+    return run.split(/(pi|inf)/)
+      .map(part => (part === "pi" || part === "inf") ? part : part.split("").join("*"))
+      .filter(part => part !== "")
+      .join("*");
+  });
+
+  s = s.replace(/\x00/g, "");
+  s = s.replace(/\x01(\d+)\x02/g, (m, i) => fnTokens[+i]);   // 还原函数名
+  s = s.replace(/\x03(\d+)\x04/g, (m, i) => sciNums[+i]);   // 还原科学计数法
+  s = fixPowerUnary(s);
+
+  /* 残留危险运算符检查：转换结束后不应再有 ^ & | 或裸 =（=> 是 Σ/Π 的箭头，放行）。
+   * 这些符号在 JS 里会被静默解释成位运算/赋值（如 e^-x 变成位异或），
+   * 图像全错却不报任何错，必须在这里拦住并给出中文提示。 */
+  const badOp = s.match(/\^|&|\||=(?![>])/);
+  if (badOp) {
+    const hint = {
+      "^": "乘方指数带负号或多项式时请写成 ^(-x)、^{…} 或 ^(…)",
+      "&": "不支持按位与 &",
+      "|": "绝对值请把 |x| 成对写出",
+      "=": "每条表达式只能有一个等号/不等号",
+    }[badOp[0]];
+    throw new Error("无法识别的运算符：" + badOp[0] + "（" + hint + "）");
+  }
+  return s;
+}
+
+/* ---------------- 表达式类型识别 ---------------- */
+function detectType(expr) {
+  const norm = l => /^[xXyY]$/.test(l) ? l.toLowerCase() : l;  // X/Y 归一化为小写
+  for (const op of [">=", "<="]) {
+    if (expr.includes(op)) {
+      const idx = expr.indexOf(op);
+      return { kind: "ineq", lhs: norm(expr.slice(0, idx).trim()), op, rhs: expr.slice(idx + 2).trim() };
+    }
+  }
+  for (const op of [">", "<"]) {
+    if (expr.includes(op)) {
+      const idx = expr.indexOf(op);
+      return { kind: "ineq", lhs: norm(expr.slice(0, idx).trim()), op, rhs: expr.slice(idx + 1).trim() };
+    }
+  }
+  let m = /^[yY]\s*=/.exec(expr);
+  if (m) return { kind: "y=", lhs: "y", op: "=", rhs: expr.slice(m[0].length).trim() };
+  m = /^[xX]\s*=/.exec(expr);
+  if (m) return { kind: "x=", lhs: "x", op: "=", rhs: expr.slice(m[0].length).trim() };
+  if (expr.includes("=")) {
+    const idx = expr.indexOf("=");
+    const l = expr.slice(0, idx).trim(), r = expr.slice(idx + 1).trim();
+    if (l && r) return { kind: "implicit", lhs: l, op: "=", rhs: r };
+  }
+  return { kind: "y=", lhs: "y", op: "=", rhs: expr.trim() };
+}
+
+/* ---------------- 编译为可调用函数 ---------------- */
+/* Σ/Π 迭代上限：防止超大上下限（如 Σ_{k=1}^{1e8}）让页面假死 */
+const SUMPROD_MAX = 100000;
+const __sum = (lo, hi, f) => {
+  const a = Math.trunc(lo), b = Math.trunc(hi);
+  if (b - a > SUMPROD_MAX) throw new Error("Σ/Π 项数过多：上限 " + SUMPROD_MAX + " 项，请缩小上下限范围");
+  let s = 0; for (let k = a; k <= b; k++) s += f(k); return s;
+};
+const __prod = (lo, hi, f) => {
+  const a = Math.trunc(lo), b = Math.trunc(hi);
+  if (b - a > SUMPROD_MAX) throw new Error("Σ/Π 项数过多：上限 " + SUMPROD_MAX + " 项，请缩小上下限范围");
+  let r = 1; for (let k = a; k <= b; k++) r *= f(k); return r;
+};
+
+const FN_PRELUDE = `
+const {sin,cos,tan,asin,acos,atan,sinh,cosh,tanh,sqrt,abs,sign,floor,ceil,exp,max,min} = Math;
+const pi = Math.PI, e = Math.E, inf = Infinity;
+const ln = Math.log;                                        /* ln = 自然对数 */
+const log = Math.log10 || (v => Math.log(v) / Math.LN10);   /* log/lg = 常用对数（底 10，与功能说明一致） */
+const lg = Math.log10 || (v => Math.log(v) / Math.LN10);
+const log10 = Math.log10 || (v => Math.log(v) / Math.LN10);
+const log2 = Math.log2 || (v => Math.log(v) / Math.LN2);
+const sec = v => 1 / Math.cos(v), csc = v => 1 / Math.sin(v), cot = v => 1 / Math.tan(v);
+`;
+
+function makeFn(js) {
+  const f = new Function("x", "y", "__sum", "__prod",
+    FN_PRELUDE + "return (" + js + ");");
+  return (xv, yv) => f(xv, yv, __sum, __prod);
+}
+
+function compileInfo(info) {
+  if (info.kind === "implicit") {
+    const js = "((" + latexToJS(info.lhs) + ")-(" + latexToJS(info.rhs) + "))";
+    return { vars: "xy", js, fn: makeFn(js) };
+  }
+  const varName = (info.kind === "x=" || (info.kind === "ineq" && info.lhs === "x")) ? "y" : "x";
+  const js = latexToJS(info.rhs);
+  return { vars: varName, js, fn: makeFn(js) };
+}
+
+/* 允许的标识符白名单：多字符标识符必须是已知函数/常量，
+ * 单个小写字母放行（x、y 或 \sum 的指标变量），
+ * 其余（window、document、fetch 等）一律拒绝 —— 防注入也防手误。 */
+const ALLOWED_IDS = new Set(["sin", "cos", "tan", "asin", "acos", "atan", "sinh", "cosh", "tanh",
+  "sec", "csc", "cot", "log", "log10", "log2", "ln", "lg", "exp", "sqrt", "abs", "sign", "floor", "ceil",
+  "max", "min", "pi", "e", "inf", "__sum", "__prod"]);
+
+function checkIdentifiers(js) {
+  /* 先剔除科学计数法数字（1e3、1.5e-3、2E10），否则其中的 e3/E10 会被误判为标识符 */
+  const ids = js.replace(/\d+(?:\.\d+)?[eE][+-]?\d+/g, "").match(/[a-zA-Z_][a-zA-Z0-9_]*/g) || [];
+  for (const id of ids) {
+    if (ALLOWED_IDS.has(id)) continue;
+    if (/^[a-z]$/.test(id)) continue;
+    throw new Error("无法识别的符号：" + id);
+  }
+}
+
+/* 添加前验证：结构校验 + 试算几个点，提前暴露语法/未定义符号错误 */
+function validateExpr(info) {
+  // 不等式左端必须是单独的 x 或 y，否则填充方向无法定义
+  if (info.kind === "ineq" && info.lhs !== "x" && info.lhs !== "y") {
+    throw new Error("不等式左端需为单独的 x 或 y（如 y>x+1、x<y^2）\n" +
+      "若想绘制 “" + info.lhs + " = " + info.rhs + "” 这类曲线，请改用等号（按隐函数绘制）");
+  }
+  const c = compileInfo(info);
+  checkIdentifiers(c.js);
+  // y=f(x) 右端不应再含 y（反之亦然）——含了多半是想要隐函数，放行会画成恒 0 的错图
+  if (c.vars === "x" && /(^|[^a-zA-Z0-9_])y($|[^a-zA-Z0-9_])/.test(c.js)) {
+    throw new Error("右端还含有 y，不能按 y=f(x) 绘制；若想画 xy=1 这类曲线，请写成等号形式（按隐函数绘制）");
+  }
+  if (c.vars === "y" && /(^|[^a-zA-Z0-9_])x($|[^a-zA-Z0-9_])/.test(c.js)) {
+    throw new Error("右端还含有 x，不能按 x=f(y) 绘制；若想画隐函数，请写成等号形式");
+  }
+  let nanCount = 0, total = 0;
+  const chk = r => {
+    if (typeof r !== "number") throw new Error("表达式结果不是数值");
+    total++; if (Number.isNaN(r)) nanCount++;
+  };
+  if (c.vars === "xy") {
+    for (const xv of [0.5, 1.0, 1.5]) for (const yv of [0.5, 1.0, 1.5]) chk(c.fn(xv, yv));
+  } else if (c.vars === "x") {
+    for (const xv of [0.5, 0.75, 1.0, 1.25, 1.5]) chk(c.fn(xv, 0));
+  } else {
+    for (const yv of [0.5, 0.75, 1.0, 1.25, 1.5]) chk(c.fn(0, yv));
+  }
+  /* 所有试算点都是 NaN：再探几个远处的点，区分两种情况——
+   * sqrt(x-10) 这类“定义域在远处”的函数放行（交给添加后的体检提示）；
+   * 0/0、sin^{2}(x) 误写这类处处 NaN 的表达式在添加时就明确报错 */
+  if (nanCount === total) {
+    let anyDefined = false;
+    const probe = (xv, yv) => { try { if (!Number.isNaN(c.fn(xv, yv))) anyDefined = true; } catch (e) { /* 忽略求值异常 */ } };
+    if (c.vars === "xy") {
+      for (const xv of [-100, -10, 10, 100]) for (const yv of [-100, -10, 10, 100]) probe(xv, yv);
+    } else if (c.vars === "x") {
+      for (const xv of [-1000, -100, -10, 10, 100, 1000]) probe(xv, 0);
+    } else {
+      for (const yv of [-1000, -100, -10, 10, 100, 1000]) probe(0, yv);
+    }
+    if (!anyDefined) throw new Error("表达式结果不是数值（所有测试点均为 NaN）");
+  }
+}
+
+/* ============================================================
+ * 吸附点计算（移植自桌面版 compute_snap_points）
+ * ============================================================ */
+function linspace(a, b, n) {
+  const r = new Array(n);
+  const d = (b - a) / (n - 1);
+  for (let i = 0; i < n; i++) r[i] = a + d * i;
+  return r;
+}
+
+/* 标量求值，|v|>1e6 截断为 NaN（对应桌面版 safe_eval） */
+function clampEval(v) {
+  return (typeof v === "number" && Math.abs(v) > 1e6) ? NaN : v;
+}
+
+function evalSingle(fn, varName, v) {
+  /* 求值期异常（如 Σ/Π 项数过多在绘制期才触发）一律视为该点无定义，
+   * 否则异常会穿过事件处理器变成未捕获错误，中断重采样/吸附计算 */
+  let r;
+  try { r = varName === "x" ? fn(v, 0) : fn(0, v); } catch (e) { return NaN; }
+  return clampEval(typeof r === "number" ? r : NaN);
+}
+
+/* 不做 1e6 截断的标量求值：数值积分等计算路径使用（截断会把大函数值误判成
+ * 间断点并跳过，污染积分结果）；绘图路径仍用 clampEval 防坐标溢出 */
+function evalRaw(fn, varName, v) {
+  try {
+    const r = varName === "x" ? fn(v, 0) : fn(0, v);
+    return (typeof r === "number") ? r : NaN;
+  } catch (e) { return NaN; }
+}
+
+function bisect(fn, varName, a, b, tol = 1e-10, maxIter = 60) {
+  try {
+    let fa = evalSingle(fn, varName, a), fb = evalSingle(fn, varName, b);
+    if (fa * fb > 0) return null;
+    for (let i = 0; i < maxIter; i++) {
+      const mid = (a + b) / 2;
+      const fm = evalSingle(fn, varName, mid);
+      if (!Number.isFinite(fm)) return null;
+      if (Math.abs(fm) < tol) return mid;
+      if (fa * fm < 0) { b = mid; fb = fm; } else { a = mid; fa = fm; }
+    }
+    return (a + b) / 2;
+  } catch (e) { return null; }
+}
+
+function bisectDiff(f1, f2, a, b, tol = 1e-10, maxIter = 60) {
+  try {
+    let fa = evalSingle(f1, "x", a) - evalSingle(f2, "x", a);
+    let fb = evalSingle(f1, "x", b) - evalSingle(f2, "x", b);
+    if (fa * fb > 0) return null;
+    for (let i = 0; i < maxIter; i++) {
+      const mid = (a + b) / 2;
+      const fm = evalSingle(f1, "x", mid) - evalSingle(f2, "x", mid);
+      if (!Number.isFinite(fm)) return null;
+      if (Math.abs(fm) < tol) return mid;
+      if (fa * fm < 0) { b = mid; } else { a = mid; fa = fm; }
+    }
+    return (a + b) / 2;
+  } catch (e) { return null; }
+}
+
+/* 若函数恰为二次多项式 y=ax²+bx+c，返回焦点 (h, k+1/(4a)) */
+function tryParabolaFocus(fn, varName) {
+  try {
+    const ys = [0, 1, 2, 3].map(v => evalSingle(fn, varName, v));
+    if (!ys.every(Number.isFinite)) return null;
+    const c = ys[0];
+    const a = (ys[2] - 2 * ys[1] + ys[0]) / 2;
+    const b = ys[1] - ys[0] - a;
+    if (Math.abs(a) < 1e-12) return null;
+    const resid = Math.abs(a * 9 + b * 3 + c - ys[3]);
+    if (resid > 1e-6 * Math.max(1, Math.abs(ys[3]))) return null;
+    const h = -b / (2 * a);
+    const k = c - b * b / (4 * a);
+    const p = 1 / (4 * a);
+    return [h, k + p];
+  } catch (e) { return null; }
+}
+
+/* x = ay²+by+c 的焦点 (k+1/(4a), h) */
+function tryParabolaFocusY(fn) {
+  const f = tryParabolaFocus(fn, "y");
+  return f ? [f[1], f[0]] : null;
+}
+
+function computeSnapPoints(functions, xMin, xMax, yMin, yMax) {
+  const pts = [];
+  // 两函数交点优先（去重时优先保留“交点”标签）
+  const yFns = [];
+  for (const f of functions) {
+    try {
+      const info = detectType(f.raw);
+      if (info.kind === "y=" || (info.kind === "ineq" && info.lhs === "y")) {
+        yFns.push(compileInfo(info).fn);
+      }
+    } catch (e) { /* 忽略解析失败的函数 */ }
+  }
+  for (let i = 0; i < yFns.length; i++) {
+    for (let j = i + 1; j < yFns.length; j++) {
+      const xs = linspace(xMin, xMax, 4000);
+      let dPrev = evalSingle(yFns[i], "x", xs[0]) - evalSingle(yFns[j], "x", xs[0]);
+      for (let k = 0; k < xs.length - 1; k++) {
+        const d0 = dPrev;
+        const d1 = evalSingle(yFns[i], "x", xs[k + 1]) - evalSingle(yFns[j], "x", xs[k + 1]);
+        dPrev = d1;
+        if (Number.isFinite(d0) && Number.isFinite(d1) && d0 * d1 < 0) {
+          const xi = bisectDiff(yFns[i], yFns[j], xs[k], xs[k + 1]);
+          if (xi !== null) {
+            const yi = evalSingle(yFns[i], "x", xi);
+            if (Number.isFinite(yi) && yMin <= yi && yi <= yMax) pts.push([xi, yi, "交点"]);
+          }
+        }
+      }
+    }
+  }
+  for (const f of functions) {
+    let info, comp;
+    try {
+      info = detectType(f.raw);
+      comp = compileInfo(info);
+    } catch (e) { continue; }
+    const yOfX = info.kind === "y=" || (info.kind === "ineq" && info.lhs === "y");
+    const xOfY = info.kind === "x=" || (info.kind === "ineq" && info.lhs === "x");
+
+    if (yOfX) {
+      // 整数点；范围过大时跳过，避免卡顿
+      if (xMax - xMin <= 2000) {
+        for (let n = Math.floor(xMin); n <= Math.ceil(xMax); n++) {
+          try {
+            const yv = evalSingle(comp.fn, "x", n);
+            if (Number.isFinite(yv) && yMin <= yv && yv <= yMax) {
+              pts.push([n, yv, "整数点 x=" + n]);
+            }
+          } catch (e) { /* skip */ }
+        }
+      }
+      // 零点与极值（密采样）
+      const xs = linspace(xMin, xMax, 4000);
+      const ys = xs.map(v => { try { return evalSingle(comp.fn, "x", v); } catch (e) { return NaN; } });
+      for (let i = 0; i < xs.length - 1; i++) {
+        const y0 = ys[i], y1 = ys[i + 1];
+        if (Number.isFinite(y0) && Number.isFinite(y1) && y0 * y1 < 0) {
+          const xz = bisect(comp.fn, "x", xs[i], xs[i + 1]);
+          if (xz !== null) pts.push([xz, 0, "零点"]);
+        }
+      }
+      // 相切零点（不变号，如 y=x² 的 x=0）：|f| 的采样局部极小 + 黄金分割求精，
+      // 求精后 |f| 足够小才认定为零点（避免把 y=x²+0.001 这类近零极小值误报）
+      const yTolC = (yMax - yMin) * 1e-2, yTolA = (yMax - yMin) * 1e-6;
+      const absAt = v => { const r = evalSingle(comp.fn, "x", v); return Number.isFinite(r) ? Math.abs(r) : Infinity; };
+      for (let i = 1; i < xs.length - 1; i++) {
+        const a0 = Math.abs(ys[i - 1]), a1 = Math.abs(ys[i]), a2 = Math.abs(ys[i + 1]);
+        if (!Number.isFinite(a1) || !(a1 <= a0 && a1 <= a2) || a1 > yTolC) continue;
+        if (a0 === 0 && a1 === 0 && a2 === 0) continue;  // 零平台内部（如 y=0）逐点触发没有意义
+        let lo = xs[i - 1], hi = xs[i + 1];
+        const gr = (Math.sqrt(5) - 1) / 2;
+        let cc = hi - gr * (hi - lo), dd = lo + gr * (hi - lo);
+        let gc = absAt(cc), gd = absAt(dd);
+        for (let it = 0; it < 60; it++) {
+          if (gc < gd) { hi = dd; dd = cc; gd = gc; cc = hi - gr * (hi - lo); gc = absAt(cc); }
+          else { lo = cc; cc = dd; gc = gd; dd = lo + gr * (hi - lo); gd = absAt(dd); }
+        }
+        const xz = (lo + hi) / 2, fz = evalSingle(comp.fn, "x", xz);
+        if (Number.isFinite(fz) && Math.abs(fz) < yTolA) pts.push([xz, 0, "零点"]);
+      }
+      const dy = new Array(xs.length).fill(NaN);
+      for (let i = 1; i < xs.length - 1; i++) dy[i] = (ys[i + 1] - ys[i - 1]) / (xs[i + 1] - xs[i - 1]);
+      dy[0] = (ys[1] - ys[0]) / (xs[1] - xs[0]);
+      dy[xs.length - 1] = (ys[xs.length - 1] - ys[xs.length - 2]) / (xs[xs.length - 1] - xs[xs.length - 2]);
+      // 极值点：导数符号变化定位后，在采样区间内对数值导数做二分求精
+      // （原先直接报采样点，y=x²-2 的极值会偏到 x=-0.0025）
+      const dAt = v => {
+        const hd = 1e-6 * Math.max(1, Math.abs(v));
+        const f1 = evalSingle(comp.fn, "x", v + hd), f0 = evalSingle(comp.fn, "x", v - hd);
+        return (Number.isFinite(f1) && Number.isFinite(f0)) ? (f1 - f0) / (2 * hd) : NaN;
+      };
+      for (let i = 0; i < xs.length - 1; i++) {
+        if (Number.isFinite(dy[i]) && Number.isFinite(dy[i + 1]) && dy[i] * dy[i + 1] < 0) {
+          let lo = xs[i], hi = xs[i + 1], dLo = dy[i], ok = true;
+          for (let it = 0; it < 50; it++) {
+            const mid = (lo + hi) / 2, dm = dAt(mid);
+            if (!Number.isFinite(dm)) { ok = false; break; }
+            if (dLo * dm <= 0) hi = mid; else { lo = mid; dLo = dm; }
+          }
+          const xe = ok ? (lo + hi) / 2 : xs[i];
+          const ye = ok ? evalSingle(comp.fn, "x", xe) : ys[i];
+          if (Number.isFinite(ye) && yMin <= ye && ye <= yMax) {
+            pts.push([xe, ye, "极值点"]);
+          }
+        }
+      }
+      // 抛物线焦点
+      const focus = tryParabolaFocus(comp.fn, "x");
+      if (focus && yMin <= focus[1] && focus[1] <= yMax) pts.push([focus[0], focus[1], "焦点"]);
+    } else if (xOfY) {
+      if (yMax - yMin <= 2000) {
+        for (let n = Math.floor(yMin); n <= Math.ceil(yMax); n++) {
+          try {
+            const xv = evalSingle(comp.fn, "y", n);
+            if (Number.isFinite(xv) && xMin <= xv && xv <= xMax) pts.push([xv, n, "整数点 y=" + n]);
+          } catch (e) { /* skip */ }
+        }
+      }
+      const focus = tryParabolaFocusY(comp.fn);
+      if (focus && xMin <= focus[0] && focus[0] <= xMax && yMin <= focus[1] && focus[1] <= yMax) {
+        pts.push([focus[0], focus[1], "焦点"]);
+      }
+    }
+  }
+  // 去重（距离过近的点合并为一个）。信息更具体的标签优先：
+  // 交点 > 零点/极值点/焦点 > 整数点——否则求精后的极值点 x=0 会被同位置的整数点吞掉
+  // 用 Map 按 1e-6 网格取键：点数大（多函数×大跨度整数点可达数万）时 O(n)，
+  // 原先的 dedup.find 线性查找是 O(n²)，会让防抖后的重采样卡住数秒
+  const tagPri = t => t === "交点" ? 4 : (t === "零点" || t === "极值点" || t === "焦点") ? 3 : 1;
+  const dedup = [];
+  const seen = new Map();
+  for (const p of pts) {
+    const key = Math.round(p[0] * 1e6) + "," + Math.round(p[1] * 1e6);
+    const q = seen.get(key);
+    if (!q) { seen.set(key, p); dedup.push(p); continue; }
+    if (tagPri(p[2]) > tagPri(q[2])) { q[0] = p[0]; q[1] = p[1]; q[2] = p[2]; }
+  }
+  return dedup;
+}
+
+/* ---------------- 导函数（三阶中心差分） ---------------- */
+function derivativeValues(fn, xs) {
+  const n = xs.length;
+  const f = xs.map(v => { try { return evalSingle(fn, "x", v); } catch (e) { return NaN; } });
+  const fp = new Array(n).fill(NaN);
+  for (let i = 1; i < n - 1; i++) {
+    const h = xs[i + 1] - xs[i - 1];
+    fp[i] = h !== 0 ? (f[i + 1] - f[i - 1]) / h : NaN;
+  }
+  if (n > 1) {
+    fp[0] = (f[1] - f[0]) / (xs[1] - xs[0]);
+    fp[n - 1] = (f[n - 1] - f[n - 2]) / (xs[n - 1] - xs[n - 2]);
+  }
+  return { xs, fp };
+}
+
+/* ---------------- 数值工具 ---------------- */
+function niceTicks(min, max, target = 8) {
+  const span = max - min;
+  if (!(span > 0) || !Number.isFinite(span)) return [];
+  const raw = span / target;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw / mag;
+  let step;
+  if (norm < 1.5) step = 1; else if (norm < 3) step = 2; else if (norm < 7) step = 5; else step = 10;
+  step *= mag;
+  const ticks = [];
+  let prevTick = -Infinity;
+  for (let v = Math.ceil(min / step - 1e-9) * step; v <= max + step * 1e-9; v += step) {
+    /* 超大坐标（如平移/输入范围到 1e17）下 step 小于浮点精度，v += step 不再增长，
+     * 原循环会永久空转直到数组爆掉（RangeError）——检测停滞立即退出 */
+    if (v <= prevTick) break;
+    prevTick = v;
+    ticks.push(Math.abs(v) < step * 1e-9 ? 0 : v);
+    if (ticks.length > 1000) break;   // 保险丝：刻度数量封顶
+  }
+  return { ticks, step };
+}
+
+function fmtTick(v, step) {
+  /* 小数位数跟随步长：深度缩放到 1e-8 量级时 toFixed(6) 会把所有刻度显示成 0。
+   * toFixed 支持 0~100 位，这里封到 20 足够覆盖 clampSpan 的最小跨度 */
+  const dec = Math.min(20, Math.max(0, -Math.floor(Math.log10(step))));
+  return String(parseFloat(v.toFixed(dec)));
+}
+
+function fmtG(v, digits) {
+  if (!Number.isFinite(v)) return "";
+  return String(parseFloat(v.toPrecision(digits)));
+}
+
+/* ============================================================
+ * 圆锥曲线分析器
+ * 一般二次方程 Ax²+Bxy+Cy²+Dx+Ey+F=0 → 旋转变换消交叉项 → 标准形
+ * → 识别椭圆/双曲线/抛物线/退化情形，求中心、焦点、准线、渐近线
+ * ============================================================ */
+const CONIC_COLOR = "#e64980";      // 曲线本色（两主题下均可读）
+const CONIC_AUX = "#8b9bb4";        // 准线/渐近线
+const CONIC_FOCUS = "#f59e0b";      // 焦点
+const CONIC_CTR = "#4c6ef5";        // 中心/顶点
+
+/* 数值格式化：近整数吸附，否则保留 6 位有效数字 */
+function fmtC(v) {
+  if (!Number.isFinite(v)) return String(v);
+  if (Math.abs(v - Math.round(v)) < 1e-9) return String(Math.round(v));
+  return fmtG(v, 6);
+}
+function fmtPt(p) { return "(" + fmtC(p[0]) + ", " + fmtC(p[1]) + ")"; }
+/* 直线法线式 nx·x+ny·y=d → 可读文本（单位法向量已归一） */
+function fmtLine(L) {
+  const t = [];
+  const push = (coef, sym) => {
+    const a = Math.abs(coef);
+    if (a < 1e-9) return;
+    const s = (t.length ? (coef < 0 ? " − " : " + ") : (coef < 0 ? "−" : ""));
+    t.push(s + (Math.abs(a - 1) < 1e-9 ? "" : fmtC(a)) + sym);
+  };
+  push(L.nx, "x"); push(L.ny, "y");
+  return (t.length ? t.join("") : "0") + " = " + fmtC(L.d);
+}
+
+/* 从 F(x,y) 采样提取二次系数，并复核确为二元二次多项式 */
+function extractConicCoeffs(F) {
+  const ev = (x, y) => { const v = F(x, y); return (typeof v === "number" && Number.isFinite(v)) ? v : NaN; };
+  const F00 = ev(0, 0), Fp = ev(1, 0), Fm = ev(-1, 0), Gp = ev(0, 1), Gm = ev(0, -1), F11 = ev(1, 1);
+  if (![F00, Fp, Fm, Gp, Gm, F11].every(Number.isFinite)) {
+    throw new Error("表达式在采样点处无定义，无法按二次曲线分析");
+  }
+  const A = (Fp + Fm) / 2 - F00, D = (Fp - Fm) / 2;
+  const C = (Gp + Gm) / 2 - F00, E = (Gp - Gm) / 2;
+  const B = F11 - A - C - D - E - F00;
+  const quad = (x, y) => A * x * x + B * x * y + C * y * y + D * x + E * y + F00;
+  const sc = Math.max(1, Math.abs(A), Math.abs(B), Math.abs(C), Math.abs(D), Math.abs(E), Math.abs(F00));
+  for (const [x, y] of [[2, 3], [-1, 2], [3, -2], [-2, -1.5]]) {   // 新鲜点复核，排除高次/超越项
+    const v = ev(x, y);
+    if (!Number.isFinite(v) || Math.abs(v - quad(x, y)) > 1e-6 * sc * 10) {
+      throw new Error("该方程不是二元二次方程（含高次项或超越项），无法作圆锥曲线分析");
+    }
+  }
+  const eps = 1e-9 * sc;
+  if (Math.abs(A) < eps && Math.abs(B) < eps && Math.abs(C) < eps) {
+    throw new Error("二次项系数全为 0——这是一次方程（直线），不是圆锥曲线");
+  }
+  return { A, B, C, D, E, F0: F00, sc };
+}
+
+/* 核心：识别 + 全部几何要素。直线统一为 {nx,ny,d} 单位法线式；点统一为 {x,y,label} */
+function analyzeConicCoeffs(cf) {
+  let { A, B, C, D, E, F0, sc } = cf;
+  const eps = 1e-9 * sc;
+  /* 旋转消交叉项：x = c·x' − s·y'，y = s·x' + c·y'；x' = c·x + s·y，y' = −s·x + c·y */
+  let theta = 0;
+  if (Math.abs(B) > eps) theta = 0.5 * Math.atan2(B, A - C);
+  const c = Math.cos(theta), s = Math.sin(theta);
+  const A2 = A * c * c + B * c * s + C * s * s;
+  const C2 = A * s * s - B * c * s + C * c * c;
+  const D2 = D * c + E * s;
+  const E2 = -D * s + E * c;
+  const aZ = Math.abs(A2) < eps ? 0 : A2, cZ = Math.abs(C2) < eps ? 0 : C2;
+  /* 旋转坐标 → 原始坐标 */
+  const toXY = (u, v) => [c * u - s * v, s * u + c * v];
+  const lineU = u0 => ({ nx: c, ny: s, d: u0 });          // x' = u0
+  const lineV = v0 => ({ nx: -s, ny: c, d: v0 });         // y' = v0
+  const lineVU = (m, h0, k0) => {                          // v−k0 = m·(u−h0)
+    let nx = -m * c - s, ny = -m * s + c, d = k0 - m * h0;
+    const L = Math.hypot(nx, ny); return { nx: nx / L, ny: ny / L, d: d / L };
+  };
+  const rotNote = Math.abs(theta) > 1e-9
+    ? "（旋转 θ = " + fmtC(theta * 180 / Math.PI) + "° 后消去交叉项，x′ 轴方向 (" + fmtC(c) + ", " + fmtC(s) + ")）" : "";
+  const R = { theta, lines: [], points: [], text: [] };   // lines: {…,style:'directrix'|'asymptote'|'curve'}
+
+  if (aZ !== 0 && cZ !== 0) {
+    /* 椭圆/双曲线族：平移消一次项 */
+    const h = -D2 / (2 * aZ), k = -E2 / (2 * cZ);
+    const Fc = F0 - D2 * D2 / (4 * aZ) - E2 * E2 / (4 * cZ);
+    const M = -Fc;
+    const center = toXY(h, k);
+    R.center = center;
+    if (Math.abs(M) < eps) {
+      if (aZ * cZ > 0) {
+        R.type = "point"; R.name = "退化：单点（点椭圆）";
+        R.points.push({ x: center[0], y: center[1], label: "唯一点" });
+        R.text.push("方程仅在点 " + fmtPt(center) + " 处成立");
+      } else {
+        R.type = "lines"; R.name = "退化：两条相交直线";
+        const m = Math.sqrt(-aZ / cZ);
+        R.lines.push(Object.assign(lineVU(m, h, k), { style: "curve" }));
+        R.lines.push(Object.assign(lineVU(-m, h, k), { style: "curve" }));
+        R.points.push({ x: center[0], y: center[1], label: "交点" });
+        R.text.push("交点 " + fmtPt(center) + "，斜率（旋转系）±" + fmtC(m));
+      }
+      return R;
+    }
+    if (aZ * cZ > 0) {          /* 椭圆族 */
+      if (M / aZ < 0) {
+        R.type = "empty"; R.name = "无轨迹（虚椭圆）";
+        R.text.push("标准形左端恒正、右端为负，无实数解");
+        return R;
+      }
+      let au = M / aZ, bv = M / cZ, majorU = au >= bv;      // au=半轴²(u 向)
+      const a = Math.sqrt(Math.max(au, bv)), b = Math.sqrt(Math.min(au, bv));
+      const isCircle = Math.abs(a - b) < 1e-9 * Math.max(1, a);
+      const cf2 = Math.sqrt(Math.abs(au - bv));
+      const ecc = isCircle ? 0 : cf2 / a;
+      R.type = isCircle ? "circle" : "ellipse";
+      R.name = isCircle ? "圆（椭圆特例）" : "椭圆";
+      R.a = a; R.b = b; R.ecc = ecc;
+      const fu = majorU ? [[h + cf2, k], [h - cf2, k]] : [[h, k + cf2], [h, k - cf2]];
+      const vu = majorU ? [[h + a, k], [h - a, k]] : [[h, k + a], [h, k - a]];
+      const cvv = majorU ? [[h, k + b], [h, k - b]] : [[h + b, k], [h - b, k]];
+      R.points.push({ x: center[0], y: center[1], label: "中心" });
+      if (!isCircle) fu.forEach(p => { const q = toXY(p[0], p[1]); R.points.push({ x: q[0], y: q[1], label: "焦点" }); });
+      vu.forEach(p => { const q = toXY(p[0], p[1]); R.points.push({ x: q[0], y: q[1], label: "顶点" }); });
+      cvv.forEach(p => { const q = toXY(p[0], p[1]); R.points.push({ x: q[0], y: q[1], label: "短轴端点" }); });
+      if (!isCircle) {
+        const dd = a * a / cf2;   // 准线距中心 a²/c
+        R.directrix = majorU ? [lineU(h + dd), lineU(h - dd)] : [lineV(k + dd), lineV(k - dd)];
+        R.directrix.forEach(L => R.lines.push(Object.assign(L, { style: "directrix" })));
+      }
+      R.text.push(
+        "标准方程：" + (majorU
+          ? "(x′−(" + fmtC(h) + "))²/" + fmtC(au) + " + (y′−(" + fmtC(k) + "))²/" + fmtC(bv) + " = 1"
+          : "(x′−(" + fmtC(h) + "))²/" + fmtC(au) + " + (y′−(" + fmtC(k) + "))²/" + fmtC(bv) + " = 1") + rotNote,
+        "中心：" + fmtPt(center),
+        "半轴：a = " + fmtC(a) + "，b = " + fmtC(b) + "（" + (isCircle ? "半径 r = " + fmtC(a) : "长轴沿 " + (majorU ? "x′" : "y′") + " 方向") + "）",
+        "离心率 e = " + fmtC(ecc) + "，焦距 c = " + fmtC(cf2));
+      if (!isCircle) {
+        R.text.push("焦点：" + fu.map(p => fmtPt(toXY(p[0], p[1]))).join("，"));
+        R.text.push("准线：" + R.directrix.map(fmtLine).join(" ；"));
+      }
+      return R;
+    }
+    /* 双曲线：aZ·cZ < 0 */
+    let a2, b2, transU;
+    if (M / aZ > 0) { a2 = M / aZ; b2 = -M / cZ; transU = true; }
+    else { a2 = M / cZ; b2 = -M / aZ; transU = false; }
+    const a = Math.sqrt(a2), b = Math.sqrt(b2), cf2 = Math.sqrt(a2 + b2), ecc = cf2 / a;
+    R.type = "hyperbola"; R.name = "双曲线"; R.a = a; R.b = b; R.ecc = ecc;
+    const foci = transU ? [[h + cf2, k], [h - cf2, k]] : [[h, k + cf2], [h, k - cf2]];
+    const vert = transU ? [[h + a, k], [h - a, k]] : [[h, k + a], [h, k - a]];
+    R.points.push({ x: center[0], y: center[1], label: "中心" });
+    foci.forEach(p => { const q = toXY(p[0], p[1]); R.points.push({ x: q[0], y: q[1], label: "焦点" }); });
+    vert.forEach(p => { const q = toXY(p[0], p[1]); R.points.push({ x: q[0], y: q[1], label: "顶点" }); });
+    const m = transU ? b / a : a / b;   // v−k = ±m(u−h)
+    R.asymptote = [lineVU(m, h, k), lineVU(-m, h, k)];
+    R.asymptote.forEach(L => R.lines.push(Object.assign(L, { style: "asymptote" })));
+    const dd = a2 / cf2;
+    R.directrix = transU ? [lineU(h + dd), lineU(h - dd)] : [lineV(k + dd), lineV(k - dd)];
+    R.directrix.forEach(L => R.lines.push(Object.assign(L, { style: "directrix" })));
+    R.text.push(
+      "标准方程：" + (transU
+        ? "(x′−(" + fmtC(h) + "))²/" + fmtC(a2) + " − (y′−(" + fmtC(k) + "))²/" + fmtC(b2) + " = 1"
+        : "(y′−(" + fmtC(k) + "))²/" + fmtC(a2) + " − (x′−(" + fmtC(h) + "))²/" + fmtC(b2) + " = 1") + rotNote,
+      "中心：" + fmtPt(center) + "，实轴沿 " + (transU ? "x′" : "y′") + " 方向",
+      "实半轴 a = " + fmtC(a) + "，虚半轴 b = " + fmtC(b) + "，焦距 c = " + fmtC(cf2) + "，离心率 e = " + fmtC(ecc),
+      "焦点：" + foci.map(p => fmtPt(toXY(p[0], p[1]))).join("，"),
+      "顶点：" + vert.map(p => fmtPt(toXY(p[0], p[1]))).join("，"),
+      "渐近线：" + R.asymptote.map(fmtLine).join(" ；"),
+      "准线：" + R.directrix.map(fmtLine).join(" ；"));
+    return R;
+  }
+  /* 抛物线族：A′ 或 C′ 为 0 */
+  if (aZ === 0 && cZ === 0) throw new Error("二次项在旋转后全部消失，无法分析");  // 理论不可达
+  const swapped = (aZ === 0);          // A′=0：方程关于 v 二次；否则关于 u 二次
+  const Q = swapped ? cZ : aZ;         // 二次项系数
+  const L1 = swapped ? E2 : D2;        // 二次变量的一次系数
+  const L2 = swapped ? D2 : E2;        // 线性变量的系数
+  const k0 = -L1 / (2 * Q);            // 二次变量配方
+  const G = F0 - L1 * L1 / (4 * Q);
+  if (Math.abs(L2) < eps) {
+    /* 退化：Q·w² + L1·w + F0 = 0 → 平行直线族 */
+    const disc = L1 * L1 - 4 * Q * F0;
+    if (disc < -eps) { R.type = "empty"; R.name = "无轨迹"; R.text.push("关于 " + (swapped ? "y′" : "x′") + " 的二次式无实根"); return R; }
+    R.type = "lines";
+    const mk = swapped ? lineV : lineU;
+    if (Math.abs(disc) < eps) {
+      R.name = "退化：一条重合直线";
+      R.lines.push(Object.assign(mk(-L1 / (2 * Q)), { style: "curve" }));
+    } else {
+      R.name = "退化：两条平行直线";
+      const r1 = (-L1 + Math.sqrt(disc)) / (2 * Q), r2 = (-L1 - Math.sqrt(disc)) / (2 * Q);
+      R.lines.push(Object.assign(mk(r1), { style: "curve" }));
+      R.lines.push(Object.assign(mk(r2), { style: "curve" }));
+    }
+    R.text.push(R.name + "：" + R.lines.map(fmtLine).join(" ；"));
+    return R;
+  }
+  /* (w−k0)² = −(L2/Q)·(z + G/L2)，4p = −L2/Q */
+  const p = -L2 / (4 * Q);
+  const zV = -G / L2;                  // 顶点线性变量坐标
+  let vertex, focus, axis, directrix;
+  if (swapped) {                       // (y′−k0)² = 4p(x′−zV)
+    vertex = toXY(zV, k0); focus = toXY(zV + p, k0);
+    axis = lineV(k0); directrix = lineU(zV - p);
+  } else {                             // (x′−k0)² = 4p(y′−zV)
+    vertex = toXY(k0, zV); focus = toXY(k0, zV + p);
+    axis = lineU(k0); directrix = lineV(zV - p);
+  }
+  R.type = "parabola"; R.name = "抛物线"; R.center = vertex; R.p = p;
+  R.points.push({ x: vertex[0], y: vertex[1], label: "顶点" });
+  R.points.push({ x: focus[0], y: focus[1], label: "焦点" });
+  R.directrix = [directrix];
+  R.lines.push(Object.assign(directrix, { style: "directrix" }));
+  R.lines.push(Object.assign(axis, { style: "asymptote", axis: true }));  // 对称轴借虚线样式
+  R.text.push(
+    "标准方程：" + (swapped
+      ? "(y′−(" + fmtC(k0) + "))² = " + fmtC(4 * p) + "·(x′−(" + fmtC(zV) + "))"
+      : "(x′−(" + fmtC(k0) + "))² = " + fmtC(4 * p) + "·(y′−(" + fmtC(zV) + "))") + rotNote,
+    "顶点：" + fmtPt(vertex) + "，焦点：" + fmtPt(focus),
+    "焦参数 p = " + fmtC(p) + "（离心率 e = 1）",
+    "准线：" + fmtLine(directrix),
+    "对称轴：" + fmtLine(axis));
+  return R;
+}
+
+function analyzeConic(raw) {
+  const info = detectType(raw);
+  let F;
+  if (info.kind === "implicit") F = compileInfo(info).fn;
+  else if (info.kind === "y=") { const g = compileInfo(info).fn; F = (x, y) => g(x, 0) - y; }
+  else if (info.kind === "x=") { const g = compileInfo(info).fn; F = (x, y) => g(0, y) - x; }
+  else throw new Error("请输入等式形式的二次方程，如 x^2/4+y^2=1");
+  checkIdentifiers(compileInfo(info).js);
+  const cf = extractConicCoeffs(F);
+  const res = analyzeConicCoeffs(cf);
+  res.coeffs = cf;
+  return { F, res };
+}
+
+/* 法线式直线与当前可见矩形求交，返回两数据点（供画布/SVG 共用） */
+function conicLineSeg(L, r) {
+  const pts = [];
+  if (Math.abs(L.ny) > 1e-12) for (const x of [r.xmin, r.xmax]) {
+    const y = (L.d - L.nx * x) / L.ny;
+    if (y >= r.ymin - 1e-9 && y <= r.ymax + 1e-9) pts.push([x, y]);
+  }
+  if (Math.abs(L.nx) > 1e-12) for (const y of [r.ymin, r.ymax]) {
+    const x = (L.d - L.ny * y) / L.nx;
+    if (x >= r.xmin - 1e-9 && x <= r.xmax + 1e-9 &&
+        !pts.some(p => Math.abs(p[0] - x) < 1e-9 && Math.abs(p[1] - y) < 1e-9)) pts.push([x, y]);
+  }
+  return pts.length >= 2 ? [pts[0], pts[1]] : null;
+}
+
+/* ============================================================
+ * 应用状态
+ * ============================================================ */
+const App = {
+  functions: [],       // {raw,color,label_size,label_mode,label_x,label_y,show_deriv,_plot}
+  markers: [],         // {x,y,tag,t}
+  tangents: [],        // {x0,y0,k,vertical,color,raw}
+  integral: null,      // {fRaw,gRaw,a,b,value,xs,fv,gv}
+  conic: null,         // 圆锥曲线分析器 {raw,fn,segs,info}
+  snapPoints: [],      // [x,y,描述]
+  selectedIndex: null,
+  view: { xmin: -10, xmax: 10, ymin: -10, ymax: 10 },
+  history: [], hIdx: -1,   // 不变量：hIdx 指向 history 中当前视野项；空历史为 -1
+  mode: "none",        // none | pan | zoom | tangent | area
+  snapTimer: null,
+  resizeTimer: null,
+  legendEntries: [],
+  legendFontPx: 12,
+};
+
+const $ = id => document.getElementById(id);
+const canvas = $("plot"), wrap = $("canvasWrap");
+const ctx = canvas.getContext("2d");
+
+/* ---------------- 内联消息条（替代 alert，不阻断操作） ---------------- */
+let msgTimer = null;
+function showMsg(text, isErr = true) {
+  const bar = $("msgBar");
+  bar.textContent = text;
+  bar.classList.toggle("err", isErr);
+  bar.hidden = false;
+  if (msgTimer) clearTimeout(msgTimer);
+  msgTimer = setTimeout(() => { bar.hidden = true; msgTimer = null; }, isErr ? 9000 : 6000);
+}
+$("msgBar").addEventListener("click", () => { $("msgBar").hidden = true; });
+
+/* 把 JS 引擎的英文报错翻译成面向用户的中文提示 */
+function humanizeError(msg) {
+  if (/Unexpected end of input/.test(msg)) return "表达式不完整（请检查括号、运算符是否写全）";
+  const mt = msg.match(/Unexpected token '?(.+?)'?$/);
+  if (mt) return "语法错误：多余或位置不对符号 “" + mt[1] + "”（请检查括号配对与运算符）";
+  const md = msg.match(/^(.+?) is not defined/);
+  if (md) return "包含未定义的符号：“" + md[1] + "”";
+  const mf = msg.match(/^(.+?) is not a function/);
+  if (mf) return "函数写法有误：“" + mf[1] + "”不是可调用的函数";
+  if (/Invalid or unexpected token/.test(msg)) return "包含无法识别的字符";
+  return msg;
+}
+
+/* ---------------- 范围 ---------------- */
+const RANGE_FIELDS = ["xMin", "xMax", "yMin", "yMax"];
+
+/* 支持数字或表达式（如 2*pi、-sqrt(2)）；无法解析返回 NaN 并标红输入框 */
+function parseRangeField(el) {
+  const t = el.value.trim();
+  if (!t) return NaN;
+  // 严格纯数字（parseFloat 会把 "2*pi" 截断成 2，不能用）
+  if (/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(t)) return parseFloat(t);
+  try {
+    const js = latexToJS(t);
+    checkIdentifiers(js);
+    const r = makeFn(js)(0, 0);
+    return (typeof r === "number" && Number.isFinite(r)) ? r : NaN;
+  } catch (e) { return NaN; }
+}
+
+function getRange() {
+  const els = RANGE_FIELDS.map($);
+  const vals = els.map(parseRangeField);
+  els.forEach((el, i) => el.classList.toggle("invalid", !Number.isFinite(vals[i])));
+  if (vals.some(v => !Number.isFinite(v))) return null;
+  return vals;
+}
+
+function syncRangeInputs() {
+  RANGE_FIELDS.forEach(id => $(id).classList.remove("invalid"));
+  $("xMin").value = fmtG(App.view.xmin, 4);
+  $("xMax").value = fmtG(App.view.xmax, 4);
+  $("yMin").value = fmtG(App.view.ymin, 4);
+  $("yMax").value = fmtG(App.view.ymax, 4);
+}
+
+/* ---------------- 函数采样 ---------------- */
+function curveLabelPos(pts, r) {
+  const vis = [];
+  for (let i = 0; i < pts.length; i++) {
+    const [x, y] = pts[i];
+    if (Number.isFinite(x) && Number.isFinite(y) &&
+        x >= r.xmin && x <= r.xmax && y >= r.ymin && y <= r.ymax) vis.push(i);
+  }
+  if (!vis.length) return null;
+  const mid = vis[vis.length >> 1];
+  return pts[mid];
+}
+
+function sampleFunction(f, r) {
+  const info = detectType(f.raw);
+  const comp = compileInfo(info);
+  const plot = { kind: info.kind, labelPos: null };
+  const safeX = v => { try { return clampEval(comp.fn(v, 0)); } catch (e) { return NaN; } };
+  const safeY = v => { try { return clampEval(comp.fn(0, v)); } catch (e) { return NaN; } };
+  // 采样密度随画布宽度自适应
+  const pw = App.pa ? App.pa.w : 800, ph = App.pa ? App.pa.h : 600;
+  const NX = Math.max(800, Math.min(4000, Math.round(pw * 2)));
+  const NY = Math.max(600, Math.min(3000, Math.round(ph * 2)));
+
+  if (info.kind === "y=") {
+    const xs = linspace(r.xmin, r.xmax, NX);
+    plot.pts = xs.map(x => [x, safeX(x)]);
+    if (f.show_deriv) {
+      const d = derivativeValues(comp.fn, linspace(r.xmin, r.xmax, NX));
+      plot.deriv = d.xs.map((x, i) => [x, clampEval(d.fp[i])]);
+    }
+    plot.labelPos = curveLabelPos(plot.pts, r);
+  } else if (info.kind === "x=") {
+    const ys = linspace(r.ymin, r.ymax, NY);
+    plot.pts = ys.map(y => [safeY(y), y]);
+    plot.labelPos = curveLabelPos(plot.pts, r);
+  } else if (info.kind === "ineq") {
+    plot.strict = (info.op === ">" || info.op === "<");
+    if (info.lhs === "x") {
+      const ys = linspace(r.ymin, r.ymax, Math.round(NY / 2));
+      plot.pts = ys.map(y => [safeY(y), y]);
+      plot.dir = (info.op === ">" || info.op === ">=") ? "right" : "left";
+    } else {
+      const xs = linspace(r.xmin, r.xmax, Math.round(NX / 2));
+      plot.pts = xs.map(x => [x, safeX(x)]);
+      plot.dir = (info.op === ">" || info.op === ">=") ? "above" : "below";
+    }
+    plot.labelPos = curveLabelPos(plot.pts, r);
+  } else if (info.kind === "implicit") {
+    plot.segs = marchingSquares(comp.fn, r.xmin, r.xmax, r.ymin, r.ymax, 340);
+  }
+  return plot;
+}
+
+/* ---------------- 隐函数等高线（marching squares，z=0） ---------------- */
+function marchingSquares(fn, xmin, xmax, ymin, ymax, N) {
+  const xs = linspace(xmin, xmax, N + 1);
+  const ys = linspace(ymin, ymax, N + 1);
+  const z = [];
+  for (let j = 0; j <= N; j++) {
+    const row = new Array(N + 1);
+    for (let i = 0; i <= N; i++) {
+      try { row[i] = clampEval(fn(xs[i], ys[j])); } catch (e) { row[i] = NaN; }
+    }
+    z.push(row);
+  }
+  const segs = [];
+  // 边: 0=T 1=R 2=B 3=L
+  const TABLE = {
+    1: [[3, 0]], 2: [[0, 1]], 3: [[3, 1]], 4: [[1, 2]],
+    5: [[3, 0], [1, 2]], 6: [[0, 2]], 7: [[3, 2]], 8: [[3, 2]],
+    9: [[0, 2]], 10: [[0, 1], [2, 3]], 11: [[1, 2]], 12: [[3, 1]],
+    13: [[0, 1]], 14: [[3, 0]],
+  };
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      const z0 = z[j][i], z1 = z[j][i + 1], z2 = z[j + 1][i + 1], z3 = z[j + 1][i];
+      if (!(Number.isFinite(z0) && Number.isFinite(z1) && Number.isFinite(z2) && Number.isFinite(z3))) continue;
+      let idx = 0;
+      if (z0 < 0) idx |= 1;
+      if (z1 < 0) idx |= 2;
+      if (z2 < 0) idx |= 4;
+      if (z3 < 0) idx |= 8;
+      if (idx === 0 || idx === 15) continue;
+      const x0 = xs[i], x1 = xs[i + 1], y0 = ys[j], y1 = ys[j + 1];
+      const edgePt = e => {
+        if (e === 0) { const t = z0 / (z0 - z1); return [x0 + (x1 - x0) * t, y0]; }
+        if (e === 1) { const t = z1 / (z1 - z2); return [x1, y0 + (y1 - y0) * t]; }
+        if (e === 2) { const t = z3 / (z3 - z2); return [x0 + (x1 - x0) * t, y1]; }
+        const t = z0 / (z0 - z3); return [x0, y0 + (y1 - y0) * t];
+      };
+      for (const [e1, e2] of TABLE[idx]) {
+        const p1 = edgePt(e1), p2 = edgePt(e2);
+        segs.push([p1[0], p1[1], p2[0], p2[1]]);
+      }
+    }
+  }
+  return segs;
+}
+
+/* 当前画布可见的数据范围（1:1 等比时比视野略大） */
+function visibleRange() {
+  if (!App.map || !App.pa) return { ...App.view };
+  const pa = App.pa;
+  return {
+    xmin: App.map.invX(pa.x), xmax: App.map.invX(pa.x + pa.w),
+    ymin: App.map.invY(pa.y + pa.h), ymax: App.map.invY(pa.y),
+  };
+}
+
+/* 按当前可见范围重新采样所有函数并重算吸附点 */
+function resampleAll() {
+  const r = visibleRange();
+  for (const f of App.functions) {
+    try { f._plot = sampleFunction(f, r); }
+    catch (e) { console.warn("绘制失败 " + f.raw + ": " + e.message); f._plot = null; }
+  }
+  try { App.snapPoints = computeSnapPoints(App.functions, r.xmin, r.xmax, r.ymin, r.ymax); }
+  catch (e) { App.snapPoints = []; }   // 单个函数求值异常不应中断整个重采样
+  // 圆锥曲线：重采样曲线轮廓，并把中心/焦点/顶点并入吸附点
+  if (App.conic) {
+    try { App.conic.segs = marchingSquares(App.conic.fn, r.xmin, r.xmax, r.ymin, r.ymax, 340); }
+    catch (e) { App.conic.segs = []; }
+    if (App.conic.info) for (const p of App.conic.info.points) {
+      if (p.x >= r.xmin && p.x <= r.xmax && p.y >= r.ymin && p.y <= r.ymax) {
+        App.snapPoints.push([p.x, p.y, p.label]);
+      }
+    }
+  }
+}
+
+/* ---------------- 重绘（函数/范围变化时） ---------------- */
+function redraw() {
+  const range = getRange();
+  if (!range) {
+    showMsg("请检查标红的输入框：支持数字或表达式（如 2*pi、-sqrt(2)）");
+    return;
+  }
+  const [xmin, xmax, ymin, ymax] = range;
+  if (!(xmin < xmax && ymin < ymax)) {
+    showMsg("需要 x_min < x_max 且 y_min < y_max");
+    return;
+  }
+  App.view = { xmin, xmax, ymin, ymax };
+  pushHistoryIfChanged();   // 不再清空历史：应用范围只是普通的一步视野变化
+  App.markers = [];
+  App.tangents = [];
+  updateToolbarState();
+  render();          // 先建立坐标映射
+  resampleAll();     // 按可见范围采样
+  render();
+  saveState();
+}
+
+/* 视图变化后：同步输入框，即时用旧采样渲染（保证流畅），
+ * 防抖 180ms 后按新可见范围重采样曲线并重算吸附点 */
+function afterViewChange() {
+  syncRangeInputs();
+  render();
+  if (App.snapTimer) clearTimeout(App.snapTimer);
+  App.snapTimer = setTimeout(() => {
+    App.snapTimer = null;
+    resampleAll();
+    render();
+    saveState();
+  }, 180);
+}
+
+function pushHistory() {
+  App.history = App.history.slice(0, App.hIdx + 1);
+  App.history.push({ ...App.view });
+  App.hIdx++;
+  if (App.history.length > 100) { App.history.shift(); App.hIdx--; }  // 历史封顶 100 步，防长会话无限增长
+  updateToolbarState();
+}
+
+/* 视野确实变了才入栈（连续相同视野不产生重复步） */
+function pushHistoryIfChanged() {
+  const last = App.history[App.hIdx];
+  if (!last || Math.abs(last.xmin - App.view.xmin) > 1e-12 || Math.abs(last.xmax - App.view.xmax) > 1e-12 ||
+      Math.abs(last.ymin - App.view.ymin) > 1e-12 || Math.abs(last.ymax - App.view.ymax) > 1e-12) {
+    pushHistory();
+  } else updateToolbarState();
+}
+
+/* ============================================================
+ * 渲染
+ * ============================================================ */
+function roundRectPath(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.arcTo(x + w, y, x + w, y + h, r);
+  c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r);
+  c.arcTo(x, y, x + w, y, r);
+  c.closePath();
+}
+
+function render() {
+  const t = TC();
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.width / dpr, H = canvas.height / dpr;
+  if (W < 10 || H < 10) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = t.canvasBg;
+  ctx.fillRect(0, 0, W, H);
+
+  /* ---- 图例条目（决定右侧预留宽度） ---- */
+  App.legendEntries = [];
+  let legendFontPt = 9;
+  for (const f of App.functions) {
+    if (f.label_mode === "图例(右侧)") {
+      App.legendEntries.push({ color: f.color, text: f.raw, dash: false });
+      if (f.show_deriv) App.legendEntries.push({ color: t.deriv, text: "(" + f.raw + ")'", dash: true });
+      legendFontPt = Math.max(legendFontPt, Math.min(f.label_size, 20));
+    }
+  }
+  App.legendFontPx = legendFontPt * 4 / 3;
+  let legendW = 0;
+  if (App.legendEntries.length) {
+    ctx.font = App.legendFontPx + "px " + getComputedStyle(document.body).fontFamily;
+    let maxW = 0;
+    for (const e of App.legendEntries) maxW = Math.max(maxW, ctx.measureText(e.text).width);
+    legendW = Math.min(W * 0.32, maxW + 44);
+  }
+
+  /* ---- 绘图区（CSS 像素） ---- */
+  const pa = { x: 46, y: 14, w: W - 46 - 12 - (legendW ? legendW + 8 : 0), h: H - 14 - 34 };
+  if (pa.w < 40 || pa.h < 40) return;
+  App.pa = pa;
+  const v = App.view;
+  const xspan = v.xmax - v.xmin, yspan = v.ymax - v.ymin;
+  let sx, sy, ox, oy;
+  if ($("aspectCheck").checked) {
+    const s = Math.min(pa.w / xspan, pa.h / yspan);
+    sx = sy = s;
+    ox = pa.x + pa.w / 2 - (v.xmin + v.xmax) / 2 * s;
+    oy = pa.y + pa.h / 2 + (v.ymin + v.ymax) / 2 * s;
+  } else {
+    sx = pa.w / xspan; sy = pa.h / yspan;
+    ox = pa.x - v.xmin * sx;
+    oy = pa.y + pa.h + v.ymin * sy;
+  }
+  const X = x => ox + x * sx;
+  const Y = y => oy - y * sy;
+  App.map = { X, Y, sx, sy, pa,
+    invX: px => (px - ox) / sx,
+    invY: py => (oy - py) / sy };
+
+  /* ---- 网格与刻度（按可见范围生成，1:1 等比时方格也完整铺满） ---- */
+  ctx.font = "11px " + getComputedStyle(document.body).fontFamily;
+  const vx0 = App.map.invX(pa.x), vx1 = App.map.invX(pa.x + pa.w);
+  const vy0 = App.map.invY(pa.y + pa.h), vy1 = App.map.invY(pa.y);
+  const tx = niceTicks(vx0, vx1, Math.max(4, Math.round(pa.w / 80)));
+  const ty = niceTicks(vy0, vy1, Math.max(4, Math.round(pa.h / 60)));
+  ctx.lineWidth = 0.8;
+  for (const tv of tx.ticks) {
+    const px = X(tv);
+    if (px < pa.x - 0.5 || px > pa.x + pa.w + 0.5) continue;
+    ctx.strokeStyle = t.grid;
+    ctx.beginPath(); ctx.moveTo(px, pa.y); ctx.lineTo(px, pa.y + pa.h); ctx.stroke();
+    ctx.fillStyle = t.tick;
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    ctx.fillText(fmtTick(tv, tx.step), px, pa.y + pa.h + 5);
+  }
+  for (const tv of ty.ticks) {
+    const py = Y(tv);
+    if (py < pa.y - 0.5 || py > pa.y + pa.h + 0.5) continue;
+    ctx.strokeStyle = t.grid;
+    ctx.beginPath(); ctx.moveTo(pa.x, py); ctx.lineTo(pa.x + pa.w, py); ctx.stroke();
+    ctx.fillStyle = t.tick;
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    ctx.fillText(fmtTick(tv, ty.step), pa.x - 5, py);
+  }
+  /* 坐标轴 x=0 / y=0 */
+  ctx.strokeStyle = t.axis; ctx.lineWidth = 1;
+  const py0 = Y(0);
+  if (py0 >= pa.y && py0 <= pa.y + pa.h) {
+    ctx.beginPath(); ctx.moveTo(pa.x, py0); ctx.lineTo(pa.x + pa.w, py0); ctx.stroke();
+  }
+  const px0 = X(0);
+  if (px0 >= pa.x && px0 <= pa.x + pa.w) {
+    ctx.beginPath(); ctx.moveTo(px0, pa.y); ctx.lineTo(px0, pa.y + pa.h); ctx.stroke();
+  }
+  /* 左/下边框（对应桌面版隐藏 top/right spines） */
+  ctx.strokeStyle = t.spine; ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pa.x, pa.y); ctx.lineTo(pa.x, pa.y + pa.h); ctx.lineTo(pa.x + pa.w, pa.y + pa.h);
+  ctx.stroke();
+  /* 轴名 */
+  ctx.fillStyle = t.text;
+  ctx.font = "italic 13px Georgia, serif";
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  ctx.fillText("x", pa.x + pa.w / 2, pa.y + pa.h + 19);
+  ctx.save();
+  ctx.translate(pa.x - 34, pa.y + pa.h / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+  ctx.fillText("y", 0, 0);
+  ctx.restore();
+
+  /* ---- 裁剪到绘图区，绘制内容 ---- */
+  ctx.save();
+  ctx.beginPath(); ctx.rect(pa.x, pa.y, pa.w, pa.h); ctx.clip();
+
+  const jumpLimit = 2 * yspan * sy;  // 像素跳变超过 2 倍视高视为渐近线断点
+  const jumpLimitX = 2 * xspan * sx;
+
+  /* ---- 积分区域阴影（画在曲线之下） ---- */
+  if (App.integral) {
+    const ig = App.integral;
+    const igColor = (App.functions.find(f => f.raw === ig.fRaw) || {}).color || "#4c6ef5";
+    ctx.fillStyle = igColor;
+    let run = [];
+    const flushIg = () => {
+      if (run.length < 2) { run = []; return; }
+      ctx.globalAlpha = 0.25;
+      ctx.beginPath();
+      ctx.moveTo(X(run[0][0]), Y(run[0][1]));
+      for (let i = 1; i < run.length; i++) ctx.lineTo(X(run[i][0]), Y(run[i][1]));
+      for (let i = run.length - 1; i >= 0; i--) ctx.lineTo(X(run[i][0]), Y(run[i][2]));
+      ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = 1;
+      run = [];
+    };
+    for (let i = 0; i < ig.xs.length; i++) {
+      const fv = ig.fv[i], gv = ig.gv ? ig.gv[i] : 0;
+      if (Number.isFinite(fv) && Number.isFinite(gv)) run.push([ig.xs[i], fv, gv]);
+      else flushIg();
+    }
+    flushIg();
+  }
+
+  for (const f of App.functions) {
+    const p = f._plot;
+    if (!p) continue;
+    ctx.strokeStyle = f.color;
+
+    if (p.kind === "ineq") {
+      /* 填充区域（分段，遇 NaN 断开） */
+      ctx.fillStyle = f.color;
+      let run = [];
+      const flush = () => {
+        if (run.length < 2) { run = []; return; }
+        ctx.globalAlpha = 0.15;
+        ctx.beginPath();
+        ctx.moveTo(X(run[0][0]), Y(run[0][1]));
+        for (let i = 1; i < run.length; i++) ctx.lineTo(X(run[i][0]), Y(run[i][1]));
+        if (p.dir === "above") {
+          ctx.lineTo(X(run[run.length - 1][0]), pa.y);
+          ctx.lineTo(X(run[0][0]), pa.y);
+        } else if (p.dir === "below") {
+          ctx.lineTo(X(run[run.length - 1][0]), pa.y + pa.h);
+          ctx.lineTo(X(run[0][0]), pa.y + pa.h);
+        } else if (p.dir === "right") {
+          ctx.lineTo(pa.x + pa.w, Y(run[run.length - 1][1]));
+          ctx.lineTo(pa.x + pa.w, Y(run[0][1]));
+        } else {
+          ctx.lineTo(pa.x, Y(run[run.length - 1][1]));
+          ctx.lineTo(pa.x, Y(run[0][1]));
+        }
+        ctx.closePath(); ctx.fill();
+        ctx.globalAlpha = 1;
+        run = [];
+      };
+      for (const pt of p.pts) {
+        if (Number.isFinite(pt[0]) && Number.isFinite(pt[1])) run.push(pt); else flush();
+      }
+      flush();
+      /* 边界线 */
+      ctx.lineWidth = 2;
+      ctx.setLineDash(p.strict ? [6, 5] : []);
+      const indepAxis = (p.dir === "right" || p.dir === "left") ? "x" : "y";
+      strokeCurve(p.pts, indepAxis === "x" ? jumpLimitX : jumpLimit, indepAxis);
+      ctx.setLineDash([]);
+    } else if (p.kind === "implicit") {
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (const s of p.segs) {
+        ctx.moveTo(X(s[0]), Y(s[1]));
+        ctx.lineTo(X(s[2]), Y(s[3]));
+      }
+      ctx.stroke();
+    } else {
+      ctx.lineWidth = 2;
+      strokeCurve(p.pts, p.kind === "y=" ? jumpLimit : jumpLimitX, p.kind === "y=" ? "y" : "x");
+      if (p.deriv) {
+        ctx.strokeStyle = t.deriv;
+        ctx.lineWidth = 1.6;
+        ctx.setLineDash([6, 5]);
+        strokeCurve(p.deriv, jumpLimit, "y");
+        ctx.setLineDash([]);
+      }
+    }
+  }
+
+  /* ---- 圆锥曲线分析器覆盖层 ---- */
+  if (App.conic) {
+    const cn = App.conic;
+    ctx.strokeStyle = CONIC_COLOR;
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    for (const s of cn.segs || []) {
+      ctx.moveTo(X(s[0]), Y(s[1])); ctx.lineTo(X(s[2]), Y(s[3]));
+    }
+    ctx.stroke();
+    if (cn.info && $("conicElems").checked) {
+      const r = visibleRange();
+      for (const L of cn.info.lines) {
+        const seg = conicLineSeg(L, r);
+        if (!seg) continue;
+        ctx.strokeStyle = L.style === "curve" ? CONIC_COLOR : CONIC_AUX;
+        ctx.lineWidth = L.style === "curve" ? 2 : 1.5;
+        ctx.setLineDash(L.style === "asymptote" ? (L.axis ? [10, 5] : [4, 4]) : [9, 6]);
+        ctx.beginPath();
+        ctx.moveTo(X(seg[0][0]), Y(seg[0][1])); ctx.lineTo(X(seg[1][0]), Y(seg[1][1]));
+        ctx.stroke(); ctx.setLineDash([]);
+        // 线名小标签画在第一个端点附近
+        const tag = L.style === "directrix" ? "准线" : (L.axis ? "对称轴" : (L.style === "asymptote" ? "渐近线" : ""));
+        if (tag) {
+          ctx.font = "11px " + getComputedStyle(document.body).fontFamily;
+          drawTag(tag, X(seg[0][0]) + 8, Y(seg[0][1]) - 10, CONIC_AUX);
+        }
+      }
+      for (const p of cn.info.points) {
+        const px = X(p.x), py = Y(p.y);
+        const col = p.label === "焦点" ? CONIC_FOCUS : CONIC_CTR;
+        ctx.beginPath(); ctx.arc(px, py, 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = col; ctx.fill();
+        ctx.lineWidth = 1.2; ctx.strokeStyle = t.canvasBg; ctx.stroke();
+        ctx.font = "11px " + getComputedStyle(document.body).fontFamily;
+        drawTag(p.label + " " + fmtPt([p.x, p.y]), px + 9, py - 12, col);
+      }
+    }
+  }
+
+  /* ---- 切线 ---- */
+  const fontFam = getComputedStyle(document.body).fontFamily;
+  for (const tg of App.tangents) {
+    ctx.strokeStyle = tg.color;
+    ctx.lineWidth = 1.4;
+    ctx.setLineDash([8, 5]);
+    ctx.beginPath();
+    if (tg.vertical) {
+      ctx.moveTo(X(tg.x0), pa.y); ctx.lineTo(X(tg.x0), pa.y + pa.h);
+    } else {
+      const xa = App.map.invX(pa.x), xb = App.map.invX(pa.x + pa.w);
+      ctx.moveTo(X(xa), Y(tg.y0 + tg.k * (xa - tg.x0)));
+      ctx.lineTo(X(xb), Y(tg.y0 + tg.k * (xb - tg.x0)));
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.arc(X(tg.x0), Y(tg.y0), 4, 0, Math.PI * 2);
+    ctx.fillStyle = tg.color; ctx.fill();
+    const label = tg.vertical
+      ? "竖直切线 x=" + fmtG(tg.x0, 4)
+      : "k ≈ " + fmtG(tg.k, 5) + "  (" + fmtG(tg.x0, 4) + ", " + fmtG(tg.y0, 4) + ")";
+    ctx.font = "12px " + fontFam;
+    drawTag(label, X(tg.x0) + 10, Y(tg.y0) - 16, tg.color);
+  }
+
+  /* 曲线旁 / 手动坐标标签 */
+  for (const f of App.functions) {
+    const p = f._plot;
+    if (!p) continue;
+    const px = f.label_size * 4 / 3;
+    ctx.font = px + "px " + getComputedStyle(document.body).fontFamily;
+    if (f.label_mode === "曲线旁" && p.labelPos) {
+      drawTag(f.raw, X(p.labelPos[0]), Y(p.labelPos[1]), f.color);
+    } else if (f.label_mode === "手动坐标") {
+      const lx = parseFloat(f.label_x), ly = parseFloat(f.label_y);
+      if (Number.isFinite(lx) && Number.isFinite(ly)) drawTag(f.raw, X(lx), Y(ly), f.color);
+    }
+  }
+
+  /* 点击标记 */
+  for (const mk of App.markers) {
+    const px = X(mk.x), py = Y(mk.y);
+    ctx.beginPath();
+    ctx.arc(px, py, 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = "yellow"; ctx.fill();
+    ctx.lineWidth = 1.2; ctx.strokeStyle = "black"; ctx.stroke();
+    const label = (mk.tag ? mk.tag + "  " : "") + "(" + mk.x.toFixed(3) + ", " + mk.y.toFixed(3) + ")";
+    ctx.font = "12px " + getComputedStyle(document.body).fontFamily;
+    const tw = ctx.measureText(label).width;
+    let bx = px + 10, by = py + 10;
+    if (bx + tw + 10 > pa.x + pa.w) bx = px - 14 - tw - 8;
+    if (by + 20 > pa.y + pa.h) by = py - 14 - 20;
+    ctx.fillStyle = "rgba(255,255,0,0.85)";
+    roundRectPath(ctx, bx, by, tw + 10, 20, 4); ctx.fill();
+    ctx.fillStyle = "#1a1f2b";
+    ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillText(label, bx + 5, by + 11);
+  }
+  ctx.restore();
+
+  /* ---- 图例（绘图区右侧） ---- */
+  if (App.legendEntries.length) {
+    const fontPx = App.legendFontPx;
+    ctx.font = fontPx + "px " + getComputedStyle(document.body).fontFamily;
+    const lh = fontPx * 1.55;
+    const boxH = App.legendEntries.length * lh + 12;
+    const bx = pa.x + pa.w + 8;
+    const by = pa.y + pa.h / 2 - boxH / 2;
+    ctx.globalAlpha = 0.95;
+    ctx.fillStyle = t.legendBg;
+    roundRectPath(ctx, bx, by, legendW, boxH, 6); ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = t.legendBorder; ctx.lineWidth = 1; ctx.stroke();
+    App.legendEntries.forEach((e, i) => {
+      const cy = by + 6 + lh * i + lh / 2;
+      ctx.strokeStyle = e.color; ctx.lineWidth = 2;
+      ctx.setLineDash(e.dash ? [5, 4] : []);
+      ctx.beginPath(); ctx.moveTo(bx + 8, cy); ctx.lineTo(bx + 30, cy); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = t.text;
+      ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.fillText(e.text, bx + 36, cy, legendW - 42);
+    });
+  }
+}
+
+/* 折线绘制：NaN 断开；相邻像素跳变过大（渐近线）也断开 */
+function strokeCurve(pts, jumpPx, axis) {
+  const { X, Y } = App.map;
+  ctx.beginPath();
+  let pen = false, prevPx = 0, prevPy = 0;
+  for (const [x, y] of pts) {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) { pen = false; continue; }
+    const px = X(x), py = Y(y);
+    if (pen && Math.abs(axis === "x" ? px - prevPx : py - prevPy) > jumpPx) pen = false;
+    if (pen) ctx.lineTo(px, py); else ctx.moveTo(px, py);
+    pen = true; prevPx = px; prevPy = py;
+  }
+  ctx.stroke();
+}
+
+/* 带底色圆角的小标签 */
+function drawTag(text, px, py, color) {
+  const tw = ctx.measureText(text).width;
+  const fs = parseInt(ctx.font, 10) || 14;
+  ctx.fillStyle = TC().labelBg;
+  roundRectPath(ctx, px - 4, py - fs * 0.75 - 3, tw + 8, fs * 1.5 + 6, 4);
+  ctx.fill();
+  ctx.fillStyle = color;
+  ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  ctx.fillText(text, px, py);
+}
+
+/* ============================================================
+ * 点击标记与吸附
+ * ============================================================ */
+function addMarkerAt(dataX, dataY) {
+  if (!Number.isFinite(dataX) || !Number.isFinite(dataY)) return;
+  let x = dataX, y = dataY, tag = "";
+  if ($("snapCheck").checked) {
+    const { X, Y } = App.map;
+    const px = X(dataX), py = Y(dataY);
+    let best = null, bestD = 1e18;
+    for (const [sx, sy, kind] of App.snapPoints) {
+      const d = Math.hypot(X(sx) - px, Y(sy) - py);
+      if (d < bestD) { bestD = d; best = [sx, sy, kind]; }
+    }
+    // 整数格点吸附（不要求该点在曲线上）
+    const rx = Math.round(dataX), ry = Math.round(dataY);
+    const dGrid = Math.hypot(X(rx) - px, Y(ry) - py);
+    if (dGrid < bestD) { bestD = dGrid; best = [rx, ry, "整数格点"]; }
+    if (best && bestD <= parseInt($("snapRadius").value, 10)) {
+      x = best[0]; y = best[1]; tag = best[2];
+    }
+  }
+  App.markers.push({ x, y, tag, t: Date.now() });
+  if (App.markers.length > 12) App.markers.splice(0, App.markers.length - 12);  // 防标签叠盖，只留最近 12 个
+  render();
+}
+
+function clearMarkers() {
+  if (!App.markers.length && !App.tangents.length) return;
+  App.markers = [];
+  App.tangents = [];
+  render();
+}
+
+/* ---------------- 切线工具 ---------------- */
+function addTangentAt(dx, dy) {
+  const px = App.map.X(dx), py = App.map.Y(dy);
+  const radius = Math.max(30, parseInt($("snapRadius").value, 10));
+  let best = null;
+  for (const f of App.functions) {
+    let info;
+    try { info = detectType(f.raw); } catch (e) { continue; }
+    if (info.kind !== "y=" && info.kind !== "x=") continue;
+    let comp;
+    try { comp = compileInfo(info); } catch (e) { continue; }
+    if (info.kind === "y=") {
+      const y0 = evalSingle(comp.fn, "x", dx);
+      if (!Number.isFinite(y0)) continue;
+      const d = Math.abs(App.map.Y(y0) - py);
+      if (!best || d < best.d) best = { d, kind: "y=", f, fn: comp.fn, x0: dx, y0 };
+    } else {
+      const x0 = evalSingle(comp.fn, "y", dy);
+      if (!Number.isFinite(x0)) continue;
+      const d = Math.abs(App.map.X(x0) - px);
+      if (!best || d < best.d) best = { d, kind: "x=", f, fn: comp.fn, x0, y0: dy };
+    }
+  }
+  if (!best || best.d > radius) {
+    showMsg("点击位置附近没有可求切线的曲线（仅支持 y=f(x) 与 x=f(y) 类型）");
+    return;
+  }
+  // 中心差分求斜率
+  const h = 1e-6 * Math.max(1, Math.abs(best.kind === "y=" ? best.x0 : best.y0));
+  let k, vertical = false;
+  if (best.kind === "y=") {
+    const f1 = evalSingle(best.fn, "x", best.x0 + h), f0 = evalSingle(best.fn, "x", best.x0 - h);
+    k = (f1 - f0) / (2 * h);
+  } else {
+    const f1 = evalSingle(best.fn, "y", best.y0 + h), f0 = evalSingle(best.fn, "y", best.y0 - h);
+    const dxdy = (f1 - f0) / (2 * h);
+    k = Math.abs(dxdy) < 1e-9 ? Infinity : 1 / dxdy;
+  }
+  // 斜率分支：NaN = 尖点/断点（真不可导）；±Infinity = 竖直切线（y= 与 x= 都支持）。
+  // 有限大斜率（不管多陡）照常画出，不再设 1e6 阈值误报"导数不存在"
+  if (!Number.isFinite(k)) {
+    if (Number.isNaN(k)) { showMsg("该点处导数不存在（尖点/断点）"); return; }
+    vertical = true;
+  }
+  App.tangents.push({ x0: best.x0, y0: best.y0, k, vertical, color: best.f.color, raw: best.f.raw });
+  if (App.tangents.length > 6) App.tangents.splice(0, App.tangents.length - 6);  // 防切线堆叠，只留最近 6 条
+  render();
+}
+
+/* ---------------- 定积分 / 曲线间面积 ---------------- */
+function yFunctions() {
+  return App.functions.filter(f => { try { return detectType(f.raw).kind === "y="; } catch (e) { return false; } });
+}
+
+function updateIntSelectors() {
+  const yf = yFunctions().map(f => f.raw);
+  const selF = $("intF"), selG = $("intG");
+  const prevF = selF.value, prevG = selG.value;
+  selF.innerHTML = "";
+  selG.innerHTML = "";
+  if (!yf.length) {
+    selF.appendChild(new Option("（先添加 y=f(x) 函数）", ""));
+    selG.appendChild(new Option("（无）", ""));
+    return;
+  }
+  for (const raw of yf) selF.appendChild(new Option(raw, raw));
+  selG.appendChild(new Option("（无）", ""));
+  for (const raw of yf) selG.appendChild(new Option(raw, raw));
+  if (yf.includes(prevF)) selF.value = prevF;
+  if (prevG === "" || yf.includes(prevG)) selG.value = prevG;
+}
+
+function computeIntegral() {
+  const fRaw = $("intF").value;
+  if (!fRaw) { showMsg("请先添加至少一个 y=f(x) 类型的函数"); return; }
+  const gRaw = $("intG").value || null;
+  const a = parseRangeField($("intA")), b = parseRangeField($("intB"));
+  const aBad = !Number.isFinite(a), bBad = !Number.isFinite(b);
+  $("intA").classList.toggle("invalid", aBad);
+  $("intB").classList.toggle("invalid", bBad);
+  if (aBad || bBad) {
+    showMsg("请检查标红的上下限：支持数字或表达式（如 pi/2）");
+    return;
+  }
+  if (!(a < b)) {
+    $("intA").classList.add("invalid"); $("intB").classList.add("invalid");
+    showMsg("需要 下限 < 上限");
+    return;
+  }
+  $("intA").classList.remove("invalid"); $("intB").classList.remove("invalid");
+  let fComp, gComp = null;
+  try {
+    fComp = compileInfo(detectType(fRaw));
+    if (gRaw) gComp = compileInfo(detectType(gRaw));
+  } catch (e) { showMsg(humanizeError(e.message)); return; }
+
+  const N = 2000;
+  const xs = linspace(a, b, N + 1);
+  // 积分用不截断的 evalRaw：clampEval 会把 |f|>1e6 截成 NaN 被当成间断点跳过，污染结果
+  const fv = xs.map(v => evalRaw(fComp.fn, "x", v));
+  const gv = gComp ? xs.map(v => evalRaw(gComp.fn, "x", v)) : null;
+  // Simpson 积分；含 NaN/±∞ 的小区段跳过（真间断点），其余段照常参与
+  let sum = 0, used = 0;
+  const h = (b - a) / N;
+  for (let i = 0; i < N; i += 2) {
+    const p0 = gv ? [fv[i], gv[i]] : [fv[i]];
+    const p1 = gv ? [fv[i + 1], gv[i + 1]] : [fv[i + 1]];
+    const p2 = gv ? [fv[i + 2], gv[i + 2]] : [fv[i + 2]];
+    const w0 = gComp ? Math.abs(p0[0] - p0[1]) : p0[0];
+    const w1 = gComp ? Math.abs(p1[0] - p1[1]) : p1[0];
+    const w2 = gComp ? Math.abs(p2[0] - p2[1]) : p2[0];
+    if (Number.isFinite(w0) && Number.isFinite(w1) && Number.isFinite(w2)) {
+      sum += h / 3 * (w0 + 4 * w1 + w2);
+      used++;
+    }
+  }
+  App.integral = { fRaw, gRaw, a, b, value: sum, xs, fv, gv };
+  const rangeText = "[" + fmtG(a, 6) + ", " + fmtG(b, 6) + "]";
+  $("intResult").textContent = (gComp ? "面积 ∫|f−g|dx " : "∫f(x)dx ") + rangeText +
+    " ≈ " + fmtG(sum, 8) + (used < N / 2 ? "（区间含间断点，已跳过）" : "");
+  render();
+}
+
+function clearIntegral() {
+  App.integral = null;
+  $("intResult").textContent = "";
+  render();
+}
+
+/* ---------------- 导出 SVG ---------------- */
+function svgEscape(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function svgPathFromPts(pts, jumpPx, axis) {
+  const { X, Y } = App.map;
+  let d = "", pen = false, prevPx = 0, prevPy = 0;
+  for (const [x, y] of pts) {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) { pen = false; continue; }
+    const px = X(x), py = Y(y);
+    if (pen && Math.abs(axis === "x" ? px - prevPx : py - prevPy) > jumpPx) pen = false;
+    d += (pen ? "L" : "M") + px.toFixed(2) + " " + py.toFixed(2);
+    pen = true; prevPx = px; prevPy = py;
+  }
+  return d;
+}
+
+function exportSVG() {
+  if (!App.pa) return;
+  const t = TC();
+  const dpr = window.devicePixelRatio || 1;
+  const W = Math.round(canvas.width / dpr), H = Math.round(canvas.height / dpr);
+  const pa = App.pa;
+  const { X, Y } = App.map;
+  const v = App.view;
+  const yspan = v.ymax - v.ymin, xspan = v.xmax - v.xmin;
+  const jumpLimit = 2 * yspan * App.map.sy, jumpLimitX = 2 * xspan * App.map.sx;
+  const fontFam = getComputedStyle(document.body).fontFamily;
+  const out = [];
+  const r2 = n => Math.round(n * 100) / 100;
+  out.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="${svgEscape(fontFam)}">`);
+  out.push(`<rect width="${W}" height="${H}" fill="${t.canvasBg}"/>`);
+  out.push(`<defs><clipPath id="pa"><rect x="${pa.x}" y="${pa.y}" width="${pa.w}" height="${pa.h}"/></clipPath></defs>`);
+
+  /* 网格与刻度（可见范围） */
+  const vx0 = App.map.invX(pa.x), vx1 = App.map.invX(pa.x + pa.w);
+  const vy0 = App.map.invY(pa.y + pa.h), vy1 = App.map.invY(pa.y);
+  const tx = niceTicks(vx0, vx1, Math.max(4, Math.round(pa.w / 80)));
+  const ty = niceTicks(vy0, vy1, Math.max(4, Math.round(pa.h / 60)));
+  for (const tv of tx.ticks) {
+    const px = X(tv);
+    if (px < pa.x - 0.5 || px > pa.x + pa.w + 0.5) continue;
+    out.push(`<line x1="${r2(px)}" y1="${pa.y}" x2="${r2(px)}" y2="${pa.y + pa.h}" stroke="${t.grid}" stroke-width="0.8"/>`);
+    out.push(`<text x="${r2(px)}" y="${pa.y + pa.h + 16}" font-size="11" fill="${t.tick}" text-anchor="middle">${svgEscape(fmtTick(tv, tx.step))}</text>`);
+  }
+  for (const tv of ty.ticks) {
+    const py = Y(tv);
+    if (py < pa.y - 0.5 || py > pa.y + pa.h + 0.5) continue;
+    out.push(`<line x1="${pa.x}" y1="${r2(py)}" x2="${pa.x + pa.w}" y2="${r2(py)}" stroke="${t.grid}" stroke-width="0.8"/>`);
+    out.push(`<text x="${pa.x - 5}" y="${r2(py + 4)}" font-size="11" fill="${t.tick}" text-anchor="end">${svgEscape(fmtTick(tv, ty.step))}</text>`);
+  }
+  if (Y(0) >= pa.y && Y(0) <= pa.y + pa.h) {
+    out.push(`<line x1="${pa.x}" y1="${r2(Y(0))}" x2="${pa.x + pa.w}" y2="${r2(Y(0))}" stroke="${t.axis}" stroke-width="1"/>`);
+  }
+  if (X(0) >= pa.x && X(0) <= pa.x + pa.w) {
+    out.push(`<line x1="${r2(X(0))}" y1="${pa.y}" x2="${r2(X(0))}" y2="${pa.y + pa.h}" stroke="${t.axis}" stroke-width="1"/>`);
+  }
+  out.push(`<polyline points="${pa.x},${pa.y} ${pa.x},${pa.y + pa.h} ${pa.x + pa.w},${pa.y + pa.h}" fill="none" stroke="${t.spine}" stroke-width="1"/>`);
+  out.push(`<text x="${r2(pa.x + pa.w / 2)}" y="${pa.y + pa.h + 31}" font-size="13" font-style="italic" fill="${t.text}" text-anchor="middle">x</text>`);
+  out.push(`<text x="${pa.x - 34}" y="${r2(pa.y + pa.h / 2)}" font-size="13" font-style="italic" fill="${t.text}" text-anchor="middle" transform="rotate(-90 ${pa.x - 34} ${r2(pa.y + pa.h / 2)})">y</text>`);
+
+  /* 裁剪区内内容 */
+  out.push(`<g clip-path="url(#pa)">`);
+  /* 积分阴影 */
+  if (App.integral) {
+    const ig = App.integral;
+    const igColor = (App.functions.find(f => f.raw === ig.fRaw) || {}).color || "#4c6ef5";
+    let run = [];
+    const parts = [];
+    const flush = () => {
+      if (run.length < 2) { run = []; return; }
+      let ptsS = "";
+      for (const p of run) ptsS += r2(X(p[0])) + "," + r2(Y(p[1])) + " ";
+      for (let i = run.length - 1; i >= 0; i--) ptsS += r2(X(run[i][0])) + "," + r2(Y(run[i][2])) + " ";
+      parts.push(`<polygon points="${ptsS.trim()}" fill="${igColor}" fill-opacity="0.25"/>`);
+      run = [];
+    };
+    for (let i = 0; i < ig.xs.length; i++) {
+      const fvv = ig.fv[i], gvv = ig.gv ? ig.gv[i] : 0;
+      if (Number.isFinite(fvv) && Number.isFinite(gvv)) run.push([ig.xs[i], fvv, gvv]);
+      else flush();
+    }
+    flush();
+    out.push(...parts);
+  }
+  /* 函数 */
+  for (const f of App.functions) {
+    const p = f._plot;
+    if (!p) continue;
+    const fColor = safeColor(f.color);   // 颜色会被直接拼进 SVG 文本，白名单校验防注入
+    if (p.kind === "implicit") {
+      let d = "";
+      for (const s of p.segs) d += "M" + r2(X(s[0])) + " " + r2(Y(s[1])) + "L" + r2(X(s[2])) + " " + r2(Y(s[3]));
+      out.push(`<path d="${d}" fill="none" stroke="${fColor}" stroke-width="2"/>`);
+    } else {
+      if (p.kind === "ineq") {
+        /* 填充 */
+        let run = [];
+        const flush = () => {
+          if (run.length < 2) { run = []; return; }
+          let ptsS = "";
+          for (const pt of run) ptsS += r2(X(pt[0])) + "," + r2(Y(pt[1])) + " ";
+          const last = run[run.length - 1], first = run[0];
+          if (p.dir === "above") ptsS += `${r2(X(last[0]))},${pa.y} ${r2(X(first[0]))},${pa.y}`;
+          else if (p.dir === "below") ptsS += `${r2(X(last[0]))},${pa.y + pa.h} ${r2(X(first[0]))},${pa.y + pa.h}`;
+          else if (p.dir === "right") ptsS += `${pa.x + pa.w},${r2(Y(last[1]))} ${pa.x + pa.w},${r2(Y(first[1]))}`;
+          else ptsS += `${pa.x},${r2(Y(last[1]))} ${pa.x},${r2(Y(first[1]))}`;
+          out.push(`<polygon points="${ptsS.trim()}" fill="${fColor}" fill-opacity="0.15"/>`);
+          run = [];
+        };
+        for (const pt of p.pts) {
+          if (Number.isFinite(pt[0]) && Number.isFinite(pt[1])) run.push(pt); else flush();
+        }
+        flush();
+      }
+      const indepAxis = (p.kind === "y=" || (p.kind === "ineq" && (p.dir === "above" || p.dir === "below"))) ? "y" : "x";
+      const d = svgPathFromPts(p.pts, indepAxis === "y" ? jumpLimit : jumpLimitX, indepAxis);
+      const dash = (p.kind === "ineq" && p.strict) ? ` stroke-dasharray="6 5"` : "";
+      out.push(`<path d="${d}" fill="none" stroke="${fColor}" stroke-width="2"${dash}/>`);
+      if (p.deriv) {
+        out.push(`<path d="${svgPathFromPts(p.deriv, jumpLimit, "y")}" fill="none" stroke="${t.deriv}" stroke-width="1.6" stroke-dasharray="6 5"/>`);
+      }
+    }
+  }
+  /* 圆锥曲线分析器覆盖层 */
+  if (App.conic) {
+    const cn = App.conic;
+    let d = "";
+    for (const s of cn.segs || []) d += "M" + r2(X(s[0])) + " " + r2(Y(s[1])) + "L" + r2(X(s[2])) + " " + r2(Y(s[3]));
+    out.push(`<path d="${d}" fill="none" stroke="${CONIC_COLOR}" stroke-width="2.4"/>`);
+    if (cn.info && $("conicElems").checked) {
+      const vr = visibleRange();
+      for (const L of cn.info.lines) {
+        const seg = conicLineSeg(L, vr);
+        if (!seg) continue;
+        const col = L.style === "curve" ? CONIC_COLOR : CONIC_AUX;
+        const dash = L.style === "curve" ? "" : ` stroke-dasharray="${L.style === "asymptote" ? (L.axis ? "10 5" : "4 4") : "9 6"}"`;
+        out.push(`<line x1="${r2(X(seg[0][0]))}" y1="${r2(Y(seg[0][1]))}" x2="${r2(X(seg[1][0]))}" y2="${r2(Y(seg[1][1]))}" stroke="${col}" stroke-width="${L.style === "curve" ? 2 : 1.5}"${dash}/>`);
+      }
+      for (const p of cn.info.points) {
+        const col = p.label === "焦点" ? CONIC_FOCUS : CONIC_CTR;
+        out.push(`<circle cx="${r2(X(p.x))}" cy="${r2(Y(p.y))}" r="4.5" fill="${col}" stroke="${t.canvasBg}" stroke-width="1.2"/>`);
+        out.push(`<text x="${r2(X(p.x)) + 9}" y="${r2(Y(p.y)) - 12}" font-size="11" fill="${col}">${svgEscape(p.label + " " + fmtPt([p.x, p.y]))}</text>`);
+      }
+    }
+  }
+  /* 切线 */
+  for (const tg of App.tangents) {
+    const tgColor = safeColor(tg.color);
+    if (tg.vertical) {
+      out.push(`<line x1="${r2(X(tg.x0))}" y1="${pa.y}" x2="${r2(X(tg.x0))}" y2="${pa.y + pa.h}" stroke="${tgColor}" stroke-width="1.4" stroke-dasharray="8 5"/>`);
+    } else {
+      const xa = App.map.invX(pa.x), xb = App.map.invX(pa.x + pa.w);
+      out.push(`<line x1="${r2(X(xa))}" y1="${r2(Y(tg.y0 + tg.k * (xa - tg.x0)))}" x2="${r2(X(xb))}" y2="${r2(Y(tg.y0 + tg.k * (xb - tg.x0)))}" stroke="${tgColor}" stroke-width="1.4" stroke-dasharray="8 5"/>`);
+    }
+    out.push(`<circle cx="${r2(X(tg.x0))}" cy="${r2(Y(tg.y0))}" r="4" fill="${tgColor}"/>`);
+  }
+  /* 标签 */
+  for (const f of App.functions) {
+    const p = f._plot;
+    if (!p) continue;
+    const fs = f.label_size * 4 / 3;
+    let pos = null;
+    if (f.label_mode === "曲线旁" && p.labelPos) pos = p.labelPos;
+    else if (f.label_mode === "手动坐标") {
+      const lx = parseFloat(f.label_x), ly = parseFloat(f.label_y);
+      if (Number.isFinite(lx) && Number.isFinite(ly)) pos = [lx, ly];
+    }
+    if (pos) out.push(`<text x="${r2(X(pos[0]))}" y="${r2(Y(pos[1]))}" font-size="${r2(fs)}" fill="${safeColor(f.color)}">${svgEscape(f.raw)}</text>`);
+  }
+  /* 标记点 */
+  for (const mk of App.markers) {
+    out.push(`<circle cx="${r2(X(mk.x))}" cy="${r2(Y(mk.y))}" r="4.5" fill="yellow" stroke="black" stroke-width="1.2"/>`);
+    const label = (mk.tag ? mk.tag + "  " : "") + "(" + mk.x.toFixed(3) + ", " + mk.y.toFixed(3) + ")";
+    out.push(`<text x="${r2(X(mk.x)) + 12}" y="${r2(Y(mk.y)) + 22}" font-size="12" fill="${t.text}">${svgEscape(label)}</text>`);
+  }
+  out.push(`</g>`);
+
+  /* 图例 */
+  if (App.legendEntries.length) {
+    const fontPx = App.legendFontPx;
+    const lh = fontPx * 1.55;
+    const boxH = App.legendEntries.length * lh + 12;
+    const legendW = Math.min(W * 0.32, Math.max(...App.legendEntries.map(e => e.text.length)) * fontPx * 0.72 + 44);
+    const bx = pa.x + pa.w + 8, by = pa.y + pa.h / 2 - boxH / 2;
+    out.push(`<rect x="${bx}" y="${r2(by)}" width="${r2(legendW)}" height="${r2(boxH)}" rx="6" fill="${t.legendBg}" fill-opacity="0.95" stroke="${t.legendBorder}"/>`);
+    App.legendEntries.forEach((e, i) => {
+      const cy = by + 6 + lh * i + lh / 2;
+      const dash = e.dash ? ` stroke-dasharray="5 4"` : "";
+      out.push(`<line x1="${bx + 8}" y1="${r2(cy)}" x2="${bx + 30}" y2="${r2(cy)}" stroke="${e.color}" stroke-width="2"${dash}/>`);
+      out.push(`<text x="${bx + 36}" y="${r2(cy + 4)}" font-size="${r2(fontPx)}" fill="${t.text}">${svgEscape(e.text)}</text>`);
+    });
+  }
+  out.push(`</svg>`);
+
+  const blob = new Blob([out.join("\n")], { type: "image/svg+xml" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "函数图像.svg";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+/* ---------------- 状态持久化 + URL 分享 ---------------- */
+const STORAGE_KEY = "plotter-state-v2";
+
+function serializeState() {
+  return {
+    v: 2,
+    theme,
+    aspect: $("aspectCheck").checked,
+    view: App.view,
+    functions: App.functions.map(f => ({
+      raw: f.raw, color: f.color, label_size: f.label_size, label_mode: f.label_mode,
+      label_x: f.label_x, label_y: f.label_y, show_deriv: f.show_deriv,
+    })),
+  };
+}
+
+function saveState() {
+  const s = JSON.stringify(serializeState());
+  try { localStorage.setItem(STORAGE_KEY, s); } catch (e) {}
+  try { history.replaceState(null, "", "#d=" + encodeURIComponent(s)); } catch (e) {}
+}
+
+function loadState() {
+  let s = null;
+  if (location.hash.startsWith("#d=")) {
+    try { s = JSON.parse(decodeURIComponent(location.hash.slice(3))); } catch (e) {}
+  }
+  if (!s) {
+    try { s = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (e) {}
+  }
+  if (!s || !Array.isArray(s.functions)) return false;
+  const okFns = [];
+  for (const f of s.functions) {
+    try {
+      validateExpr(detectType(f.raw));
+      const ls = parseInt(f.label_size, 10);
+      okFns.push({
+        raw: f.raw, color: safeColor(f.color, COLORS[okFns.length % COLORS.length]),
+        label_size: Number.isFinite(ls) ? Math.min(30, Math.max(6, ls)) : 11,
+        label_mode: f.label_mode || "图例(右侧)",
+        label_x: f.label_x || "", label_y: f.label_y || "", show_deriv: !!f.show_deriv,
+      });
+    } catch (e) { /* 跳过失效函数 */ }
+  }
+  App.functions = okFns;
+  const sv = s.view;
+  if (sv && [sv.xmin, sv.xmax, sv.ymin, sv.ymax].every(Number.isFinite) && sv.xmin < sv.xmax && sv.ymin < sv.ymax) {
+    $("xMin").value = fmtG(sv.xmin, 6); $("xMax").value = fmtG(sv.xmax, 6);
+    $("yMin").value = fmtG(sv.ymin, 6); $("yMax").value = fmtG(sv.ymax, 6);
+  }
+  $("aspectCheck").checked = s.aspect !== false;
+  if (s.theme === "dark" || s.theme === "light") setTheme(s.theme, true);
+  renderList();
+  return true;
+}
+
+function shareLink() {
+  saveState();
+  const url = location.href;
+  const done = () => showMsg("已复制分享链接，把链接发给他人，打开即可还原当前图形与视野", false);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(done, () => prompt("复制分享链接：", url));
+  } else prompt("复制分享链接：", url);
+}
+
+/* ---------------- 主题切换 ---------------- */
+function setTheme(next, silent) {
+  theme = next === "dark" ? "dark" : "light";
+  document.documentElement.dataset.theme = theme;
+  $("tbTheme").textContent = theme === "dark" ? "☀️" : "🌙";
+  try { localStorage.setItem("plotter-theme", theme); } catch (e) {}
+  render();
+  if (!silent) saveState();
+}
+
+function toggleTheme() { setTheme(theme === "dark" ? "light" : "dark"); }
+
+/* ---------------- 双击：不等式交区域面积 ---------------- */
+/* comp 由调用方预编译传入；每条不等式只编译一次。
+ * 此前每次调用都 compileInfo（含 latexToJS + new Function），
+ * 在 400×400 网格循环里被调用 32 万次，会卡顿数秒。 */
+function ineqBoundaryOk(f, info, px, py, comp) {
+  if (!comp) { try { comp = compileInfo(info); } catch (e) { return false; } }
+  if (info.lhs === "x") {
+    const fv = evalSingle(comp.fn, "y", py);
+    return (info.op === ">" || info.op === ">=") ? px >= fv : px <= fv;
+  }
+  const fv = evalSingle(comp.fn, "x", px);
+  return (info.op === ">" || info.op === ">=") ? py >= fv : py <= fv;
+}
+
+function onDoubleClick(px, py) {
+  // 双击的前两次单击各加了一个标记：从尾部精确剔除最近 500ms 内添加的至多 2 个，
+  // 不误伤更早手动打的点（面积模式下单击进入这里，本来就没加标记，循环自然不执行）
+  const now = Date.now();
+  let removed = 0;
+  while (removed < 2 && App.markers.length && now - App.markers[App.markers.length - 1].t <= 500) {
+    App.markers.pop(); removed++;
+  }
+  if (removed) render();
+  const ineqs = [];
+  for (const f of App.functions) {
+    const info = detectType(f.raw);
+    if (info.kind === "ineq" && (info.lhs === "x" || info.lhs === "y")) ineqs.push([f, info]);
+  }
+  if (ineqs.length < 2) {
+    // 不等式不足两个 → 尝试两条普通曲线的相邻交点间面积
+    if (curveAreaAt(px, py)) return;
+    showMsg("求面积支持两种情形：\n· 在至少两个不等式围成的交区域内双击（触屏可点工具栏“面积”后单击）\n· 在两条 y=f(x) 曲线的相邻交点之间双击");
+    return;
+  }
+  // 每条不等式预编译一次，供下面的点在区域内判断与 400×400 网格估算复用
+  const ineqsCompiled = ineqs.map(([f, info]) => {
+    try { return [f, info, compileInfo(info)]; } catch (e) { return [f, info, null]; }
+  });
+  let inside = true;
+  for (const [f, info, comp] of ineqsCompiled) {
+    try { if (!ineqBoundaryOk(f, info, px, py, comp)) { inside = false; break; } }
+    catch (e) { inside = false; break; }
+  }
+  if (!inside) {
+    // 不在不等式交区域内 → 也许用户想要曲线间面积
+    if (curveAreaAt(px, py)) return;
+    showMsg("该点不在不等式交区域内，也不在两条曲线的相邻交点之间。");
+    return;
+  }
+  if (!confirm("是否计算该有限交区域的面积？")) return;
+  const v = App.view;
+  const N = 400;
+  const xs = linspace(v.xmin, v.xmax, N);
+  const ys = linspace(v.ymin, v.ymax, N);
+  let count = 0;
+  let touchEdge = { top: false, bottom: false, left: false, right: false };
+  const insideAll = (x, y) => {
+    for (const [f, info, comp] of ineqsCompiled) {
+      try { if (!ineqBoundaryOk(f, info, x, y, comp)) return false; }
+      catch (e) { return false; }
+    }
+    return true;
+  };
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      if (insideAll(xs[i], ys[j])) {
+        count++;
+        if (j === 0) touchEdge.bottom = true;
+        if (j === N - 1) touchEdge.top = true;
+        if (i === 0) touchEdge.left = true;
+        if (i === N - 1) touchEdge.right = true;
+      }
+    }
+  }
+  const bounded = !(count > 0 && (touchEdge.top || touchEdge.bottom || touchEdge.left || touchEdge.right));
+  const area = count / (N * N) * (v.xmax - v.xmin) * (v.ymax - v.ymin);
+  let msg = "交区域面积 ≈ " + fmtG(area, 6);
+  if (!bounded) msg += "\n\n注意：区域触及视图边界，可能无界，以上为当前视图内的估计值。";
+  showMsg("面积\n" + msg, false);
+}
+
+/* 双击两条 y=f(x) 曲线之间：自动找到夹住点击位置的相邻交点，
+ * 数值积分 |f−g| 并套用积分卡片的阴影标注 */
+function curveAreaAt(dx, dy) {
+  const py = App.map.Y(dy);
+  const scored = [];
+  for (const f of App.functions) {
+    let info;
+    try { info = detectType(f.raw); } catch (e) { continue; }
+    if (info.kind !== "y=") continue;
+    let comp;
+    try { comp = compileInfo(info); } catch (e) { continue; }
+    const y0 = evalSingle(comp.fn, "x", dx);
+    if (!Number.isFinite(y0)) continue;
+    scored.push({ raw: f.raw, fn: comp.fn, d: Math.abs(App.map.Y(y0) - py) });
+  }
+  if (scored.length < 2) return false;
+  scored.sort((a, b) => a.d - b.d);
+  const F = scored[0], G = scored[1];
+  // 在可见范围内找 F−G 的符号变化 → 二分求精交点
+  const r = visibleRange();
+  const xs = linspace(r.xmin, r.xmax, 2000);
+  const diffAt = v => {
+    const a = evalSingle(F.fn, "x", v), b = evalSingle(G.fn, "x", v);
+    return (Number.isFinite(a) && Number.isFinite(b)) ? a - b : NaN;
+  };
+  const roots = [];
+  let dPrev = diffAt(xs[0]);
+  for (let i = 0; i < xs.length - 1; i++) {
+    const d0 = dPrev, d1 = diffAt(xs[i + 1]);
+    dPrev = d1;
+    if (!Number.isFinite(d0) || !Number.isFinite(d1) || d0 * d1 >= 0) continue;
+    let lo = xs[i], hi = xs[i + 1], okRoot = true;
+    for (let it = 0; it < 60; it++) {
+      const mid = (lo + hi) / 2, dm = diffAt(mid);
+      if (!Number.isFinite(dm)) { okRoot = false; break; }
+      if (d0 * dm <= 0) hi = mid; else lo = mid;
+    }
+    if (okRoot) roots.push((lo + hi) / 2);
+  }
+  // 交点需成对夹住点击的 x
+  let a = null, b = null;
+  for (let i = 0; i < roots.length - 1; i++) {
+    if (roots[i] <= dx && dx <= roots[i + 1]) { a = roots[i]; b = roots[i + 1]; }
+  }
+  if (a === null) return false;
+  const zsnap = v => Math.abs(v) < (r.xmax - r.xmin) * 1e-9 ? 0 : v;  // 二分残差近零归 0
+  $("intF").value = F.raw;
+  $("intG").value = G.raw;
+  $("intA").value = fmtG(zsnap(a), 8);
+  $("intB").value = fmtG(zsnap(b), 8);
+  computeIntegral();
+  return true;
+}
+
+/* ============================================================
+ * 缩放 / 历史
+ * ============================================================ */
+/* 视野跨度钳制：防止无限缩放导致数值溢出或坐标全为 NaN */
+function clampSpan(sx, sy) {
+  const MIN = 1e-8, MAX = 1e9;
+  return [Math.min(MAX, Math.max(MIN, sx)), Math.min(MAX, Math.max(MIN, sy))];
+}
+
+/* 以数据点 (ax, ay) 为锚点缩放：缩放前后锚点保持在同一像素位置 */
+let zoomHistTimer = null;
+function zoomAtData(ax, ay, factor) {
+  const v = App.view;
+  let nxs = (v.xmax - v.xmin) * factor, nys = (v.ymax - v.ymin) * factor;
+  [nxs, nys] = clampSpan(nxs, nys);
+  const rx = (ax - v.xmin) / (v.xmax - v.xmin);
+  const ry = (ay - v.ymin) / (v.ymax - v.ymin);
+  App.view = {
+    xmin: ax - nxs * rx, xmax: ax + nxs * (1 - rx),
+    ymin: ay - nys * ry, ymax: ay + nys * (1 - ry),
+  };
+  afterViewChange();
+  // 滚轮/按钮缩放：手势停顿 300ms 后记一次历史（与平移结束记录一致，后退/前进对缩放生效）
+  if (zoomHistTimer) clearTimeout(zoomHistTimer);
+  zoomHistTimer = setTimeout(() => { zoomHistTimer = null; pushHistoryIfChanged(); }, 300);
+}
+
+function zoomBy(factor) {
+  const v = App.view;
+  zoomAtData((v.xmin + v.xmax) / 2, (v.ymin + v.ymax) / 2, factor);
+}
+
+function resetView() {
+  $("xMin").value = "-10"; $("xMax").value = "10";
+  $("yMin").value = "-10"; $("yMax").value = "10";
+  redraw();
+}
+
+function goHome() { if (!App.history.length) return; App.hIdx = 0; App.view = { ...App.history[0] }; afterViewChange(); updateToolbarState(); }
+function goBack() { if (App.hIdx > 0) { App.hIdx--; App.view = { ...App.history[App.hIdx] }; afterViewChange(); updateToolbarState(); } }
+function goForward() { if (App.hIdx < App.history.length - 1) { App.hIdx++; App.view = { ...App.history[App.hIdx] }; afterViewChange(); updateToolbarState(); } }
+
+function updateToolbarState() {
+  $("tbBack").disabled = App.hIdx <= 0;
+  $("tbFwd").disabled = App.hIdx >= App.history.length - 1;
+  $("tbPan").classList.toggle("on", App.mode === "pan");
+  $("tbZoom").classList.toggle("on", App.mode === "zoom");
+  $("tbTangent").classList.toggle("on", App.mode === "tangent");
+  $("tbArea").classList.toggle("on", App.mode === "area");
+  canvas.classList.toggle("panning", App.mode === "pan");
+  canvas.classList.toggle("boxzoom", App.mode === "zoom");
+}
+
+function toggleMode(which) {
+  App.mode = (App.mode === which) ? "none" : which;
+  updateToolbarState();
+}
+
+/* ============================================================
+ * 画布指针交互（鼠标 + 触屏统一处理）
+ * ============================================================ */
+const pointers = new Map();
+let dragState = null;      // {startX,startY,lastX,lastY,moved,longPress,lpTimer}
+let pinchState = null;     // {d0, view0, anchorData}
+let zoomRectEl = null;
+
+function evtPos(e) {
+  const r = canvas.getBoundingClientRect();
+  return [e.clientX - r.left, e.clientY - r.top];
+}
+
+canvas.addEventListener("pointerdown", e => {
+  // 鼠标右键/中键不进入拖拽与标记流程（右键由 contextmenu 清除标记）
+  if (e.pointerType === "mouse" && e.button !== 0) return;
+  canvas.setPointerCapture(e.pointerId);
+  const [px, py] = evtPos(e);
+  pointers.set(e.pointerId, { px, py, type: e.pointerType });
+  if (pointers.size === 2) {
+    // 双指：进入捏合缩放
+    const pts = [...pointers.values()];
+    const d0 = Math.hypot(pts[0].px - pts[1].px, pts[0].py - pts[1].py);
+    const mx = (pts[0].px + pts[1].px) / 2, my = (pts[0].py + pts[1].py) / 2;
+    pinchState = { d0, view0: { ...App.view }, ax: App.map.invX(mx), ay: App.map.invY(my) };
+    if (dragState && dragState.lpTimer) clearTimeout(dragState.lpTimer);
+    dragState = null;
+    hideZoomRect();
+    return;
+  }
+  dragState = { startX: px, startY: py, lastX: px, lastY: py, moved: false, longPress: false, lpTimer: null };
+  if (App.mode === "zoom") {
+    zoomRectEl = $("zoomRect");
+    zoomRectEl.hidden = false;
+    zoomRectEl.style.left = px + "px"; zoomRectEl.style.top = py + "px";
+    zoomRectEl.style.width = "0px"; zoomRectEl.style.height = "0px";
+  }
+  if (e.pointerType === "touch" && App.mode !== "zoom") {
+    // 触屏长按 = 清除标记
+    dragState.lpTimer = setTimeout(() => {
+      if (dragState && !dragState.moved) { dragState.longPress = true; clearMarkers(); }
+    }, 600);
+  }
+});
+
+canvas.addEventListener("pointermove", e => {
+  const [px, py] = evtPos(e);
+  // 状态栏坐标
+  if (App.pa && px >= App.pa.x && px <= App.pa.x + App.pa.w && py >= App.pa.y && py <= App.pa.y + App.pa.h) {
+    const cvx = App.map.invX(px), cvy = App.map.invY(py);
+    const zeroEps = (App.view.xmax - App.view.xmin) * 1e-6;  // 近零按 0 显示，阈值随视野缩放
+    const cz = v => Math.abs(v) < zeroEps ? "0" : fmtG(v, 5);
+    $("coord").textContent = "x = " + cz(cvx) + "    y = " + cz(cvy);
+  } else $("coord").textContent = "";
+
+  if (pointers.has(e.pointerId)) pointers.set(e.pointerId, { px, py, type: e.pointerType });
+
+  if (pinchState && pointers.size === 2) {
+    const pts = [...pointers.values()];
+    const d = Math.hypot(pts[0].px - pts[1].px, pts[0].py - pts[1].py);
+    if (d > 10 && pinchState.d0 > 10) {
+      const scale = pinchState.d0 / d;  // 手指张开 → 放大（范围缩小）
+      const v0 = pinchState.view0;
+      // 保持锚点（初始双指中点对应的数据点）不动
+      let nxSpan = (v0.xmax - v0.xmin) * scale;
+      let nySpan = (v0.ymax - v0.ymin) * scale;
+      [nxSpan, nySpan] = clampSpan(nxSpan, nySpan);
+      const axr = (pinchState.ax - v0.xmin) / (v0.xmax - v0.xmin);
+      const ayr = (pinchState.ay - v0.ymin) / (v0.ymax - v0.ymin);
+      App.view = {
+        xmin: pinchState.ax - nxSpan * axr, xmax: pinchState.ax + nxSpan * (1 - axr),
+        ymin: pinchState.ay - nySpan * ayr, ymax: pinchState.ay + nySpan * (1 - ayr),
+      };
+      afterViewChange();
+    }
+    return;
+  }
+  if (!dragState) return;
+  const dx = px - dragState.lastX, dy = py - dragState.lastY;
+  if (Math.abs(px - dragState.startX) + Math.abs(py - dragState.startY) > 5) {
+    dragState.moved = true;
+    if (dragState.lpTimer) { clearTimeout(dragState.lpTimer); dragState.lpTimer = null; }
+  }
+  if (App.mode === "zoom" && dragState.moved) {
+    const x0 = Math.min(dragState.startX, px), y0 = Math.min(dragState.startY, py);
+    zoomRectEl.style.left = x0 + "px"; zoomRectEl.style.top = y0 + "px";
+    zoomRectEl.style.width = Math.abs(px - dragState.startX) + "px";
+    zoomRectEl.style.height = Math.abs(py - dragState.startY) + "px";
+  } else if (dragState.moved) {
+    // 拖拽平移（任何模式下拖动画布均可平移）
+    const v = App.view;
+    const ddx = dx / App.map.sx, ddy = dy / App.map.sy;
+    App.view = { xmin: v.xmin - ddx, xmax: v.xmax - ddx, ymin: v.ymin + ddy, ymax: v.ymax + ddy };
+    canvas.classList.add("active");
+    afterViewChange();
+  }
+  dragState.lastX = px; dragState.lastY = py;
+});
+
+canvas.addEventListener("pointerup", e => {
+  const [px, py] = evtPos(e);
+  const wasPinch = !!pinchState;
+  pointers.delete(e.pointerId);
+  if (pointers.size < 2) pinchState = null;
+  if (wasPinch) {
+    // 视野确实变了才记录历史
+    const last = App.history[App.hIdx];
+    if (!last || Math.abs(last.xmin - App.view.xmin) > 1e-12 || Math.abs(last.ymin - App.view.ymin) > 1e-12) {
+      pushHistory();
+    }
+    dragState = null;
+    return;
+  }
+  if (!dragState) return;
+  if (dragState.lpTimer) clearTimeout(dragState.lpTimer);
+  canvas.classList.remove("active");
+
+  if (App.mode === "zoom") {
+    hideZoomRect();
+    // 框选范围钳制在绘图区内（指针可能拖出坐标轴）
+    const pa = App.pa;
+    const cx1 = Math.max(pa.x, Math.min(dragState.startX, px));
+    const cx2 = Math.min(pa.x + pa.w, Math.max(dragState.startX, px));
+    const cy1 = Math.max(pa.y, Math.min(dragState.startY, py));
+    const cy2 = Math.min(pa.y + pa.h, Math.max(dragState.startY, py));
+    if (dragState.moved && cx2 - cx1 > 8 && cy2 - cy1 > 8) {
+      App.view = {
+        xmin: App.map.invX(cx1), xmax: App.map.invX(cx2),
+        ymin: App.map.invY(cy2), ymax: App.map.invY(cy1),
+      };
+      pushHistory();
+      afterViewChange();
+    }
+  } else if (!dragState.moved && !dragState.longPress && (App.mode === "none" || App.mode === "tangent" || App.mode === "area")) {
+    // 单击 = 标记点（自动吸附）；切线模式 = 画切线；面积模式 = 求面积（触屏替代双击的入口）
+    if (App.pa && px >= App.pa.x && px <= App.pa.x + App.pa.w && py >= App.pa.y && py <= App.pa.y + App.pa.h) {
+      if (App.mode === "tangent") addTangentAt(App.map.invX(px), App.map.invY(py));
+      else if (App.mode === "area") onDoubleClick(App.map.invX(px), App.map.invY(py));
+      else addMarkerAt(App.map.invX(px), App.map.invY(py));
+    }
+  } else if (dragState.moved) {
+    pushHistory();  // 平移结束，记录历史
+  }
+  dragState = null;
+});
+
+canvas.addEventListener("pointercancel", e => {
+  pointers.delete(e.pointerId);
+  if (pointers.size < 2) pinchState = null;
+  if (dragState && dragState.lpTimer) clearTimeout(dragState.lpTimer);
+  dragState = null;
+  hideZoomRect();
+  canvas.classList.remove("active");
+});
+
+function hideZoomRect() { const zr = $("zoomRect"); if (zr) zr.hidden = true; }
+
+/* 右键 = 清除标记 */
+canvas.addEventListener("contextmenu", e => { e.preventDefault(); clearMarkers(); });
+
+/* 双击 = 交区域面积 */
+canvas.addEventListener("dblclick", e => {
+  const [px, py] = evtPos(e);
+  if (!App.pa) return;
+  onDoubleClick(App.map.invX(px), App.map.invY(py));
+});
+
+/* 滚轮 = 缩放（以鼠标指针位置为锚点，符合网页端直觉） */
+canvas.addEventListener("wheel", e => {
+  e.preventDefault();
+  if (!App.pa) return;
+  const [px, py] = evtPos(e);
+  const factor = e.deltaY < 0 ? 0.85 : 1 / 0.85;
+  zoomAtData(App.map.invX(px), App.map.invY(py), factor);
+}, { passive: false });
+
+/* ============================================================
+ * 面板逻辑
+ * ============================================================ */
+let curColor = COLORS[0];
+
+function renderList() {
+  const ul = $("funcList");
+  ul.innerHTML = "";
+  App.functions.forEach((f, i) => {
+    const li = document.createElement("li");
+    li.textContent = "■ " + f.raw + (f.show_deriv ? "  ' " : "");
+    li.style.color = f.color;
+    if (i === App.selectedIndex) li.classList.add("selected");
+    li.addEventListener("click", () => { App.selectedIndex = i; onSelect(); renderList(); });
+    ul.appendChild(li);
+  });
+  updateIntSelectors();
+}
+
+function addFunction() {
+  const text = $("exprInput").value.trim();
+  if (!text) return;
+  if (/["'`;]/.test(text)) {
+    showMsg("表达式中不允许包含引号或分号");
+    return;
+  }
+  let info;
+  try {
+    info = detectType(text);
+    validateExpr(info);
+  } catch (ex) {
+    showMsg("无法解析：" + text + "\n" + humanizeError(ex.message));
+    return;
+  }
+  let showDeriv = $("derivCheck").checked;
+  if (showDeriv && info.kind !== "y=") {
+    showMsg("仅 y=f(x) 类型支持绘制导函数。该表达式为其它类型，已忽略导函数选项。");
+    showDeriv = false;
+  }
+  const color = COLORS[App.functions.length % COLORS.length];
+  App.functions.push({
+    raw: text, color,
+    label_size: 11, label_mode: "图例(右侧)",
+    label_x: "", label_y: "", show_deriv: showDeriv,
+  });
+  $("exprInput").value = "";
+  renderList();
+  redraw();
+  // 体检：当前视野内采样值全部无定义（如 y=0/0、y=sqrt(-1)）时提示
+  try {
+    const c = compileInfo(info);
+    let finite = 0;
+    if (c.vars === "xy") {
+      const xs = linspace(App.view.xmin, App.view.xmax, 12);
+      const ys = linspace(App.view.ymin, App.view.ymax, 12);
+      for (const xv of xs) for (const yv of ys) {
+        if (Number.isFinite(clampEval(c.fn(xv, yv)))) finite++;
+      }
+    } else {
+      const [lo, hi] = c.vars === "x" ? [App.view.xmin, App.view.xmax] : [App.view.ymin, App.view.ymax];
+      for (const v of linspace(lo, hi, 200)) {
+        if (Number.isFinite(evalSingle(c.fn, c.vars, v))) finite++;
+      }
+    }
+    if (finite === 0) {
+      showMsg("“" + text + "”在当前视野内没有可绘制的点（采样值全部无定义或超出范围）。\n" +
+            "它已加入函数列表——若是 sqrt(x-10)、log(x-100) 这类函数，调整视野后即可看到。", false);
+    }
+  } catch (e) { /* 体检失败不影响添加 */ }
+}
+
+/* ---------------- 圆锥曲线分析器（面板逻辑） ---------------- */
+function analyzeConicUI() {
+  const text = $("conicInput").value.trim();
+  if (!text) return;
+  if (/["'`;]/.test(text)) { showMsg("表达式中不允许包含引号或分号"); return; }
+  let parsed;
+  try {
+    parsed = analyzeConic(text);
+  } catch (ex) {
+    showMsg("圆锥曲线分析失败：" + humanizeError(ex.message));
+    $("conicResult").textContent = "";
+    return;
+  }
+  App.conic = { raw: text, fn: parsed.F, segs: null, info: parsed.res };
+  const R = parsed.res;
+  $("conicResult").textContent =
+    "■ " + text + "\n类型：" + R.name + "\n" + R.text.join("\n");
+  /* 自适应视野：包住曲线本体与全部几何要素 */
+  let L = Infinity, Rt = -Infinity, Tp = -Infinity, Bt = Infinity;
+  const eat = (x, y) => { if (x < L) L = x; if (x > Rt) Rt = x; if (y < Bt) Bt = y; if (y > Tp) Tp = y; };
+  for (const p of R.points || []) eat(p.x, p.y);
+  if (R.center) eat(R.center[0], R.center[1]);
+  // 退化直线族（平行/重合直线没有中心与特征点）：把原点到各直线的垂足纳入视野，
+  // 否则 x²=400 这类方程自适应出的视野里根本看不到直线
+  for (const Ln of R.lines || []) eat(Ln.nx * Ln.d, Ln.ny * Ln.d);
+  if (R.a) { const cx = R.center ? R.center[0] : 0, cy = R.center ? R.center[1] : 0;
+    eat(cx - R.a * 1.1, cy - R.a * 1.1); eat(cx + R.a * 1.1, cy + R.a * 1.1); }
+  if (!Number.isFinite(L)) { const cx = R.center ? R.center[0] : 0, cy = R.center ? R.center[1] : 0;
+    L = cx - 5; Rt = cx + 5; Bt = cy - 5; Tp = cy + 5; }
+  const pad = Math.max(1, 0.25 * Math.max(Rt - L, Tp - Bt));
+  L -= pad; Rt += pad; Bt -= pad; Tp += pad;
+  if (R.type === "hyperbola" || R.type === "parabola" || R.type === "lines") {
+    // 开放曲线适当再放大一圈，渐近线走向更直观
+    const m = Math.max(Rt - L, Tp - Bt) * 0.35;
+    L -= m; Rt += m; Bt -= m; Tp += m;
+  }
+  $("xMin").value = fmtG(L, 5); $("xMax").value = fmtG(Rt, 5);
+  $("yMin").value = fmtG(Bt, 5); $("yMax").value = fmtG(Tp, 5);
+  redraw();
+  showMsg("已识别：" + R.name + "（曲线与几何要素已叠加绘制）", false);
+}
+
+function clearConic() {
+  App.conic = null;
+  $("conicResult").textContent = "";
+  resampleAll();
+  render();
+}
+
+function onSelect() {
+  const f = App.functions[App.selectedIndex];
+  if (!f) return;
+  curColor = f.color;
+  $("colorBtn").style.background = f.color;
+  $("colorPicker").value = f.color;
+  $("sizeInput").value = f.label_size;
+  $("labelMode").value = f.label_mode;
+  $("labelX").value = f.label_x;
+  $("labelY").value = f.label_y;
+}
+
+function applySettings() {
+  if (App.selectedIndex === null || App.selectedIndex >= App.functions.length) {
+    showMsg("请先在列表中选中一个函数");
+    return;
+  }
+  const f = App.functions[App.selectedIndex];
+  f.color = curColor;
+  f.label_size = Math.min(30, Math.max(6, parseInt($("sizeInput").value, 10) || 11));
+  f.label_mode = $("labelMode").value;
+  f.label_x = $("labelX").value.trim();
+  f.label_y = $("labelY").value.trim();
+  renderList();
+  redraw();
+}
+
+function removeSelected() {
+  if (App.selectedIndex === null || App.selectedIndex >= App.functions.length) return;
+  App.functions.splice(App.selectedIndex, 1);
+  App.selectedIndex = null;
+  renderList();
+  redraw();
+}
+
+function clearAll() {
+  App.functions = [];
+  App.markers = [];
+  App.tangents = [];
+  App.integral = null;
+  App.conic = null;
+  $("intResult").textContent = "";
+  $("conicResult").textContent = "";
+  App.selectedIndex = null;
+  renderList();
+  redraw();
+}
+
+function saveImage() {
+  canvas.toBlob(blob => {
+    if (!blob) return;
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "函数图像.png";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }, "image/png");
+}
+
+/* ---------------- 事件绑定 ---------------- */
+$("addBtn").addEventListener("click", addFunction);
+$("exprInput").addEventListener("keydown", e => { if (e.key === "Enter") addFunction(); });
+$("removeBtn").addEventListener("click", removeSelected);
+$("clearBtn").addEventListener("click", clearAll);
+$("funcList").addEventListener("keydown", e => { if (e.key === "Delete") removeSelected(); });
+$("applyBtn").addEventListener("click", applySettings);
+$("colorBtn").addEventListener("click", () => $("colorPicker").click());
+$("colorPicker").addEventListener("input", e => {
+  curColor = e.target.value;
+  $("colorBtn").style.background = curColor;
+});
+$("applyRangeBtn").addEventListener("click", redraw);
+$("zoomInBtn").addEventListener("click", () => zoomBy(0.8));
+$("zoomOutBtn").addEventListener("click", () => zoomBy(1.25));
+$("resetBtn").addEventListener("click", resetView);
+$("aspectCheck").addEventListener("change", redraw);
+$("snapRadius").addEventListener("input", e => { $("snapVal").textContent = e.target.value; });
+$("fabPng").addEventListener("click", saveImage);
+$("fabSvg").addEventListener("click", exportSVG);
+$("fabShare").addEventListener("click", shareLink);
+$("intCalcBtn").addEventListener("click", computeIntegral);
+$("intClearBtn").addEventListener("click", clearIntegral);
+$("conicBtn").addEventListener("click", analyzeConicUI);
+$("conicClearBtn").addEventListener("click", clearConic);
+$("conicInput").addEventListener("keydown", e => { if (e.key === "Enter") analyzeConicUI(); });
+$("conicElems").addEventListener("change", render);
+document.querySelectorAll(".chip[data-conic]").forEach(chip => {
+  chip.addEventListener("click", () => { $("conicInput").value = chip.dataset.conic; analyzeConicUI(); });
+});
+$("tbHome").addEventListener("click", goHome);
+$("tbBack").addEventListener("click", goBack);
+$("tbFwd").addEventListener("click", goForward);
+$("tbPan").addEventListener("click", () => toggleMode("pan"));
+$("tbZoom").addEventListener("click", () => toggleMode("zoom"));
+$("tbTangent").addEventListener("click", () => toggleMode("tangent"));
+$("tbArea").addEventListener("click", () => toggleMode("area"));
+$("tbTheme").addEventListener("click", toggleTheme);
+
+/* 示例一键填入。注意必须限定 [data-expr]：圆锥曲线示例芯片没有 data-expr，
+ * 原先通用 .chip 选择器会把 exprInput 写成字符串 "undefined" 并抢走焦点。
+ * 不另绑 keydown：原生 <button> 的 Enter/Space 本就触发 click，重复绑定会双触发 */
+document.querySelectorAll(".chip[data-expr]").forEach(chip => {
+  chip.addEventListener("click", () => {
+    $("exprInput").value = chip.dataset.expr;
+    $("exprInput").focus();
+  });
+});
+/* 输入时清除标红 */
+RANGE_FIELDS.concat(["intA", "intB"]).forEach(id => $(id).addEventListener("input", () => $(id).classList.remove("invalid")));
+/* Esc：优先关闭说明弹窗，其次退出平移/框选/切线模式 */
+window.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  if (!$("helpMask").hidden) { closeHelp(); return; }
+  // 框选拖拽中按 Esc 退出模式：框选矩形也要一并隐藏，否则会残留到下次框选
+  if (App.mode !== "none") { App.mode = "none"; hideZoomRect(); updateToolbarState(); }
+});
+
+/* ---------------- 功能说明弹窗 ---------------- */
+let helpPrevFocus = null;
+const NOHELP_KEY = "plotter-nohelp"; // 「下次打开不再自动弹出」偏好
+function setNoHelp(v) { try { v ? localStorage.setItem(NOHELP_KEY, "1") : localStorage.removeItem(NOHELP_KEY); } catch (e) {} }
+function openHelp() {
+  helpPrevFocus = document.activeElement;          // 记录触发焦点，关闭时还原
+  $("helpMask").hidden = false;
+  $("helpClose").focus();                          // 打开即聚焦弹窗内控件，键盘/读屏可达
+}
+function closeHelp() {
+  $("helpMask").hidden = true;
+  setNoHelp($("helpNoMore").checked);
+  if (helpPrevFocus && helpPrevFocus.focus) helpPrevFocus.focus();
+}
+$("tbHelp").addEventListener("click", openHelp);
+$("helpClose").addEventListener("click", closeHelp);
+$("helpMask").addEventListener("click", e => { if (e.target === $("helpMask")) closeHelp(); });
+$("helpNoMore").addEventListener("change", e => setNoHelp(e.target.checked)); // 勾选/取消勾选立即持久化
+curColor = COLORS[0];
+$("colorBtn").style.background = curColor;
+$("colorPicker").value = curColor;
+
+/* ---------------- 画布尺寸自适应（横竖屏切换/窗口缩放） ---------------- */
+function resizeCanvas() {
+  /* 用 content-box 尺寸（clientWidth 不含 1px 边框）而不是 getBoundingClientRect 的
+   * border-box：canvas 以 inset:0 贴在 padding box 上，若位图按 border-box 设置，
+   * 会比 CSS 显示区大出 2×dpr 个物理像素，浏览器再缩回去——图像发虚、鼠标坐标错位 */
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.max(1, Math.round(wrap.clientWidth * dpr));
+  const h = Math.max(1, Math.round(wrap.clientHeight * dpr));
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w; canvas.height = h;
+  }
+  render();
+  // 画布变化后可见范围可能改变 → 防抖重采样
+  if (App.resizeTimer) clearTimeout(App.resizeTimer);
+  App.resizeTimer = setTimeout(() => { App.resizeTimer = null; resampleAll(); render(); }, 180);
+}
+if (window.ResizeObserver) new ResizeObserver(resizeCanvas).observe(wrap);
+else window.addEventListener("resize", resizeCanvas);   // 老旧浏览器（无 ResizeObserver）兜底
+window.addEventListener("orientationchange", () => setTimeout(resizeCanvas, 60));
+
+/* ---------------- 启动 ---------------- */
+$("tbTheme").textContent = theme === "dark" ? "☀️" : "🌙";
+loadState();
+renderList();          // 初始化函数列表与积分选择器占位
+resizeCanvas();
+redraw();
+updateToolbarState();
+// 自动弹出功能说明（未勾选「下次打开不再自动弹出」时）；启动时回读勾选状态到复选框
+let noHelp = false;
+try { noHelp = localStorage.getItem(NOHELP_KEY) === "1"; } catch (e) {}
+$("helpNoMore").checked = noHelp;
+if (!noHelp) openHelp();
+</script>
+</body>
+</html>
