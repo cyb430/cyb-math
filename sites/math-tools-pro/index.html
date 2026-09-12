@@ -634,7 +634,7 @@ body :where(button,input,select,textarea,a):focus-visible{outline:2px solid #4f7
 <nav id="cyb-suite-bar" aria-label="CYB Math 全站导航">
   <a class="cyb-suite-brand" href="https://cyb-math.pages.dev/" data-local="index.html" aria-label="返回 CYB Math 工具总览"><span class="cyb-suite-mark" aria-hidden="true">ƒ</span><span class="cyb-suite-brand-text">CYB Math</span></a>
   <span class="cyb-suite-current">数学实用工具</span><span class="cyb-suite-spacer"></span>
-  <label><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)">切换工具</span><select class="cyb-suite-select" id="cyb-suite-switch"><option value="https://cyb-math.pages.dev/" data-local="index.html">工具总览</option><option value="https://math-tools-pro.pages.dev/" data-local="math-tools-pro.html" selected>数学实用工具</option><option value="https://math-plotter.pages.dev/" data-local="math-plotter.html">函数图像绘制</option><option value="https://math-equation.pages.dev/" data-local="math-equation.html">方程求解</option><option value="https://math-geometry.pages.dev/" data-local="math-geometry-theorems.html">几何画板</option><option value="https://math-algebra.pages.dev/" data-local="math-algebra.html">代数计算</option><option value="https://math-3d.pages.dev/" data-local="math-3d.html">3D 绘图</option><option value="https://math-theory.pages.dev/" data-local="math-theory.html">数论工具</option><option value="https://math-sequence.pages.dev/" data-local="math-sequence.html">数列工具</option><option value="https://math-latex.pages.dev/" data-local="math-latex.html">LaTeX 编辑器</option><option value="https://math-fourier.pages.dev/" data-local="math-fourier.html">傅里叶可视化</option></select></label>
+  <label><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)">切换工具</span><select class="cyb-suite-select" id="cyb-suite-switch"><option value="https://cyb-math.pages.dev/" data-local="index.html">工具总览</option><option value="https://math-tools-pro.pages.dev/" data-local="math-tools-pro.html" selected>数学实用工具</option><option value="https://math-plotter.pages.dev/" data-local="math-plotter.html">函数图像绘制</option><option value="https://math-equation.pages.dev/" data-local="math-equation.html">方程求解</option><option value="https://math-geometry.pages.dev/" data-local="math-geometry-theorems.html">几何画板</option><option value="https://math-algebra.pages.dev/" data-local="math-algebra.html">代数计算</option><option value="https://math-3d.pages.dev/" data-local="math-3d.html">3D 绘图</option><option value="https://math-theory.pages.dev/" data-local="math-theory.html">数论工具</option><option value="https://math-sequence.pages.dev/" data-local="math-sequence.html">数列工具</option><option value="https://math-latex.pages.dev/" data-local="math-latex.html">LaTeX 编辑器</option><option value="https://math-fourier.pages.dev/" data-local="math-fourier.html">傅里叶可视化</option><option value="https://math-linear.pages.dev/" data-local="math-linear.html">线性代数</option></select></label>
   <button class="cyb-suite-btn" id="cyb-suite-theme" type="button" aria-label="切换主题" title="切换主题">◐</button>
   <button class="cyb-suite-btn" id="cyb-suite-help-button" type="button" aria-expanded="false" aria-controls="cyb-suite-help"><span aria-hidden="true">?</span><span class="cyb-suite-btn-label"> 帮助</span></button>
   <button class="cyb-suite-btn" id="cyb-suite-share" type="button"><span aria-hidden="true">↗</span><span class="cyb-suite-btn-label"> 分享</span></button>
@@ -1433,7 +1433,7 @@ const App = (() => {
         else localStorage.removeItem("me-no-auto-help");
       } catch (e) {}
     });
-    if (!noHelp && !location.search.includes("nohelp")) {
+    if (!noHelp && !location.search.includes("nohelp") && !location.search.includes("feature=")) {
       const m = active();
       if (m) showHelp("功能说明 · " + m.name, m.helpHtml || "<p>暂无说明</p>");
     }
@@ -3530,6 +3530,7 @@ return {
 
 (() => {
 const T = { refs: {}, plot: null };
+let landingFeatureApplied = false;
 
 const DIST_DEFS = {
   normal:      { name: "正态分布", params: "mu=0,sigma=1", discrete: false, range: p => [p.mu - 4 * p.sigma, p.mu + 4 * p.sigma] },
@@ -3835,7 +3836,19 @@ App.registerModule({
     );
     plotDist();
   },
-  onShow() { stageRender(); },
+  onShow() {
+    stageRender();
+    let feature = "";
+    try { feature = new URLSearchParams(location.search).get("feature") || ""; } catch (e) {}
+    if (feature === "linear-regression" && !landingFeatureApplied) {
+      landingFeatureApplied = true;
+      T.refs.xdata.value = "1,2,3,4,5,6";
+      T.refs.data.value = "2.1,4.2,5.8,8.3,10.1,12.2";
+      T.refs.regType.value = "linear";
+      doRegression();
+      setTimeout(() => T.refs.xdata.closest(".card").scrollIntoView({ behavior: "smooth", block: "center" }), 120);
+    }
+  },
   onResize() { stageRender(); },
   onTheme() { stageRender(); },
 });
