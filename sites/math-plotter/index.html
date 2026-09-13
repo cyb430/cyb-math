@@ -421,6 +421,21 @@ input[type="range"] {
 #hintText { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #coord { margin-left: auto; font-family: var(--mono); font-size: 11px; white-space: nowrap; }
 
+/* 参数探究与不等式解集 */
+.param-row { display:grid; grid-template-columns:18px minmax(80px,1fr) 58px 48px 48px; align-items:center; gap:6px; margin-top:7px; }
+.param-row .pname { font:700 13px var(--mono); color:var(--accent-dark); }
+.param-row input[type="range"] { width:100%; accent-color:var(--accent); }
+.param-row input[type="number"] { min-width:0; padding:5px 4px; font-size:11px; text-align:center; }
+.param-controls { display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-top:9px; }
+.param-controls select { width:auto; padding:6px 25px 6px 8px; }
+.analysis-result { margin-top:8px; padding:9px 10px; border:1px solid var(--border); border-radius:8px; background:var(--field); color:var(--muted); font-size:11.5px; line-height:1.65; }
+.analysis-result strong { color:var(--text); }
+.sign-table { width:100%; margin-top:8px; border-collapse:collapse; font-size:11px; text-align:center; }
+.sign-table th,.sign-table td { border:1px solid var(--border); padding:5px 4px; }
+.sign-table th { background:var(--surface); color:var(--muted); font-weight:600; }
+.ineq-answer { margin-top:8px; font-size:13px; color:var(--text); }
+@media(max-width:640px){.param-row{grid-template-columns:16px minmax(70px,1fr) 54px 44px 44px}.param-row input[type="number"]{font-size:10px}}
+
 /* ============================================================
    响应式：竖屏 —— 画布在上、面板在下滚动
    ============================================================ */
@@ -504,9 +519,9 @@ body :where(button,input,select,textarea,a):focus-visible{outline:2px solid #4f7
 <body>
 <!-- CYB_SUITE_V1_NAV_START -->
 <nav id="cyb-suite-bar" aria-label="CYB Math 全站导航">
-  <a class="cyb-suite-brand" href="https://cyb-math.pages.dev/" data-local="index.html" aria-label="返回 CYB Math 工具总览"><span class="cyb-suite-mark" aria-hidden="true">ƒ</span><span class="cyb-suite-brand-text">CYB Math</span></a>
+  <a class="cyb-suite-brand" href="https://cyb-math.cn/" data-local="index.html" aria-label="返回 CYB Math 工具总览"><span class="cyb-suite-mark" aria-hidden="true">ƒ</span><span class="cyb-suite-brand-text">CYB Math</span></a>
   <span class="cyb-suite-current">函数图像绘制器</span><span class="cyb-suite-spacer"></span>
-  <label><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)">切换工具</span><select class="cyb-suite-select" id="cyb-suite-switch"><option value="https://cyb-math.pages.dev/" data-local="index.html">工具总览</option><option value="https://math-tools-pro.pages.dev/" data-local="math-tools-pro.html">数学实用工具</option><option value="https://math-plotter.pages.dev/" data-local="math-plotter.html" selected>函数图像绘制</option><option value="https://math-equation.pages.dev/" data-local="math-equation.html">方程求解</option><option value="https://math-geometry.pages.dev/" data-local="math-geometry-theorems.html">几何画板</option><option value="https://math-algebra.pages.dev/" data-local="math-algebra.html">代数计算</option><option value="https://math-3d.pages.dev/" data-local="math-3d.html">3D 绘图</option><option value="https://math-theory.pages.dev/" data-local="math-theory.html">数论工具</option><option value="https://math-sequence.pages.dev/" data-local="math-sequence.html">数列工具</option><option value="https://math-latex.pages.dev/" data-local="math-latex.html">LaTeX 编辑器</option><option value="https://math-fourier.pages.dev/" data-local="math-fourier.html">傅里叶可视化</option><option value="https://math-complex.pages.dev/" data-local="math-complex.html">复变函数可视化</option></select></label>
+  <label><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)">切换工具</span><select class="cyb-suite-select" id="cyb-suite-switch"><option value="https://cyb-math.cn/" data-local="index.html">工具总览</option><option value="https://math-tools-pro.pages.dev/" data-local="math-tools-pro.html">数学实用工具</option><option value="https://math-plotter.pages.dev/" data-local="math-plotter.html" selected>函数图像绘制</option><option value="https://math-equation.pages.dev/" data-local="math-equation.html">方程求解</option><option value="https://math-geometry.pages.dev/" data-local="math-geometry-theorems.html">几何画板</option><option value="https://math-algebra.pages.dev/" data-local="math-algebra.html">代数计算</option><option value="https://math-3d.pages.dev/" data-local="math-3d.html">3D 绘图</option><option value="https://math-theory.pages.dev/" data-local="math-theory.html">数论工具</option><option value="https://math-sequence.pages.dev/" data-local="math-sequence.html">数列工具</option><option value="https://math-latex.pages.dev/" data-local="math-latex.html">LaTeX 编辑器</option><option value="https://math-fourier.pages.dev/" data-local="math-fourier.html">傅里叶可视化</option><option value="https://math-complex.pages.dev/" data-local="math-complex.html">复变函数</option><option value="https://math-linear.pages.dev/" data-local="math-linear.html">线性代数</option></select></label>
   <button class="cyb-suite-btn" id="cyb-suite-theme" type="button" aria-label="切换主题" title="切换主题">◐</button>
   <button class="cyb-suite-btn" id="cyb-suite-help-button" type="button" aria-expanded="false" aria-controls="cyb-suite-help"><span aria-hidden="true">?</span><span class="cyb-suite-btn-label"> 帮助</span></button>
   <button class="cyb-suite-btn" id="cyb-suite-share" type="button"><span aria-hidden="true">↗</span><span class="cyb-suite-btn-label"> 分享</span></button>
@@ -565,6 +580,40 @@ body :where(button,input,select,textarea,a):focus-visible{outline:2px solid #4f7
             <button id="removeBtn" class="btn">删除选中</button>
             <button id="clearBtn" class="btn danger">清空全部</button>
           </div>
+        </div>
+      </section>
+
+      <!-- 参数探究 -->
+      <section class="card">
+        <div class="card-head"><span class="tick"></span><h2>参数探究</h2></div>
+        <div class="card-body">
+          <p class="hint" id="paramEmpty">表达式中使用 a、b、c、d 后会自动生成滑块。可尝试 y=a*x^2+b*x+c。</p>
+          <div id="paramBox"></div>
+          <div class="param-controls">
+            <button id="paramPlay" class="btn" type="button">▶ 播放</button>
+            <button id="paramReset" class="btn" type="button">重置</button>
+            <label for="paramSpeed">速度</label>
+            <select id="paramSpeed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select>
+          </div>
+          <div id="intersectionResult" class="analysis-result">添加两条 y=f(x) 函数后，这里会分析当前可见范围内的交点数量。</div>
+        </div>
+      </section>
+
+      <!-- 一元不等式 -->
+      <section class="card">
+        <div class="card-head"><span class="tick"></span><h2>一元不等式解集</h2></div>
+        <div class="card-body">
+          <p class="hint">支持一元多项式和分式，自动给出零点、分母禁点、符号表与开闭端点。</p>
+          <div class="chips">
+            <button class="chip" data-ineq="(x-1)/(x+2)>=0">分式</button>
+            <button class="chip" data-ineq="x^2-5x+6<0">二次</button>
+            <button class="chip" data-ineq="(x+1)^2*(x-3)>0">重根</button>
+          </div>
+          <input id="ineqInput" type="text" value="(x-1)/(x+2)>=0" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" aria-label="输入一元不等式">
+          <div class="row">
+            <button id="ineqSolveBtn" class="btn accent" type="button">求解并说明依据</button>
+          </div>
+          <div id="ineqResult" class="analysis-result" aria-live="polite">等待求解。</div>
         </div>
       </section>
 
@@ -800,6 +849,14 @@ const THEMES = {
 };
 let theme = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
 const TC = () => THEMES[theme];
+const PARAMETER_NAMES = ["a", "b", "c", "d"];
+const PARAM_STATE = {
+  a: { val: 1, min: -10, max: 10 }, b: { val: 0, min: -10, max: 10 },
+  c: { val: 0, min: -10, max: 10 }, d: { val: 0, min: -10, max: 10 },
+};
+function evalEnv(x, y) {
+  return { x, y, a: PARAM_STATE.a.val, b: PARAM_STATE.b.val, c: PARAM_STATE.c.val, d: PARAM_STATE.d.val };
+}
 
 /* ============================================================
  * LaTeX -> JS 表达式转换（移植自桌面版 latex_to_python）
@@ -1272,9 +1329,7 @@ function evalAst(node, env) {
     case "num": return node.value;
     case "id": {
       const nm = node.name;
-      if (nm === "x") return env.x;
-      if (nm === "y") return env.y;
-      if (nm in env) return env[nm];              /* Σ/Π 指标变量（可遮蔽 x/y） */
+      if (nm in env) return env[nm];              /* x/y、参数与 Σ/Π 指标变量 */
       if (nm === "pi") return Math.PI;
       if (nm === "e") return Math.E;
       if (nm === "inf") return Infinity;
@@ -1320,7 +1375,7 @@ function evalAst(node, env) {
 
 function makeFn(js) {
   const ast = parseExpr(js);   /* 编译为 AST；语法错误在此抛出中文提示 */
-  return (xv, yv) => evalAst(ast, { x: xv, y: yv });
+  return (xv, yv) => evalAst(ast, evalEnv(xv, yv));
 }
 
 function compileInfo(info) {
@@ -1328,13 +1383,13 @@ function compileInfo(info) {
     const js = "((" + latexToJS(info.lhs) + ")-(" + latexToJS(info.rhs) + "))";
     checkIdentifiers(js);
     const ast = parseExpr(js);
-    return { vars: "xy", js, ast, fn: (xv, yv) => evalAst(ast, { x: xv, y: yv }) };
+    return { vars: "xy", js, ast, fn: (xv, yv) => evalAst(ast, evalEnv(xv, yv)) };
   }
   const varName = (info.kind === "x=" || (info.kind === "ineq" && info.lhs === "x")) ? "y" : "x";
   const js = latexToJS(info.rhs);
   checkIdentifiers(js);
   const ast = parseExpr(js);
-  return { vars: varName, js, ast, fn: (xv, yv) => evalAst(ast, { x: xv, y: yv }) };
+  return { vars: varName, js, ast, fn: (xv, yv) => evalAst(ast, evalEnv(xv, yv)) };
 }
 
 /* 编译结果缓存：raw 字符串 -> {vars,js,ast,fn}。视图变化时的重采样/吸附点计算
@@ -1958,6 +2013,7 @@ const App = {
   tangents: [],        // {x0,y0,k,vertical,color,raw}
   integral: null,      // {fRaw,gRaw,a,b,value,xs,fv,gv}
   conic: null,         // 圆锥曲线分析器 {raw,fn,segs,info}
+  paramIntersections: [], // 前两条 y=f(x) 的交点
   snapPoints: [],      // [x,y,描述]
   selectedIndex: null,
   view: { xmin: -10, xmax: 10, ymin: -10, ymax: 10 },
@@ -2160,6 +2216,7 @@ function resampleAll() {
       }
     }
   }
+  analyzeParamIntersections();
 }
 
 /* ---------------- 重绘（函数/范围变化时） ---------------- */
@@ -2508,6 +2565,13 @@ function render() {
   }
 
   /* 点击标记 */
+  for (const pt of App.paramIntersections) {
+    const px = X(pt.x), py = Y(pt.y);
+    if (px < pa.x || px > pa.x + pa.w || py < pa.y || py > pa.y + pa.h) continue;
+    ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2);
+    ctx.fillStyle = "#f59e0b"; ctx.fill();
+    ctx.lineWidth = 1.5; ctx.strokeStyle = theme === "dark" ? "#fff" : "#7c3f00"; ctx.stroke();
+  }
   for (const mk of App.markers) {
     const px = X(mk.x), py = Y(mk.y);
     ctx.beginPath();
@@ -2962,10 +3026,11 @@ const STORAGE_KEY = "plotter-state-v2";
 
 function serializeState() {
   return {
-    v: 2,
+    v: 3,
     theme,
     aspect: $("aspectCheck").checked,
     view: App.view,
+    params: PARAM_STATE,
     functions: App.functions.map(f => ({
       raw: f.raw, color: f.color, label_size: f.label_size, label_mode: f.label_mode,
       label_x: f.label_x, label_y: f.label_y, show_deriv: f.show_deriv,
@@ -3008,6 +3073,14 @@ function loadState() {
     } catch (e) { /* 跳过失效函数 */ }
   }
   App.functions = okFns;
+  if (s.params && typeof s.params === "object") PARAMETER_NAMES.forEach(name => {
+    const src = s.params[name];
+    if (!src) return;
+    let min = Number(src.min), max = Number(src.max), val = Number(src.val);
+    if (!(Number.isFinite(min) && Number.isFinite(max) && max > min)) { min = -10; max = 10; }
+    if (!Number.isFinite(val)) val = name === "a" ? 1 : 0;
+    PARAM_STATE[name] = { min, max, val: Math.max(min, Math.min(max, val)) };
+  });
   const sv = s.view;
   if (sv && [sv.xmin, sv.xmax, sv.ymin, sv.ymax].every(Number.isFinite) && sv.xmin < sv.xmax && sv.ymin < sv.ymax) {
     $("xMin").value = fmtG(sv.xmin, 6); $("xMax").value = fmtG(sv.xmax, 6);
@@ -3447,6 +3520,234 @@ canvas.addEventListener("wheel", e => {
  * ============================================================ */
 let curColor = COLORS[0];
 
+/* ---------------- 二维参数滑块与交点分析 ---------------- */
+let paramTimer = null;
+const paramDom = {};
+
+function usedParameters() {
+  const used = new Set();
+  for (const f of App.functions) {
+    try {
+      const info = detectType(f.raw);
+      const js = info.kind === "implicit"
+        ? latexToJS(info.lhs) + "-(" + latexToJS(info.rhs) + ")"
+        : latexToJS(info.rhs);
+      const ids = js.replace(/\d+(?:\.\d+)?[eE][+-]?\d+/g, "").match(/[a-zA-Z_][a-zA-Z0-9_]*/g) || [];
+      ids.forEach(id => { if (PARAMETER_NAMES.includes(id)) used.add(id); });
+    } catch (e) {}
+  }
+  return used;
+}
+
+function syncParameterDom() {
+  PARAMETER_NAMES.forEach(name => {
+    const d = paramDom[name], p = PARAM_STATE[name];
+    if (!d) return;
+    d.range.value = String(p.val); d.value.value = fmtG(p.val, 5);
+    d.min.value = String(p.min); d.max.value = String(p.max);
+  });
+}
+
+function parameterChanged(save) {
+  App.markers = []; App.tangents = [];
+  resampleAll(); render();
+  if ($("ineqInput").value && PARAMETER_NAMES.some(name => new RegExp("(^|[^a-zA-Z0-9_])" + name + "([^a-zA-Z0-9_]|$)").test($("ineqInput").value))) solveInequality(true);
+  if (save !== false) saveState();
+}
+
+function stopParameterAnimation() {
+  if (paramTimer) clearInterval(paramTimer);
+  paramTimer = null;
+  $("paramPlay").textContent = "▶ 播放";
+}
+
+function toggleParameterAnimation() {
+  if (paramTimer) { stopParameterAnimation(); saveState(); return; }
+  const used = usedParameters();
+  if (!used.size) { showMsg("请先添加含 a、b、c 或 d 的函数，例如 y=a*x^2+b*x+c", false); return; }
+  $("paramPlay").textContent = "⏸ 暂停";
+  let last = performance.now();
+  paramTimer = setInterval(() => {
+    const now = performance.now(), dt = Math.min(0.15, (now - last) / 1000); last = now;
+    const speed = Number($("paramSpeed").value) || 1;
+    used.forEach(name => {
+      const p = PARAM_STATE[name], span = p.max - p.min;
+      p.val += dt * speed * span / 8;
+      if (p.val > p.max) p.val = p.min + (p.val - p.max) % span;
+    });
+    syncParameterDom(); parameterChanged(false);
+  }, 50);
+}
+
+function updateParameterControls() {
+  const used = usedParameters(), box = $("paramBox");
+  box.innerHTML = "";
+  Object.keys(paramDom).forEach(k => delete paramDom[k]);
+  $("paramEmpty").style.display = used.size ? "none" : "block";
+  if (!used.size) stopParameterAnimation();
+  PARAMETER_NAMES.forEach(name => {
+    if (!used.has(name)) return;
+    const p = PARAM_STATE[name], row = document.createElement("div"); row.className = "param-row";
+    const label = document.createElement("span"); label.className = "pname"; label.textContent = name;
+    const range = document.createElement("input"); range.type = "range"; range.min = p.min; range.max = p.max; range.step = (p.max - p.min) / 200 || 0.1; range.value = p.val; range.setAttribute("aria-label", name + " 参数滑块");
+    const value = document.createElement("input"); value.type = "number"; value.value = fmtG(p.val, 5); value.title = "当前值";
+    const min = document.createElement("input"); min.type = "number"; min.value = p.min; min.title = "最小值";
+    const max = document.createElement("input"); max.type = "number"; max.value = p.max; max.title = "最大值";
+    paramDom[name] = { range, value, min, max };
+    range.addEventListener("input", () => { p.val = Number(range.value); value.value = fmtG(p.val, 5); parameterChanged(); });
+    value.addEventListener("change", () => {
+      const v = Number(value.value); if (!Number.isFinite(v)) { value.classList.add("invalid"); return; }
+      value.classList.remove("invalid"); p.val = Math.max(p.min, Math.min(p.max, v)); range.value = p.val; value.value = fmtG(p.val, 5); parameterChanged();
+    });
+    const applyRange = () => {
+      const lo = Number(min.value), hi = Number(max.value);
+      if (!(Number.isFinite(lo) && Number.isFinite(hi) && hi > lo)) { showMsg("参数 " + name + " 的范围需要满足最小值 < 最大值"); return; }
+      p.min = lo; p.max = hi; p.val = Math.max(lo, Math.min(hi, p.val));
+      range.min = lo; range.max = hi; range.step = (hi - lo) / 200; syncParameterDom(); parameterChanged();
+    };
+    min.addEventListener("change", applyRange); max.addEventListener("change", applyRange);
+    row.append(label, range, value, min, max); box.appendChild(row);
+  });
+}
+
+function analyzeParamIntersections() {
+  const out = $("intersectionResult");
+  const ys = App.functions.filter(f => { try { return detectType(f.raw).kind === "y="; } catch (e) { return false; } }).slice(0, 2);
+  App.paramIntersections = [];
+  if (!out || ys.length < 2) { if (out) out.textContent = "添加两条 y=f(x) 函数后，这里会分析当前可见范围内的交点数量。"; return; }
+  let c1, c2;
+  try { c1 = compileInfoCached(detectType(ys[0].raw), ys[0].raw); c2 = compileInfoCached(detectType(ys[1].raw), ys[1].raw); }
+  catch (e) { out.textContent = "暂时无法分析这两条函数的交点。"; return; }
+  const r = visibleRange(), N = 1400, xs = linspace(r.xmin, r.xmax, N + 1), vals = [];
+  let finite = 0, almostSame = 0, maxAbs = 0;
+  for (const x of xs) {
+    const v = evalRaw(c1.fn, "x", x) - evalRaw(c2.fn, "x", x);
+    vals.push(v); if (Number.isFinite(v)) { finite++; maxAbs = Math.max(maxAbs, Math.abs(v)); if (Math.abs(v) < 1e-8) almostSame++; }
+  }
+  if (finite > N * 0.8 && almostSame > finite * 0.9) { out.innerHTML = "<strong>交点分析：</strong>两条函数在当前范围内重合，交点有无穷多个。"; return; }
+  const roots = [], xTol = Math.max(1e-8, (r.xmax - r.xmin) / 3000), yTol = Math.max(1e-7, Math.min(1e-3, maxAbs * 1e-5));
+  const addRoot = x => { if (!Number.isFinite(x) || roots.some(q => Math.abs(q - x) <= xTol)) return; const y = evalRaw(c1.fn, "x", x); if (Number.isFinite(y)) roots.push(x); };
+  for (let i = 1; i <= N; i++) {
+    const a = vals[i - 1], b = vals[i];
+    if (!(Number.isFinite(a) && Number.isFinite(b))) continue;
+    if (a === 0) addRoot(xs[i - 1]);
+    if (a * b < 0) addRoot(bisectDiff(c1.fn, c2.fn, xs[i - 1], xs[i]));
+  }
+  for (let i = 1; i < N; i++) {
+    const v = vals[i];
+    if (Number.isFinite(v) && Math.abs(v) <= yTol && Math.abs(v) <= Math.abs(vals[i - 1]) && Math.abs(v) <= Math.abs(vals[i + 1])) addRoot(xs[i]);
+  }
+  roots.sort((a, b) => a - b);
+  App.paramIntersections = roots.slice(0, 20).map(x => ({ x, y: evalRaw(c1.fn, "x", x) }));
+  const list = App.paramIntersections.slice(0, 6).map(p => "(" + fmtG(p.x, 5) + ", " + fmtG(p.y, 5) + ")").join("、");
+  out.innerHTML = "<strong>交点分析：</strong>当前可见 x 范围内找到 " + App.paramIntersections.length + " 个交点" + (list ? "：" + list : "。") + (App.paramIntersections.length > 6 ? "……" : "");
+}
+
+/* ---------------- 一元多项式／分式不等式 ---------------- */
+function pTrim(p) { const q = p.slice(); while (q.length > 1 && Math.abs(q[q.length - 1]) < 1e-11) q.pop(); return q; }
+function pAdd(a, b, sign) { const n = Math.max(a.length, b.length), r = Array(n).fill(0); for (let i = 0; i < n; i++) r[i] = (a[i] || 0) + (sign || 1) * (b[i] || 0); return pTrim(r); }
+function pMul(a, b) { const r = Array(a.length + b.length - 1).fill(0); for (let i = 0; i < a.length; i++) for (let j = 0; j < b.length; j++) r[i + j] += a[i] * b[j]; return pTrim(r); }
+function pPow(a, n) { let r = [1], b = a.slice(); while (n > 0) { if (n & 1) r = pMul(r, b); n >>= 1; if (n) b = pMul(b, b); } return r; }
+function pEval(p, x) { let r = 0; for (let i = p.length - 1; i >= 0; i--) r = r * x + p[i]; return r; }
+function pDeriv(p) { return p.length <= 1 ? [0] : p.slice(1).map((v, i) => v * (i + 1)); }
+function pScaleAt(p, x) { let s = 0, a = Math.max(1, Math.abs(x)); for (let i = 0; i < p.length; i++) s += Math.abs(p[i]) * a ** i; return Math.max(1, s); }
+function pRealRoots(poly) {
+  const p = pTrim(poly), n = p.length - 1; if (n <= 0) return [];
+  if (n === 1) return [-p[0] / p[1]];
+  const bound = 1 + Math.max(0, ...p.slice(0, -1).map(v => Math.abs(v / p[n])));
+  const critical = pRealRoots(pDeriv(p)).filter(x => x > -bound && x < bound).sort((a, b) => a - b);
+  const roots = [], add = x => { if (Number.isFinite(x) && !roots.some(r => Math.abs(r - x) < 1e-7 * (1 + Math.abs(x)))) roots.push(x); };
+  critical.forEach(x => { if (Math.abs(pEval(p, x)) <= 1e-8 * pScaleAt(p, x)) add(x); });
+  const pts = [-bound, ...critical, bound];
+  for (let i = 1; i < pts.length; i++) {
+    let a = pts[i - 1], b = pts[i], fa = pEval(p, a), fb = pEval(p, b);
+    if (Math.abs(fa) <= 1e-10 * pScaleAt(p, a)) add(a);
+    if (fa * fb > 0 || !Number.isFinite(fa * fb)) continue;
+    for (let k = 0; k < 90; k++) { const m = (a + b) / 2, fm = pEval(p, m); if (fa * fm <= 0) { b = m; fb = fm; } else { a = m; fa = fm; } }
+    add((a + b) / 2);
+  }
+  return roots.sort((a, b) => a - b);
+}
+function rationalFromAst(node) {
+  if (node.type === "num") return { n: [node.value], d: [1] };
+  if (node.type === "id") {
+    if (node.name === "x") return { n: [0, 1], d: [1] };
+    if (PARAMETER_NAMES.includes(node.name)) return { n: [PARAM_STATE[node.name].val], d: [1] };
+    if (node.name === "pi") return { n: [Math.PI], d: [1] };
+    if (node.name === "e") return { n: [Math.E], d: [1] };
+    throw new Error("只允许未知数 x；a、b、c、d 可作为参数");
+  }
+  if (node.type === "unary") { const r = rationalFromAst(node.arg); return node.op === "-" ? { n: r.n.map(v => -v), d: r.d } : r; }
+  if (node.type !== "binary") throw new Error("当前解集工具支持多项式与分式，不支持函数调用");
+  const A = rationalFromAst(node.left), B = rationalFromAst(node.right); let r;
+  if (node.op === "+" || node.op === "-") r = { n: pAdd(pMul(A.n, B.d), pMul(B.n, A.d), node.op === "+" ? 1 : -1), d: pMul(A.d, B.d) };
+  else if (node.op === "*") r = { n: pMul(A.n, B.n), d: pMul(A.d, B.d) };
+  else if (node.op === "/") r = { n: pMul(A.n, B.d), d: pMul(A.d, B.n) };
+  else if (node.op === "**") {
+    const expRat = rationalFromAst(node.right);
+    if (expRat.n.length !== 1 || expRat.d.length !== 1) throw new Error("幂指数必须是整数常数");
+    const e = expRat.n[0] / expRat.d[0]; if (!Number.isInteger(e) || Math.abs(e) > 12) throw new Error("幂指数需为 -12 到 12 的整数");
+    r = e >= 0 ? { n: pPow(A.n, e), d: pPow(A.d, e) } : { n: pPow(A.d, -e), d: pPow(A.n, -e) };
+  } else throw new Error("不支持运算符 " + node.op);
+  if (r.n.length > 13 || r.d.length > 13) throw new Error("多项式次数暂限 12 次以内");
+  return { n: pTrim(r.n), d: pTrim(r.d) };
+}
+function fmtRoot(x) { const n = Math.abs(x) < 1e-9 ? 0 : x; return fmtG(n, 7); }
+function fmtPoly(p) {
+  const terms = [];
+  for (let i = p.length - 1; i >= 0; i--) { const c = Math.abs(p[i]) < 1e-10 ? 0 : p[i]; if (!c) continue; const abs = Math.abs(c), body = i === 0 ? fmtRoot(abs) : (Math.abs(abs - 1) < 1e-10 ? "" : fmtRoot(abs) + "·") + "x" + (i > 1 ? "^" + i : ""); terms.push((terms.length ? (c < 0 ? " − " : " + ") : (c < 0 ? "−" : "")) + body); }
+  return terms.join("") || "0";
+}
+function solveInequality(silent) {
+  const raw = $("ineqInput").value.trim(), out = $("ineqResult"); out.innerHTML = "";
+  try {
+    const m = raw.match(/^(.*?)(<=|>=|<|>)(.*)$/); if (!m || !m[1].trim() || !m[3].trim()) throw new Error("请按“左式 ≥ 右式”的形式输入一个不等式");
+    const op = m[2], L = rationalFromAst(parseExpr(latexToJS(m[1]))), R = rationalFromAst(parseExpr(latexToJS(m[3])));
+    const rat = { n: pAdd(pMul(L.n, R.d), pMul(R.n, L.d), -1), d: pMul(L.d, R.d) };
+    if (rat.d.every(v => Math.abs(v) < 1e-12)) throw new Error("分母恒为 0，表达式没有定义");
+    const zeros = pRealRoots(rat.n), poles = pRealRoots(rat.d);
+    const critical = [];
+    const addCrit = (x, kind) => { let c = critical.find(q => Math.abs(q.x - x) < 1e-7 * (1 + Math.abs(x))); if (!c) { c = { x, zero: false, pole: false }; critical.push(c); } c[kind] = true; };
+    zeros.forEach(x => addCrit(x, "zero")); poles.forEach(x => addCrit(x, "pole")); critical.sort((a, b) => a.x - b.x);
+    const trueSeg = [], signs = [], holds = v => op === ">" ? v > 0 : op === ">=" ? v >= 0 : op === "<" ? v < 0 : v <= 0;
+    for (let i = 0; i <= critical.length; i++) {
+      let x;
+      if (!critical.length) x = 0;
+      else if (i === 0) x = critical[0].x - Math.max(1, Math.abs(critical[0].x) * 0.5 + 1);
+      else if (i === critical.length) x = critical[i - 1].x + Math.max(1, Math.abs(critical[i - 1].x) * 0.5 + 1);
+      else x = (critical[i - 1].x + critical[i].x) / 2;
+      const den = pEval(rat.d, x), val = pEval(rat.n, x) / den, ok = Number.isFinite(val) && holds(val);
+      trueSeg.push(ok); signs.push(val > 0 ? "+" : val < 0 ? "−" : "0");
+    }
+    const inclusive = c => c.zero && !c.pole && (op === ">=" || op === "<=");
+    const parts = [];
+    for (let i = 0; i < trueSeg.length;) {
+      if (!trueSeg[i]) { i++; continue; }
+      let j = i;
+      while (j + 1 < trueSeg.length && trueSeg[j + 1] && inclusive(critical[j])) j++;
+      const left = i === 0 ? "−∞" : fmtRoot(critical[i - 1].x), right = j === critical.length ? "+∞" : fmtRoot(critical[j].x);
+      const lb = i === 0 ? "(" : (inclusive(critical[i - 1]) ? "[" : "(");
+      const rb = j === critical.length ? ")" : (inclusive(critical[j]) ? "]" : ")");
+      parts.push(lb + left + ", " + right + rb); i = j + 1;
+    }
+    critical.forEach((c, i) => { if (inclusive(c) && !trueSeg[i] && !trueSeg[i + 1]) parts.push("{" + fmtRoot(c.x) + "}"); });
+    const lead = document.createElement("div"); lead.innerHTML = "<strong>解集：</strong><span class=\"ineq-answer\">" + (parts.length ? parts.join(" ∪ ") : "∅") + "</span>"; out.appendChild(lead);
+    const basis = document.createElement("div"); basis.style.marginTop = "7px";
+    basis.textContent = "依据：移项后为 (" + fmtPoly(rat.n) + ") / (" + fmtPoly(rat.d) + ") " + op + " 0。";
+    out.appendChild(basis);
+    const detail = document.createElement("div"); detail.textContent = "等号零点：" + (zeros.length ? zeros.filter(z => !poles.some(p => Math.abs(p - z) < 1e-7 * (1 + Math.abs(z)))).map(fmtRoot).join("、") || "无" : "无") + "；分母零点（必须排除）：" + (poles.length ? poles.map(fmtRoot).join("、") : "无"); out.appendChild(detail);
+    const table = document.createElement("table"); table.className = "sign-table";
+    const tr1 = document.createElement("tr"), tr2 = document.createElement("tr"); tr1.appendChild(Object.assign(document.createElement("th"), { textContent: "区间" })); tr2.appendChild(Object.assign(document.createElement("th"), { textContent: "符号" }));
+    for (let i = 0; i < signs.length; i++) {
+      const a = i === 0 ? "−∞" : fmtRoot(critical[i - 1].x), b = i === critical.length ? "+∞" : fmtRoot(critical[i].x);
+      tr1.appendChild(Object.assign(document.createElement("td"), { textContent: "(" + a + ", " + b + ")" }));
+      tr2.appendChild(Object.assign(document.createElement("td"), { textContent: signs[i] + (trueSeg[i] ? " ✓" : "") }));
+    }
+    table.append(tr1, tr2); out.appendChild(table);
+    if (!silent) showMsg("已生成不等式解集、定义域排除项和符号表", false);
+  } catch (e) { out.textContent = "无法求解：" + humanizeError(e.message); if (!silent) showMsg(out.textContent); }
+}
+
 function renderList() {
   const ul = $("funcList");
   ul.innerHTML = "";
@@ -3459,6 +3760,7 @@ function renderList() {
     ul.appendChild(li);
   });
   updateIntSelectors();
+  updateParameterControls();
 }
 
 function addFunction() {
@@ -3644,6 +3946,16 @@ $("fabSvg").addEventListener("click", exportSVG);
 $("fabShare").addEventListener("click", shareLink);
 $("intCalcBtn").addEventListener("click", computeIntegral);
 $("intClearBtn").addEventListener("click", clearIntegral);
+$("paramPlay").addEventListener("click", toggleParameterAnimation);
+$("paramReset").addEventListener("click", () => {
+  PARAM_STATE.a.val = 1; PARAM_STATE.b.val = 0; PARAM_STATE.c.val = 0; PARAM_STATE.d.val = 0;
+  syncParameterDom(); parameterChanged();
+});
+$("ineqSolveBtn").addEventListener("click", () => solveInequality(false));
+$("ineqInput").addEventListener("keydown", e => { if (e.key === "Enter") solveInequality(false); });
+document.querySelectorAll(".chip[data-ineq]").forEach(chip => chip.addEventListener("click", () => {
+  $("ineqInput").value = chip.dataset.ineq; solveInequality(false);
+}));
 $("conicBtn").addEventListener("click", analyzeConicUI);
 $("conicClearBtn").addEventListener("click", clearConic);
 $("conicInput").addEventListener("keydown", e => { if (e.key === "Enter") analyzeConicUI(); });
@@ -3724,15 +4036,30 @@ window.addEventListener("orientationchange", () => setTimeout(resizeCanvas, 60))
 /* ---------------- 启动 ---------------- */
 $("tbTheme").textContent = theme === "dark" ? "☀️" : "🌙";
 loadState();
+let landingFeature = "";
+try { landingFeature = new URLSearchParams(location.search).get("feature") || ""; } catch (e) {}
+if (landingFeature === "parameters") {
+  App.functions = [
+    { raw: "y=a*x^2+b*x+c", color: COLORS[0], label_size: 11, label_mode: "图例(右侧)", label_x: "", label_y: "", show_deriv: false },
+    { raw: "y=d*x+1", color: COLORS[1], label_size: 11, label_mode: "图例(右侧)", label_x: "", label_y: "", show_deriv: false },
+  ];
+  PARAM_STATE.a.val = 1; PARAM_STATE.b.val = 0; PARAM_STATE.c.val = 0; PARAM_STATE.d.val = 1;
+}
 renderList();          // 初始化函数列表与积分选择器占位
 resizeCanvas();
 redraw();
+solveInequality(true);
 updateToolbarState();
+if (landingFeature === "parameters" || landingFeature === "inequality") setTimeout(() => {
+  const target = landingFeature === "parameters" ? $("paramBox") : $("ineqInput");
+  if (target) target.closest(".card").scrollIntoView({ behavior: "smooth", block: "start" });
+  if (landingFeature === "inequality") $("ineqInput").focus();
+}, 180);
 // 自动弹出功能说明（未勾选「下次打开不再自动弹出」时）；启动时回读勾选状态到复选框
 let noHelp = false;
 try { noHelp = localStorage.getItem(NOHELP_KEY) === "1"; } catch (e) {}
 $("helpNoMore").checked = noHelp;
-if (!noHelp) openHelp();
+if (!noHelp && !landingFeature) openHelp();
 </script>
 
 <!-- CYB_SUITE_V1_SCRIPT_START -->
