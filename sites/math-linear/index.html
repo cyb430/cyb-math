@@ -17,12 +17,50 @@
 .help{position:fixed;right:14px;top:58px;z-index:1002;width:min(410px,calc(100vw - 28px));max-height:calc(100vh - 76px);overflow:auto;padding:18px;border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}.help[hidden],.toast[hidden]{display:none}.help-head{display:flex;justify-content:space-between;gap:12px}.help h2{margin:0;font-size:17px}.help p,.help li{color:var(--muted);font-size:13px}.toast{position:fixed;left:50%;bottom:22px;z-index:1100;transform:translateX(-50%);padding:9px 14px;border-radius:999px;background:var(--ink);color:var(--surface);box-shadow:var(--shadow)}
 :where(button,a,input,select,textarea,summary):focus-visible{outline:2px solid var(--blue);outline-offset:2px}@media(max-width:780px){.layout{grid-template-columns:1fr}.page{padding:18px 13px 42px}.hero{padding:21px 18px}.suite-current,.suite-brand-text,.btn-label{display:none}.suite-select{min-width:0;flex:1}.metric-grid{grid-template-columns:1fr}.vec-grid{grid-template-columns:1fr}canvas{height:280px}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style>
+<!-- CYB domain migration start -->
+<link rel="canonical" href="https://linear.cyb-math.cn/">
+<style id="cyb-domain-style">.cyb-domain-notice{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:8px 16px;background:#edf4ff;color:#294361;font:13px/1.5 system-ui,sans-serif;border-bottom:1px solid #cdddf0}.cyb-domain-notice a{color:#174d9c;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}.cyb-domain-notice button{border:0;background:transparent;color:inherit;cursor:pointer;min-width:32px;min-height:32px;font-size:20px}.cyb-domain-notice :focus-visible{outline:2px solid #174d9c;outline-offset:3px}@media(prefers-color-scheme:dark){.cyb-domain-notice{background:#172536;color:#dae7f5;border-color:#314961}.cyb-domain-notice a{color:#96c2ff}}
+</style>
+<script id="cyb-domain-script">/* CYB Math: URL-only domain migration; calculations and storage are unchanged. */
+(function () {
+  'use strict';
+  var hosts = {"cyb-math.pages.dev":"cyb-math.cn","math-3d.pages.dev":"3d.cyb-math.cn","math-algebra.pages.dev":"algebra.cyb-math.cn","math-complex.pages.dev":"complex.cyb-math.cn","math-equation.pages.dev":"equation.cyb-math.cn","math-fourier.pages.dev":"fourier.cyb-math.cn","math-geometry.pages.dev":"geometry.cyb-math.cn","math-latex.pages.dev":"latex.cyb-math.cn","math-linear.pages.dev":"linear.cyb-math.cn","math-plotter.pages.dev":"plotter.cyb-math.cn","math-sequence.pages.dev":"sequence.cyb-math.cn","math-theory.pages.dev":"theory.cyb-math.cn","math-tools-pro.pages.dev":"tools.cyb-math.cn"};
+  window.cybPreferredURL = function (value) {
+    try {
+      var url = new URL(value === undefined ? location.href : value, location.href);
+      if (hosts[url.hostname]) { url.hostname = hosts[url.hostname]; url.protocol = 'https:'; url.port = ''; }
+      return url.href;
+    } catch (_) { return value === undefined ? location.href : value; }
+  };
+  document.addEventListener('DOMContentLoaded', function () {
+    if (!hosts[location.hostname]) return;
+    try { if (sessionStorage.getItem('cyb-domain-notice-dismissed') === '1') return; } catch (_) {}
+    var bar = document.createElement('aside');
+    bar.className = 'cyb-domain-notice';
+    bar.setAttribute('aria-label', '新域名提示');
+    var text = document.createElement('span');
+    text.textContent = '此地址继续可用，推荐使用 CYB Math 新域名。';
+    var link = document.createElement('a');
+    link.textContent = hosts[location.hostname];
+    link.href = window.cybPreferredURL();
+    link.title = '旧域名的本地记录仍保留在原地址，不会自动转移。分享链接中的状态会保留。';
+    link.addEventListener('click', function () { link.href = window.cybPreferredURL(); });
+    var close = document.createElement('button');
+    close.type = 'button'; close.textContent = '×'; close.setAttribute('aria-label', '关闭新域名提示');
+    close.addEventListener('click', function () {
+      bar.remove(); try { sessionStorage.setItem('cyb-domain-notice-dismissed', '1'); } catch (_) {}
+    });
+    bar.append(text, link, close); document.body.prepend(bar);
+  });
+})();
+</script>
+<!-- CYB domain migration end -->
 </head>
 <body>
 <nav id="cyb-suite-bar" aria-label="CYB Math 全站导航">
   <a class="suite-brand" href="https://cyb-math.cn/" data-local="index.html"><span class="suite-mark">ƒ</span><span class="suite-brand-text">CYB Math</span></a>
   <span class="suite-current">线性代数工具</span><span class="spacer"></span>
-  <select class="suite-select" id="suiteSwitch" aria-label="切换工具"><option value="https://cyb-math.cn/" data-local="index.html">工具总览</option><option value="https://math-tools-pro.pages.dev/" data-local="math-tools-pro.html">数学实用工具</option><option value="https://math-plotter.pages.dev/" data-local="math-plotter.html">函数图像绘制</option><option value="https://math-equation.pages.dev/" data-local="math-equation.html">方程求解</option><option value="https://math-geometry.pages.dev/" data-local="math-geometry-theorems.html">几何画板</option><option value="https://math-algebra.pages.dev/" data-local="math-algebra.html">代数计算</option><option value="https://math-3d.pages.dev/" data-local="math-3d.html">3D 绘图</option><option value="https://math-theory.pages.dev/" data-local="math-theory.html">数论工具</option><option value="https://math-sequence.pages.dev/" data-local="math-sequence.html">数列工具</option><option value="https://math-latex.pages.dev/" data-local="math-latex.html">LaTeX 编辑器</option><option value="https://math-fourier.pages.dev/" data-local="math-fourier.html">傅里叶可视化</option><option value="https://math-complex.pages.dev/" data-local="math-complex.html">复变函数</option><option value="https://math-linear.pages.dev/" data-local="math-linear.html" selected>线性代数</option></select>
+  <select class="suite-select" id="suiteSwitch" aria-label="切换工具"><option value="https://cyb-math.cn/" data-local="index.html">工具总览</option><option value="https://tools.cyb-math.cn/" data-local="math-tools-pro.html">数学实用工具</option><option value="https://plotter.cyb-math.cn/" data-local="math-plotter.html">函数图像绘制</option><option value="https://equation.cyb-math.cn/" data-local="math-equation.html">方程求解</option><option value="https://geometry.cyb-math.cn/" data-local="math-geometry-theorems.html">几何画板</option><option value="https://algebra.cyb-math.cn/" data-local="math-algebra.html">代数计算</option><option value="https://3d.cyb-math.cn/" data-local="math-3d.html">3D 绘图</option><option value="https://theory.cyb-math.cn/" data-local="math-theory.html">数论工具</option><option value="https://sequence.cyb-math.cn/" data-local="math-sequence.html">数列工具</option><option value="https://latex.cyb-math.cn/" data-local="math-latex.html">LaTeX 编辑器</option><option value="https://fourier.cyb-math.cn/" data-local="math-fourier.html">傅里叶可视化</option><option value="https://complex.cyb-math.cn/" data-local="math-complex.html">复变函数</option><option value="https://linear.cyb-math.cn/" data-local="math-linear.html" selected>线性代数</option></select>
   <button class="icon-btn" id="themeBtn" type="button" aria-label="切换主题">◐</button>
   <button class="icon-btn" id="helpBtn" type="button" aria-label="帮助">?<span class="btn-label"> 帮助</span></button>
   <button class="icon-btn" id="shareBtn" type="button" aria-label="分享">↗<span class="btn-label"> 分享</span></button>
@@ -118,7 +156,7 @@ document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>show
 document.querySelectorAll("[data-matrix-example]").forEach(b=>b.addEventListener("click",()=>{$("matrixA").value=b.dataset.matrixExample.replace(/\|/g,"\n");if(b.dataset.b)$("matrixB").value=b.dataset.b.replace(/\|/g,"\n");calculateMatrix()}));document.querySelectorAll("[data-system-example]").forEach(b=>b.addEventListener("click",()=>{$("systemInput").value=b.dataset.systemExample.replace(/\|/g,"\n");solveSystem()}));
 $("suiteSwitch").addEventListener("change",e=>{const o=e.target.options[e.target.selectedIndex];location.href=location.protocol==="file:"?o.dataset.local:o.value});document.querySelector(".suite-brand").addEventListener("click",e=>{if(location.protocol==="file:"){e.preventDefault();location.href=e.currentTarget.dataset.local}});
 function applyTheme(t){document.documentElement.dataset.theme=t;$("themeBtn").setAttribute("aria-label",t==="dark"?"切换浅色主题":"切换深色主题");document.querySelector('meta[name="theme-color"]').content=t==="dark"?"#12161d":"#f5f7fb";drawTransform()}let theme="light";try{theme=localStorage.getItem("cyb-math:theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light")}catch(e){}applyTheme(theme);$("themeBtn").addEventListener("click",()=>{theme=document.documentElement.dataset.theme==="dark"?"light":"dark";applyTheme(theme);try{localStorage.setItem("cyb-math:theme",theme)}catch(e){}});
-$("helpBtn").addEventListener("click",()=>{$("helpPanel").hidden=false;$("helpClose").focus()});$("helpClose").addEventListener("click",()=>{$("helpPanel").hidden=true;$("helpBtn").focus()});document.addEventListener("keydown",e=>{if(e.key==="Escape")$("helpPanel").hidden=true});$("shareBtn").addEventListener("click",async()=>{saveState();try{if(navigator.share)await navigator.share({title:document.title,url:location.href});else if(navigator.clipboard){await navigator.clipboard.writeText(location.href);toast("分享链接已复制")}else prompt("复制分享链接：",location.href)}catch(e){if(e.name!=="AbortError")toast("暂时无法分享")}});
+$("helpBtn").addEventListener("click",()=>{$("helpPanel").hidden=false;$("helpClose").focus()});$("helpClose").addEventListener("click",()=>{$("helpPanel").hidden=true;$("helpBtn").focus()});document.addEventListener("keydown",e=>{if(e.key==="Escape")$("helpPanel").hidden=true});$("shareBtn").addEventListener("click",async()=>{saveState();try{if(navigator.share)await navigator.share({title:document.title,url:window.cybPreferredURL()});else if(navigator.clipboard){await navigator.clipboard.writeText(window.cybPreferredURL());toast("分享链接已复制")}else prompt("复制分享链接：",window.cybPreferredURL())}catch(e){if(e.name!=="AbortError")toast("暂时无法分享")}});
 restoreState();let feature="";try{feature=new URLSearchParams(location.search).get("feature")||""}catch(e){}if(feature==="system")currentTab="system";else if(feature==="eigen")currentTab="vector";else if(feature==="matrix")currentTab="matrix";showTab(currentTab);calculateEigen();drawTransform();if(feature==="system")solveSystem();else if(feature==="matrix")calculateMatrix();else if(feature==="eigen")calculateEigen();window.addEventListener("resize",drawTransform);
 })();
 </script>
