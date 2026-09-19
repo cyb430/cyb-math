@@ -1,0 +1,407 @@
+{
+  "recordedAt": "2026-09-15T16:49:42.229Z",
+  "sourceDirectory": "outputs/cloudflare-ready-v6-custom-domains",
+  "baselineSourceDirectory": "outputs/cloudflare-ready-v5-linear-integrated",
+  "deployments": [
+    {
+      "project": "cyb-math",
+      "domains": [
+        "cyb-math.pages.dev",
+        "cyb-math.cn"
+      ],
+      "deploymentId": "2fde93c9-70e1-4cfc-8dc1-1b75087a8168",
+      "deploymentURL": "https://2fde93c9.cyb-math.pages.dev",
+      "stage": {
+        "name": "deploy",
+        "started_on": null,
+        "ended_on": "2026-09-15T16:46:55.758521Z",
+        "status": "success"
+      },
+      "environment": "production"
+    },
+    {
+      "project": "math-3d",
+      "domains": [
+        "math-3d.pages.dev",
+        "3d.cyb-math.cn"
+      ],
+      "deploymentId": "8a3debc8-1461-4908-876e-443b8b46a79c",
+      "deploymentURL": "https://8a3debc8.math-3d.pages.dev",
+      "stage": {
+        "name": "deploy",
+        "started_on": null,
+        "ended_on": "2026-09-15T16:45:29.033206Z",
+        "status": "success"
+      },
+      "environment": "production"
+    },
+    {
+      "project": "math-algebra",
+      "domains": [
+        "math-algebra.pages.dev",
+        "algebra.cyb-math.cn"
+      ],
+      "deploymentId": "bf53d4d8-2939-4306-9a24-fa1b6d4fc07d",
+      "deploymentURL": "https://bf53d4d8.math-algebra.pages.dev",
+      "stage": {
+        "name": "deploy",
+        "started_on": null,
+        "ended_on": "2026-09-15T16:45:30.829109Z",
+        "status": "success"
+      },
+      "environment": "production"
+    },
+    {
+      "project": "math-complex",
+      "domains": [
+        "math-complex.pages.dev",
+        "complex.cyb-math.cn"
+      ],
+      "deploymentId": "6c9da366-7497-4f70-8183-8b1726440671",
+      "deploymentURL": "https://6c9da366.math-complex.pages.dev",
+      "stage": {
+        "name": "deploy",
+        "started_on": null,
+        "ended_on": "2026-09-15T16:45:28.78681Z",
+        "status": "success"
+      },
+      "environment": "production"
+    },
+    {
+      "project": "math-equation",
+      "domains": [
+        "math-equation.pages.dev",
+        "equation.cyb-math.cn"
+      ],
+      "deploymentId": "5c3181fe-c03f-4607-9931-686aee33373f",
+      "deploymentURL": "https://5c3181fe.math-equation.pages.dev",
+      "stage": {
+        "name": "deploy",
+        "started_on": null,
+        "ended_on": "2026-09-15T16:45:29.359048Z",
+        "status": "success"
+      },
+      "environment": "production"
+    },
+    {
+      "project": "math-fourier",
+      "domains": [
+        "math-fourier.pages.dev",
+        "fourier.cyb-math.cn"
+      ],
+      "deploymentId": "6cb10879-3909-424a-ad7c-caab9b611c41",
+      "deploymentURL": "https://6cb10879.math-fourier.pages.dev",
+      "stage": {
+        "name": "deploy",
+        "started_on": null,
+        "ended_on": "2026-09-15T16:45:56.96116Z",
+        "status": "success"
+      },
+      "environment": "production"
+    },
+    {
+      "project": "math-geometry",
+      "domains": [
+        "math-geometry.pages.dev",
+        "geometry.cyb-math.cn"
+      ],
+      "deploymentId": "507a42ee-f62f-463b-ba4c-fb1d59b1043d",
+      "deploymentURL": "https://507a42ee.math-geometry.pages.dev",
+      "stage": {
+        "name": "deploy",
+        "started_on": null,
+        "ended_on": "2026-09-15T16:45:59.304263Z",
+        "status": "success"
+      },
+      "environment": "production"
+    },
+    {
+      "project": "math-latex",
+      "domains": [
+        "math-latex.pages.dev",
+        "latex.cyb-math.cn"
+      ],
+      "deploymentId": "3b8359c6-6cce-44b5-bc8f-cd62c7580019",
+      "deploymentURL": "https://3b8359c6.math-latex.pages.dev",
+      "stage": {
+        "name": "deploy",
+        "started_on": null,
+        "ended_on": "2026-09-15T16:45:58.547784Z",
+        "status": "success"
+      },
+      "environment": "production"
+    },
+    {
+      "project": "math-linear",
+      "domains": [
+        "math-linear.pages.dev",
+        "linear.cyb-math.cn"
+      ],
+      "deploymentId": "6d50ed35-8b09-4ee0-af37-cf0edcd12102",
+      "deploymentURL": "https://6d50ed35.math-linear.pages.dev",
+      "stage": {
+        "name": "deploy",
+        "started_on": null,
+        "ended_on": "2026-09-15T16:45:58.744963Z",
+        "status": "success"
+      },
+      "environment": "production"
+    },
+    {
+      "project": "math-plotter",
+      "domains": [
+        "math-plotter.pages.dev",
+        "plotter.cyb-math.cn"
+      ],
+      "deploymentId": "f71f27ed-cbff-4267-8d89-072ca48c746b",
+      "deploymentURL": "https://f71f27ed.math-plotter.pages.dev",
+      "stage": {
+        "name": "deploy",
+        "started_on": null,
+        "ended_on": "2026-09-15T16:46:28.287665Z",
+        "status": "success"
+      },
+      "environment": "production"
+    },
+    {
+      "project": "math-sequence",
+      "domains": [
+        "math-sequence.pages.dev",
+        "sequence.cyb-math.cn"
+      ],
+      "deploymentId": "5331db2f-3398-4391-9283-11f42964aab2",
+      "deploymentURL": "https://5331db2f.math-sequence.pages.dev",
+      "stage": {
+        "name": "deploy",
+        "started_on": null,
+        "ended_on": "2026-09-15T16:46:28.583127Z",
+        "status": "success"
+      },
+      "environment": "production"
+    },
+    {
+      "project": "math-theory",
+      "domains": [
+        "math-theory.pages.dev",
+        "theory.cyb-math.cn"
+      ],
+      "deploymentId": "731cdd3b-74c8-457d-b0bf-06171a0e5362",
+      "deploymentURL": "https://731cdd3b.math-theory.pages.dev",
+      "stage": {
+        "name": "deploy",
+        "started_on": null,
+        "ended_on": "2026-09-15T16:46:29.20633Z",
+        "status": "success"
+      },
+      "environment": "production"
+    },
+    {
+      "project": "math-tools-pro",
+      "domains": [
+        "math-tools-pro.pages.dev",
+        "tools.cyb-math.cn"
+      ],
+      "deploymentId": "048a112c-dc80-4ad9-8d53-96462125d21a",
+      "deploymentURL": "https://048a112c.math-tools-pro.pages.dev",
+      "stage": {
+        "name": "deploy",
+        "started_on": null,
+        "ended_on": "2026-09-15T16:46:38.635394Z",
+        "status": "success"
+      },
+      "environment": "production"
+    }
+  ],
+  "domains": [
+    {
+      "project": "math-3d",
+      "name": "3d.cyb-math.cn",
+      "status": "active",
+      "verification": "active",
+      "validation": "active"
+    },
+    {
+      "project": "math-algebra",
+      "name": "algebra.cyb-math.cn",
+      "status": "active",
+      "verification": "active",
+      "validation": "active"
+    },
+    {
+      "project": "math-complex",
+      "name": "complex.cyb-math.cn",
+      "status": "active",
+      "verification": "active",
+      "validation": "active"
+    },
+    {
+      "project": "math-equation",
+      "name": "equation.cyb-math.cn",
+      "status": "active",
+      "verification": "active",
+      "validation": "active"
+    },
+    {
+      "project": "math-fourier",
+      "name": "fourier.cyb-math.cn",
+      "status": "active",
+      "verification": "active",
+      "validation": "active"
+    },
+    {
+      "project": "math-geometry",
+      "name": "geometry.cyb-math.cn",
+      "status": "active",
+      "verification": "active",
+      "validation": "active"
+    },
+    {
+      "project": "math-latex",
+      "name": "latex.cyb-math.cn",
+      "status": "active",
+      "verification": "active",
+      "validation": "active"
+    },
+    {
+      "project": "math-linear",
+      "name": "linear.cyb-math.cn",
+      "status": "active",
+      "verification": "active",
+      "validation": "active"
+    },
+    {
+      "project": "math-plotter",
+      "name": "plotter.cyb-math.cn",
+      "status": "active",
+      "verification": "active",
+      "validation": "active"
+    },
+    {
+      "project": "math-sequence",
+      "name": "sequence.cyb-math.cn",
+      "status": "active",
+      "verification": "active",
+      "validation": "active"
+    },
+    {
+      "project": "math-theory",
+      "name": "theory.cyb-math.cn",
+      "status": "active",
+      "verification": "active",
+      "validation": "active"
+    },
+    {
+      "project": "math-tools-pro",
+      "name": "tools.cyb-math.cn",
+      "status": "active",
+      "verification": "active",
+      "validation": "active"
+    }
+  ],
+  "dns": [
+    {
+      "id": "1fe5ea25a010a10411b3c542f7c1daf4",
+      "type": "CNAME",
+      "name": "3d.cyb-math.cn",
+      "content": "math-3d.pages.dev",
+      "proxied": true,
+      "ttl": 1
+    },
+    {
+      "id": "d5389f0525cec6e12bbaff749356a915",
+      "type": "CNAME",
+      "name": "algebra.cyb-math.cn",
+      "content": "math-algebra.pages.dev",
+      "proxied": true,
+      "ttl": 1
+    },
+    {
+      "id": "8290a46ba299f81aae0271d38c0cccf4",
+      "type": "CNAME",
+      "name": "complex.cyb-math.cn",
+      "content": "math-complex.pages.dev",
+      "proxied": true,
+      "ttl": 1
+    },
+    {
+      "id": "cd144e55cfc818822053a8ddd1800e57",
+      "type": "CNAME",
+      "name": "cyb-math.cn",
+      "content": "cyb-math.pages.dev",
+      "proxied": true,
+      "ttl": 1
+    },
+    {
+      "id": "181c28f888b8db2ec550f3c0b547061d",
+      "type": "CNAME",
+      "name": "equation.cyb-math.cn",
+      "content": "math-equation.pages.dev",
+      "proxied": true,
+      "ttl": 1
+    },
+    {
+      "id": "cf2d622a6b98ce2b9601d9bfe7580da7",
+      "type": "CNAME",
+      "name": "fourier.cyb-math.cn",
+      "content": "math-fourier.pages.dev",
+      "proxied": true,
+      "ttl": 1
+    },
+    {
+      "id": "d36f5032a301c61f98781bfee60d0c91",
+      "type": "CNAME",
+      "name": "geometry.cyb-math.cn",
+      "content": "math-geometry.pages.dev",
+      "proxied": true,
+      "ttl": 1
+    },
+    {
+      "id": "9920f390fabbc69e8e129e0f8b090200",
+      "type": "CNAME",
+      "name": "latex.cyb-math.cn",
+      "content": "math-latex.pages.dev",
+      "proxied": true,
+      "ttl": 1
+    },
+    {
+      "id": "edd9533b4067d3ad8c631f2fcfd5370a",
+      "type": "CNAME",
+      "name": "linear.cyb-math.cn",
+      "content": "math-linear.pages.dev",
+      "proxied": true,
+      "ttl": 1
+    },
+    {
+      "id": "b562b874162621a0aca50d654fa202e4",
+      "type": "CNAME",
+      "name": "plotter.cyb-math.cn",
+      "content": "math-plotter.pages.dev",
+      "proxied": true,
+      "ttl": 1
+    },
+    {
+      "id": "d51627630fcc043dae802713e75ad829",
+      "type": "CNAME",
+      "name": "sequence.cyb-math.cn",
+      "content": "math-sequence.pages.dev",
+      "proxied": true,
+      "ttl": 1
+    },
+    {
+      "id": "d8d1d0072a86ed69f4a7719625c2ec99",
+      "type": "CNAME",
+      "name": "theory.cyb-math.cn",
+      "content": "math-theory.pages.dev",
+      "proxied": true,
+      "ttl": 1
+    },
+    {
+      "id": "d5950b2dc632fc98249dbd1be9d4ca3b",
+      "type": "CNAME",
+      "name": "tools.cyb-math.cn",
+      "content": "math-tools-pro.pages.dev",
+      "proxied": true,
+      "ttl": 1
+    }
+  ]
+}

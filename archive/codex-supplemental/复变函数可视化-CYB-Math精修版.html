@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="CYB Math 复变函数可视化：使用域着色探索复函数的模、辐角、零点与极点。所有计算均在浏览器本地完成。">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="theme-color" content="#f6f6f2">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'; img-src 'self' data: blob:; object-src 'none'; base-uri 'none'; connect-src 'self'; form-action 'none'">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%233e63dd'/%3E%3Ctext x='32' y='42' font-size='34' text-anchor='middle' fill='white' font-family='Georgia'%3E%E2%84%82%3C/text%3E%3C/svg%3E">
+<title>复变函数可视化｜CYB Math</title>
+<script>
+// 提前恢复主题，避免闪烁
+try{var t=localStorage.getItem('cvz-theme');if(t==='dark')document.documentElement.dataset.theme='dark';}catch(e){}
+</script>
+<style>
+:root{color-scheme:light;--bg:#f6f6f2;--panel:#fff;--panel-soft:#fbfbf8;--ink:#202228;--ink2:#626873;--quiet:#7b818c;--line:#dedfd9;--line2:#cfd1ca;--accent:#3e63dd;--accent-soft:#eef1ff;--teal:#14847f;--teal-soft:#e8f6f3;--orange:#c96c27;--orange-soft:#fff0e4;--violet:#7656b5;--violet-soft:#f3edff;--danger:#c8453c;--ok:#18815a;--chip:#f1f1ec;--shadow:0 16px 42px rgba(28,33,44,.12);--mono:ui-monospace,"SF Mono",Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+[data-theme="dark"]{color-scheme:dark;--bg:#141619;--panel:#1b1e22;--panel-soft:#181b1e;--ink:#f1f2ee;--ink2:#bec2c8;--quiet:#9ca2ab;--line:#34383d;--line2:#484d54;--accent:#9eb1ff;--accent-soft:#252d4d;--teal:#73cfc7;--teal-soft:#183b39;--orange:#f1aa70;--orange-soft:#442b1d;--violet:#c1a5f1;--violet-soft:#35284b;--danger:#ff8b81;--ok:#69d8a8;--chip:#25282d;--shadow:0 18px 44px rgba(0,0,0,.34)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}html,body{height:100%}body{background:var(--bg);color:var(--ink);font:14px/1.58 var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased}button,input,summary{font:inherit}.skip{position:fixed;left:12px;top:-60px;z-index:1000;background:var(--ink);color:var(--bg);padding:9px 13px;border-radius:8px;text-decoration:none}.skip:focus{top:12px}
+.topbar{height:54px;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 91%,transparent);backdrop-filter:blur(14px);position:relative;z-index:30}.brand{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--ink);font-weight:760;letter-spacing:-.01em}.brand-mark{width:31px;height:31px;border-radius:9px;display:grid;place-items:center;background:var(--accent);color:#fff;font:700 19px Georgia,serif}.current{padding-left:12px;border-left:1px solid var(--line);color:var(--quiet);font-size:12px}.top-spacer{flex:1}.top-actions{display:flex;align-items:center;gap:5px}.hbtn,.overview{min-height:36px;border:1px solid transparent;background:transparent;color:var(--ink2);border-radius:9px;padding:7px 10px;cursor:pointer;font-size:13px;text-decoration:none;white-space:nowrap}.hbtn:hover,.overview:hover,.tool-switcher summary:hover{background:var(--panel);border-color:var(--line);color:var(--ink)}
+.tool-switcher{position:relative}.tool-switcher summary{list-style:none;min-height:36px;border:1px solid transparent;border-radius:9px;padding:7px 10px;color:var(--ink2);cursor:pointer;user-select:none}.tool-switcher summary::-webkit-details-marker{display:none}.tool-switcher[open] summary{background:var(--panel);border-color:var(--line);color:var(--ink)}.tool-menu{position:absolute;right:0;top:43px;width:244px;padding:7px;border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:var(--shadow);display:grid;grid-template-columns:1fr 1fr;gap:3px}.tool-menu a,.tool-menu span{padding:8px 9px;border-radius:7px;color:var(--ink2);font-size:12px;text-decoration:none}.tool-menu a:hover{background:var(--accent-soft);color:var(--accent)}.tool-menu .active{grid-column:1/-1;background:var(--accent-soft);color:var(--accent);font-weight:700}
+main{display:flex;height:calc(100dvh - 54px);min-height:0}.sidebar{width:336px;min-width:336px;overflow-y:auto;padding:14px;background:var(--panel-soft);border-right:1px solid var(--line);scrollbar-width:thin;scrollbar-color:var(--line2) transparent}.intro{padding:3px 2px 14px}.intro-row{display:flex;align-items:center;justify-content:space-between;gap:10px}.eyebrow{color:var(--accent);font-size:10px;font-weight:800;letter-spacing:.11em}.intro h1{font-size:20px;line-height:1.25;letter-spacing:-.02em;margin-top:3px}.pro-badge{padding:3px 7px;border:1px solid color-mix(in srgb,var(--teal) 30%,var(--line));border-radius:999px;background:var(--teal-soft);color:var(--teal);font-size:10px;font-weight:750;white-space:nowrap}.intro p{margin-top:5px;color:var(--ink2);font-size:12px}.benefits{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px}.benefit{display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border-radius:7px;background:var(--panel);border:1px solid var(--line);color:var(--ink2);font-size:10px}.benefit i{width:6px;height:6px;border-radius:50%;background:var(--tone)}
+.card{border:1px solid var(--line);border-radius:11px;padding:12px;margin-bottom:9px;background:var(--panel)}.card-head{display:flex;align-items:center;gap:7px;margin-bottom:9px}.card-head i{width:3px;height:13px;border-radius:3px;background:var(--tone,var(--accent))}.card h2{font-size:13px;font-weight:730}.card-index{margin-left:auto;color:var(--quiet);font:10px var(--mono)}.expr-row{display:flex;gap:6px}#expr{flex:1;font-family:var(--mono);font-size:14px;padding:9px 10px;border:1px solid var(--line2);border-radius:8px;background:var(--panel-soft);color:var(--ink);outline:none}#expr:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 12%,transparent)}#expr.err{border-color:var(--danger);background:color-mix(in srgb,var(--danger) 7%,var(--panel))}#exprMsg{font-size:11px;min-height:18px;color:var(--danger);margin-top:4px}#exprMsg.ok{color:var(--ok)}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}.chip{font-family:var(--mono);font-size:11px;padding:3px 7px;border-radius:7px;background:var(--chip);border:1px solid transparent;cursor:pointer;color:var(--ink2)}.chip:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}select,input[type=text],input[type=number]{font-family:var(--mono);font-size:13px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel-soft);color:var(--ink);outline:none;width:100%}input:focus,select:focus{border-color:var(--accent)}.range-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.range-grid label{font-size:11px;color:var(--ink2)}.range-grid label input{margin-top:3px}.range-actions{display:flex;align-self:end;gap:5px}.range-actions .btn{flex:1;padding-inline:7px}
+.btn{display:inline-block;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:6px 11px;cursor:pointer;font-size:12px}.btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}.btn.primary:hover{filter:brightness(1.06);color:#fff}.btnrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.btnrow.compact{margin-top:4px}.opt{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:12px;cursor:pointer}.opt input{accent-color:var(--accent)}.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.seg button{flex:1;border:none;border-right:1px solid var(--line);background:var(--panel);color:var(--ink2);padding:7px 3px;cursor:pointer;font-size:11px}.seg button:last-child{border-right:0}.seg button.on{background:var(--accent-soft);color:var(--accent);font-weight:700}.render-info{font-size:11px;color:var(--quiet);margin-top:7px}.tips{font-size:11.5px;color:var(--ink2);line-height:1.7}.trust{border:0;background:transparent;padding:3px 2px 10px}.trust summary{color:var(--ink2);font-size:11px;cursor:pointer}.trust p{margin-top:6px;color:var(--quiet);font-size:10.5px}.trust strong{color:var(--ink2)}
+#stage{flex:1;min-width:0;position:relative;overflow:hidden;background:#0e0e10}#stage::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}#cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}#readout,#busy,#markLegend{background:rgba(18,20,25,.75);color:#f2f3f5;border:1px solid rgba(255,255,255,.13);backdrop-filter:blur(8px);box-shadow:0 6px 18px rgba(0,0,0,.16)}#readout{position:absolute;left:12px;bottom:12px;font-family:var(--mono);font-size:11px;padding:7px 10px;border-radius:8px;pointer-events:none;white-space:pre}#busy{position:absolute;right:12px;top:12px;color:#ffd479;font-size:11px;padding:6px 9px;border-radius:8px;display:none;pointer-events:none}.fabs{position:absolute;right:13px;bottom:13px;display:flex;flex-direction:column;gap:7px}.fab{width:40px;height:40px;border-radius:11px;border:none;background:var(--accent);color:#fff;font-size:17px;cursor:pointer;box-shadow:0 9px 24px rgba(0,0,0,.22);display:flex;align-items:center;justify-content:center}.fab:hover{filter:brightness(1.08)}.fab.ghost{background:rgba(255,255,255,.9);color:#252830;border:1px solid rgba(255,255,255,.5)}#markLegend{position:absolute;left:12px;top:12px;font-size:11px;padding:6px 9px;border-radius:8px;display:none;pointer-events:none}
+dialog{border:1px solid var(--line);border-radius:15px;padding:0;width:min(620px,calc(100% - 28px));max-height:88vh;background:var(--panel);color:var(--ink);box-shadow:0 24px 70px rgba(20,25,34,.24)}dialog::backdrop{background:rgba(20,23,29,.48);backdrop-filter:blur(2px)}.dlg-head{display:flex;align-items:center;justify-content:space-between;padding:15px 17px;border-bottom:1px solid var(--line);font-weight:750}.dlg-title{min-width:0}.dlg-title small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--quiet);font-size:10px;font-weight:600;letter-spacing:.06em}.dlg-head .btn{flex:none}.dlg-body{padding:16px 17px;overflow-y:auto;max-height:calc(88vh - 116px);font-size:12.5px}.quick-start{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.quick-step{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel-soft)}.quick-step b{display:block;color:var(--accent);font-size:11px;margin-bottom:3px}.quick-step span{color:var(--ink2);font-size:11px}.try-example{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;padding:10px 11px;border-radius:10px;background:var(--teal-soft);color:var(--teal)}.try-example code{font-family:var(--mono);font-size:12px}.docs{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}.docs>summary{cursor:pointer;color:var(--accent);font-weight:700}.docs h4{margin:13px 0 5px;color:var(--accent);font-size:12px}.docs table{border-collapse:collapse;width:100%;margin:4px 0}.docs td{border:1px solid var(--line);padding:5px 7px;font-size:11.5px}.docs td:first-child{font-family:var(--mono);white-space:nowrap;color:var(--accent)}.docs code{font-family:var(--mono);background:var(--chip);padding:1px 5px;border-radius:4px}.dlg-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 17px;border-top:1px solid var(--line)}.dlg-foot label{font-size:11px;color:var(--ink2);display:flex;gap:6px;align-items:center;cursor:pointer}#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:rgba(25,25,30,.9);color:#fff;padding:8px 16px;border-radius:99px;font-size:12px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}#toast.show{opacity:1}
+:where(a,button,input,summary):focus-visible{outline:2px solid var(--accent);outline-offset:2px}@media(max-width:900px){.current{display:none}.sidebar{width:318px;min-width:318px}}@media (orientation:portrait),(max-width:760px){body{overflow:auto}.topbar{position:sticky;top:0}.overview .label,.hbtn .label{display:none}.tool-switcher summary{font-size:0}.tool-switcher summary::after{content:"工具";font-size:12px}main{height:auto;min-height:calc(100dvh - 54px);flex-direction:column}.sidebar{width:auto;min-width:0;overflow:visible;padding:12px 13px 20px;border-right:0;border-top:1px solid var(--line);order:2}#stage{order:1;height:52dvh;min-height:330px;flex:none}.intro{display:none}.tool-menu{position:fixed;left:12px;right:12px;top:58px;width:auto}.quick-start{grid-template-columns:1fr}.try-example{align-items:stretch;flex-direction:column;gap:7px}.try-example .btn{width:100%}.dlg-foot{align-items:flex-start;flex-direction:column}.dlg-foot .btn{width:100%}#readout{max-width:calc(100% - 76px)}}@media(max-width:430px){.topbar{padding-inline:10px;gap:7px}.brand-text{font-size:13px}.brand-mark{width:29px;height:29px}.overview{padding-inline:7px}.top-actions{gap:2px}.hbtn{padding-inline:8px}.sidebar{padding-inline:10px}#stage{height:48dvh;min-height:300px}.fabs{right:9px;bottom:9px}.fab{width:38px;height:38px}.tool-menu{grid-template-columns:1fr 1fr}}@media(prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+<style>dialog{width:calc(100vw - 28px);max-width:620px;margin:auto}</style>
+</head>
+<body>
+<a class="skip" href="#workspace">跳到可视化画布</a>
+<header class="topbar">
+  <a class="brand" href="https://cyb-math.pages.dev/" aria-label="返回 CYB Math 总览"><span class="brand-mark" aria-hidden="true">ƒ</span><span class="brand-text">CYB Math</span></a>
+  <span class="current">复变函数可视化</span>
+  <div class="top-spacer"></div>
+  <a class="overview" href="https://cyb-math.pages.dev/"><span aria-hidden="true">⌂</span> <span class="label">返回总览</span></a>
+  <details class="tool-switcher">
+    <summary>切换工具⌄</summary>
+    <nav class="tool-menu" aria-label="CYB Math 工具">
+      <span class="active">ℂ 复变函数可视化</span>
+      <a href="https://math-tools-pro.pages.dev">∑ 综合工具</a><a href="https://math-plotter.pages.dev">ƒ 函数绘图</a>
+      <a href="https://math-equation.pages.dev">√ 方程求解</a><a href="https://math-geometry.pages.dev">△ 几何画板</a>
+      <a href="https://math-algebra.pages.dev">𝑥 代数计算</a><a href="https://math-3d.pages.dev">∰ 3D 绘图</a>
+      <a href="https://math-theory.pages.dev">ℤ 数论工具</a><a href="https://math-sequence.pages.dev">aₙ 数列工具</a>
+      <a href="https://math-latex.pages.dev">TeX 公式编辑</a><a href="https://math-fourier.pages.dev">∿ 傅里叶</a>
+    </nav>
+  </details>
+  <div class="top-actions">
+    <button class="hbtn" id="btnTheme" type="button" aria-label="切换主题" title="切换主题">◐</button>
+    <button class="hbtn" id="btnHelp" type="button" aria-label="打开帮助" title="帮助">?<span class="label"> 帮助</span></button>
+    <button class="hbtn" id="btnShare" type="button" aria-label="分享当前视图" title="分享">↗<span class="label"> 分享</span></button>
+  </div>
+</header>
+<main id="workspace">
+  <aside class="sidebar" aria-label="可视化控制面板">
+    <section class="intro">
+      <div class="intro-row"><div><div class="eyebrow">DOMAIN COLORING</div><h1>复变函数可视化</h1></div><span class="pro-badge">专业绘图</span></div>
+      <p>用颜色看见复函数的方向、大小、零点与极点。</p>
+      <div class="benefits" aria-label="工具特点"><span class="benefit" style="--tone:var(--teal)"><i></i>本地计算</span><span class="benefit" style="--tone:var(--orange)"><i></i>免费使用</span><span class="benefit" style="--tone:var(--violet)"><i></i>无需登录</span></div>
+    </section>
+    <section class="card" style="--tone:var(--accent)">
+      <div class="card-head"><i></i><h2>输入函数 w = f(z)</h2><span class="card-index">01</span></div>
+      <div class="expr-row"><input id="expr" spellcheck="false" placeholder="例：z^2-1 或 (z^2-1)/(z^2+1)" enterkeyhint="go"></div>
+      <div id="exprMsg" role="status" aria-live="polite"></div>
+      <div class="chips" id="chips" aria-label="函数示例"></div>
+    </section>
+    <section class="card" style="--tone:var(--teal)">
+      <div class="card-head"><i></i><h2>选择着色方案</h2><span class="card-index">02</span></div>
+      <div class="seg" id="schemeSeg">
+        <button type="button" data-s="classic">经典</button><button type="button" data-s="grid">网格</button><button type="button" data-s="phase">纯辐角</button><button type="button" data-s="bw">灰度</button>
+      </div>
+      <label class="opt"><input type="checkbox" id="optAxes" checked> 显示坐标轴与网格</label>
+      <label class="opt"><input type="checkbox" id="optMark" checked> 标注零点（红）与极点（蓝）</label>
+    </section>
+    <section class="card" style="--tone:var(--orange)">
+      <div class="card-head"><i></i><h2>调整视野与导出</h2><span class="card-index">03</span></div>
+      <div class="range-grid">
+        <label for="cx">中心 Re<input type="text" id="cx" value="0" inputmode="decimal"></label>
+        <label for="cy">中心 Im<input type="text" id="cy" value="0" inputmode="decimal"></label>
+        <label for="span">半宽<input type="text" id="span" value="3" inputmode="decimal"></label>
+        <div class="range-actions"><button class="btn" type="button" id="btnApply">应用</button><button class="btn" type="button" id="btnReset">复位</button></div>
+      </div>
+      <div class="render-info" id="renderInfo">—</div>
+      <div class="btnrow"><button class="btn primary" type="button" id="btnPng">导出 PNG</button></div>
+    </section>
+    <section class="card" style="--tone:var(--violet)">
+      <div class="card-head"><i></i><h2>画布操作</h2><span class="card-index">TIP</span></div>
+      <p class="tips">滚轮缩放 · 拖拽平移 · 双指捏合<br>悬停读取 z 与 f(z) · Enter 重绘</p>
+    </section>
+    <details class="trust"><summary>算法、限制与可靠性说明</summary><p><strong>实现：</strong>内置复数运算与表达式解析器、Canvas 2D 域着色。Gamma 使用 Lanczos 近似；Zeta 在 Re z &gt; 0 区域更可靠。零极点检测基于离散采样，结果仅供辅助，请自行验证。</p></details>
+  </aside>
+  <div id="stage">
+    <canvas id="cv" aria-label="复变函数域着色画布"></canvas>
+    <div id="markLegend">● 零点（红） · ● 极点（蓝），数字为重数</div>
+    <div id="busy">渲染中…（复杂函数请稍候）</div>
+    <div id="readout">z = —</div>
+    <div class="fabs">
+      <button class="fab ghost" type="button" id="fabIn" title="放大" aria-label="放大">＋</button>
+      <button class="fab ghost" type="button" id="fabOut" title="缩小" aria-label="缩小">－</button>
+      <button class="fab" type="button" id="fabPng" title="导出 PNG" aria-label="导出 PNG">↓</button>
+    </div>
+  </div>
+</main>
+<dialog id="helpDlg">
+  <div class="dlg-head"><span class="dlg-title">三步快速上手<small>复变函数可视化 · Domain Coloring</small></span><button class="btn" type="button" id="btnCloseHelp" aria-label="关闭帮助">✕</button></div>
+  <div class="dlg-body">
+    <div class="quick-start"><div class="quick-step"><b>01 · 输入</b><span>写入 f(z)，按 Enter 开始绘制。</span></div><div class="quick-step"><b>02 · 观察</b><span>色相表示辐角，明暗表示模长。</span></div><div class="quick-step"><b>03 · 探索</b><span>拖拽平移，滚轮或双指缩放。</span></div></div>
+    <div class="try-example"><span>从一个有零点和极点的例子开始：<br><code>(z²−1)/(z²+1)</code></span><button class="btn" type="button" id="btnExample">运行示例</button></div>
+    <details class="docs"><summary>查看完整文档与已知限制</summary>
+      <h4>这是什么</h4>
+      <p>域着色把每个复数 z 映射为画布上的一个点。色相表示 f(z) 的辐角，明暗条纹表示模长。全黑区域接近零点，全白区域接近极点。</p>
+      <h4>表达式语法</h4>
+      <table>
+      <tr><td>z^2-1</td><td>幂用 ^（也认上标 z²）；隐式乘法 2z、z(z+1)、2i 均可</td></tr>
+      <tr><td>(z^2-1)/(z^2+1)</td><td>有理函数：零点 ±1，极点 ±i</td></tr>
+      <tr><td>sin cos tan exp ln sqrt</td><td>复变初等函数；ln/sqrt 取主值（割线清晰可见）</td></tr>
+      <tr><td>sinh cosh tanh</td><td>双曲函数；log 同 ln（自然对数主值）</td></tr>
+      <tr><td>abs arg conj re im</td><td>模、辐角、共轭、实部、虚部</td></tr>
+      <tr><td>gamma(z) · Γ 函数</td><td>Lanczos 近似，全平面亚纯；看负整数处的极点</td></tr>
+      <tr><td>zeta(z) · ζ 函数</td><td>Dirichlet η + Euler 加速，Re z &gt; 0 区域准确；试把中心移到 0.5+14i 附近找非平凡零点（计算较慢）</td></tr>
+      <tr><td>\frac{z+1}{z} · \sqrt{z} · \pi</td><td>支持 LaTeX 写法；常量 pi、e、i</td></tr>
+      <tr><td>floor(z) ceil(z)</td><td>对实部、虚部分别取整（阶梯状着色）</td></tr>
+      </table>
+      <h4>画布交互</h4>
+      <table>
+      <tr><td>滚轮 / 双指</td><td>以指针为锚点缩放视野</td></tr>
+      <tr><td>拖拽</td><td>平移视野（交互中自动降低分辨率，松手后精绘）</td></tr>
+      <tr><td>悬停</td><td>左下角实时显示 z 与 f(z) 的直角式、模与辐角</td></tr>
+      <tr><td>复位</td><td>回到以原点为中心、半宽 3 的默认视野（x、y 始终等比例）</td></tr>
+      </table>
+      <h4>算法与限制</h4>
+      <p>Gamma 使用 Lanczos 近似；Zeta 使用 Dirichlet η 与 Euler 加速，在 Re z &gt; 0 区域更准确。零极点标注按辐角原理离散扫描，割线附近可能漏检或误检。结果仅供学习辅助，请自行验证。</p>
+      <h4>数据与分享</h4>
+      <p>所有计算均在浏览器本地完成，输入不上传。分享链接会编码函数、视野、着色方案与主题；设置保存在本机浏览器。PNG 导出包含当前画布和标注。</p>
+    </details>
+  </div>
+  <div class="dlg-foot">
+    <label><input type="checkbox" id="noHint"> 下次打开不再自动弹出</label>
+    <button class="btn primary" type="button" id="btnStart">开始使用</button>
+  </div>
+</dialog>
+<div id="toast"></div>
+
+<script id="core-lib">
+"use strict";
+/* ===== 复数库：一律用 [re, im] 二元数组 ===== */
+const C = {
+  num:(r,i)=>[r,i||0],
+  add:(a,b)=>[a[0]+b[0],a[1]+b[1]],
+  sub:(a,b)=>[a[0]-b[0],a[1]-b[1]],
+  neg:a=>[-a[0],-a[1]],
+  mul:(a,b)=>[a[0]*b[0]-a[1]*b[1], a[0]*b[1]+a[1]*b[0]],
+  div:(a,b)=>{const d=b[0]*b[0]+b[1]*b[1];
+    if(d===0) return [Infinity,Infinity];
+    return [(a[0]*b[0]+a[1]*b[1])/d,(a[1]*b[0]-a[0]*b[1])/d];},
+  abs:a=>Math.hypot(a[0],a[1]),
+  arg:a=>Math.atan2(a[1]+0,a[0]), // +0：把 −0 归一，使 arg(−1)=+π（主值约定）
+  exp:a=>{const r=Math.exp(a[0]);return [r*Math.cos(a[1]), r*Math.sin(a[1])];},
+  log:a=>{const r=Math.hypot(a[0],a[1]); return r===0?[NaN,NaN]:[Math.log(r), Math.atan2(a[1]+0,a[0])];},
+  pow:(a,b)=>{
+    if(b[1]===0 && Number.isInteger(b[0]) && Math.abs(b[0])<=64){ // 整数幂用快速幂，避免分支切割
+      let n=b[0]; if(n===0) return [1,0];
+      const negN=n<0; n=Math.abs(n);
+      let base=a, r=[1,0];
+      while(n>0){ if(n&1) r=C.mul(r,base); base=C.mul(base,base); n>>=1; }
+      return negN? C.div([1,0],r) : r;
+    }
+    if(a[0]===0&&a[1]===0) return [NaN,NaN];
+    return C.exp(C.mul(b, C.log(a)));
+  },
+  sqrt:a=>{const r=Math.hypot(a[0],a[1]); if(r===0)return[0,0];
+    const s=Math.sqrt(r), t=Math.atan2(a[1]+0,a[0])/2;
+    return [s*Math.cos(t), s*Math.sin(t)];},
+  sin:a=>[Math.sin(a[0])*Math.cosh(a[1]), Math.cos(a[0])*Math.sinh(a[1])],
+  cos:a=>[Math.cos(a[0])*Math.cosh(a[1]), -Math.sin(a[0])*Math.sinh(a[1])],
+  tan:a=>C.div(C.sin(a),C.cos(a)),
+  sinh:a=>[Math.sinh(a[0])*Math.cos(a[1]), Math.cosh(a[0])*Math.sin(a[1])],
+  cosh:a=>[Math.cosh(a[0])*Math.cos(a[1]), Math.sinh(a[0])*Math.sin(a[1])],
+  tanh:a=>C.div(C.sinh(a),C.cosh(a)),
+  conj:a=>[a[0],-a[1]],
+  re:a=>[a[0],0],
+  im:a=>[a[1],0],
+  absC:a=>[Math.hypot(a[0],a[1]),0],
+  argC:a=>[Math.atan2(a[1],a[0]),0],
+  floorC:a=>[Math.floor(a[0]),Math.floor(a[1])],
+  ceilC:a=>[Math.ceil(a[0]),Math.ceil(a[1])],
+};
+/* Gamma：Lanczos 近似（g=7, n=9），全平面亚纯延拓 */
+C.gamma = (function(){
+  const g=7, p=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,
+    -176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  return function(z){
+    if(z[0]<0.5){ // 反射公式 Γ(z)Γ(1−z)=π/sin(πz)
+      const s=C.sin([Math.PI*z[0],Math.PI*z[1]]);
+      const g2=C.gamma([1-z[0],-z[1]]);
+      return C.div([Math.PI,0], C.mul(s,g2));
+    }
+    const zm=[z[0]-1,z[1]];
+    let x=[p[0],0];
+    for(let i=1;i<g+2;i++) x=C.add(x, C.div([p[i],0],[zm[0]+i,zm[1]]));
+    const t=[zm[0]+g+0.5, zm[1]];
+    return C.mul(C.mul([Math.sqrt(2*Math.PI),0],
+      C.mul(C.pow(t,[zm[0]+0.5,zm[1]]), C.exp([-t[0],-t[1]]))), x);
+  };
+})();
+/* Riemann zeta：ζ(s)=η(s)/(1−2^(1−s))，η 用 Euler 加速（Re s ≳ −1 准确）。
+   交换求和顺序把二重和压成单和：权重 w_j=Σ_{k≥j} C(k,j)/2^(k+1) 预计算，每点仅 K+1 项 */
+C.zeta = (function(){
+  const K=40, lnT=[], wgt=new Float64Array(K+1);
+  for(let j=0;j<=K;j++) lnT[j]=Math.log(j+1);
+  const rows=[]; // 帕斯卡三角到第 K 行
+  for(let k=0;k<=K;k++){
+    const row=new Float64Array(k+1); row[0]=row[k]=1;
+    for(let j=1;j<k;j++) row[j]=rows[k-1][j-1]+rows[k-1][j];
+    rows.push(row);
+  }
+  for(let j=0;j<=K;j++){
+    let s=0;
+    for(let k=j;k<=K;k++) s+=rows[k][j]/Math.pow(2,k+1);
+    wgt[j]=s;
+  }
+  return function(s){
+    let er=0, ei=0, sg=1;
+    for(let j=0;j<=K;j++){
+      const t=-lnT[j], e=Math.exp(t*s[0])*wgt[j];
+      er+=sg*e*Math.cos(t*s[1]); ei+=sg*e*Math.sin(t*s[1]);
+      sg=-sg;
+    }
+    const p=C.pow([2,0],[1-s[0],-s[1]]);
+    return C.div([er,ei],[1-p[0],-p[1]]);
+  };
+})();
+if(typeof module!=="undefined") module.exports={C};
+</script>
+
+<script id="parser-lib">
+"use strict";
+/* ===== 复变表达式解析器：预处理 → 分词 → 递归下降 → 编译为 JS ===== */
+(function(){
+const FNAMES=["gamma","zeta","sinh","cosh","tanh","floor","ceil","sqrt","conj","sin","cos","tan","exp","abs","arg","log","ln","re","im"];
+const SUP={"⁰":"0","¹":"1","²":"2","³":"3","⁴":"4","⁵":"5","⁶":"6","⁷":"7","⁸":"8","⁹":"9"};
+
+function normalize(src){
+  let s=String(src==null?"":src).trim();
+  if(!s) throw new Error("表达式为空，请输入 f(z)，例如 z^2-1");
+  // 全角 → 半角
+  s=s.replace(/[\uFF01-\uFF5E]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0xFEE0)).replace(/\u3000/g," ");
+  s=s.replace(/[（【]/g,"(").replace(/[）】]/g,")").replace(/，/g,",").replace(/；/g,";");
+  s=s.replace(/\u2212/g,"-").replace(/[×\u00D7\u22C5\u00B7]/g,"*").replace(/[÷\u00F7]/g,"/");
+  // LaTeX 写法
+  s=s.replace(/\\d?frac|\\tfrac/g,"\\frac");
+  let prev;
+  do{ prev=s;
+    s=s.replace(/\\frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g,"(($1)/($2))");
+    s=s.replace(/\\sqrt\s*\[([^\]]*)\]\s*\{([^{}]*)\}/g,"(($2)^(1/($1)))");
+    s=s.replace(/\\sqrt\s*\{([^{}]*)\}/g,"sqrt($1)");
+  }while(s!==prev);
+  s=s.replace(/\\sqrt\s*([a-zA-Z0-9])/g,"sqrt($1)");
+  s=s.replace(/\\pi\b/g,"pi").replace(/\\Gamma\b/g,"gamma").replace(/\\zeta\b/g,"zeta");
+  s=s.replace(/\\lfloor/g,"floor(").replace(/\\rfloor/g,")").replace(/\\lceil/g,"ceil(").replace(/\\rceil/g,")");
+  s=s.replace(/\\cdot|\\times/g,"*").replace(/\\left|\\right/g,"");
+  s=s.replace(/π/g,"pi");
+  // 上标与根号
+  s=s.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g,m=>"^("+[...m].map(c=>SUP[c]).join("")+")");
+  s=s.replace(/√\s*\(/g,"sqrt(").replace(/√\s*([a-zA-Z0-9])/g,"sqrt($1)");
+  // 角度：60° → (60*pi/180)
+  s=s.replace(/(\d+(?:\.\d+)?)\s*°/g,"($1*pi/180)").replace(/°/g,"");
+  s=s.replace(/\s+/g,"");
+  return s;
+}
+
+function tokenize(src){
+  // 1) 保护函数名为占位符 \x00k\x00
+  let s=src; const fns=[];
+  FNAMES.forEach(name=>{
+    const re=new RegExp("\\b"+name+"\\b","g");
+    s=s.replace(re,()=>{ fns.push(name); return "\x00"+(fns.length-1)+"\x00"; });
+  });
+  // 2) 分词
+  const t=[]; let i=0;
+  while(i<s.length){
+    const ch=s[i];
+    if(ch==="\x00"){
+      const j=s.indexOf("\x00",i+1);
+      if(j<0) throw new Error("内部解析错误");
+      t.push({t:"func",f:fns[+s.slice(i+1,j)]}); i=j+1; continue;
+    }
+    if(/\d/.test(ch)||(ch==="."&&/\d/.test(s[i+1]||""))){
+      const m=s.slice(i).match(/^\d*\.?\d+(?:[eE][+-]?\d+)?/);
+      t.push({t:"num",v:parseFloat(m[0])}); i+=m[0].length; continue;
+    }
+    if(/[a-zA-Z]/.test(ch)){
+      if(ch==="p"&&s[i+1]==="i"){ t.push({t:"const",c:"pi"}); i+=2; continue; }
+      t.push({t:"id",v:ch}); i++; continue;
+    }
+    if("+-*/^".includes(ch)){ t.push({t:"op",v:ch}); i++; continue; }
+    if(ch==="("){ t.push({t:"lp"}); i++; continue; }
+    if(ch===")"){ t.push({t:"rp"}); i++; continue; }
+    throw new Error("无法识别的符号“"+ch+"”");
+  }
+  // 3) 括号配平：仅在无多余右括号时自动补齐
+  let bal=0;
+  for(const tk of t){ if(tk.t==="lp")bal++; if(tk.t==="rp")bal--; if(bal<0) throw new Error("右括号多余：请检查括号配对"); }
+  for(let k=0;k<bal;k++) t.push({t:"rp"});
+  // 4) 隐式乘法：(num|id|rp) 后紧跟 (num|id|lp|func) → 插入 *
+  const out=[];
+  for(let k=0;k<t.length;k++){
+    const cur=t[k], prev=out[out.length-1];
+    if(prev){
+      const pEnd=prev.t==="num"||prev.t==="id"||prev.t==="rp"||prev.t==="const";
+      const cBeg=cur.t==="num"||cur.t==="id"||cur.t==="lp"||cur.t==="func"||cur.t==="const";
+      if(pEnd&&cBeg) out.push({t:"op",v:"*"});
+    }
+    out.push(cur);
+  }
+  return out;
+}
+
+function parse(toks){
+  let p=0;
+  const peek=()=>toks[p];
+  const eat=()=>toks[p++];
+  function parseExpr(){ return parseAdd(); }
+  function parseAdd(){
+    let a=parseMul();
+    while(peek()&&peek().t==="op"&&(peek().v==="+"||peek().v==="-")){
+      const op=eat().v, b=parseMul(); a={n:"bin",op,a,b};
+    }
+    return a;
+  }
+  function parseMul(){
+    let a=parseUnary();
+    while(peek()&&peek().t==="op"&&(peek().v==="*"||peek().v==="/")){
+      const op=eat().v, b=parseUnary(); a={n:"bin",op,a,b};
+    }
+    return a;
+  }
+  function parseUnary(){
+    const tk=peek();
+    if(tk&&tk.t==="op"&&(tk.v==="-"||tk.v==="+")){
+      eat(); const a=parseUnary();
+      return tk.v==="-"?{n:"neg",a}:a;
+    }
+    return parsePow();
+  }
+  function parsePow(){
+    const base=parsePrimary();
+    if(peek()&&peek().t==="op"&&peek().v==="^"){
+      eat(); const e=parseUnary(); // 右结合，且允许 z^-2
+      return {n:"bin",op:"^",a:base,b:e};
+    }
+    return base;
+  }
+  function parsePrimary(){
+    const tk=peek();
+    if(!tk) throw new Error("表达式不完整：运算符后面缺少内容");
+    if(tk.t==="num"){ eat(); return {n:"num",v:tk.v}; }
+    if(tk.t==="const"){ eat(); return {n:"const",c:tk.c}; }
+    if(tk.t==="id"){
+      eat();
+      if(tk.v==="z") return {n:"var"};
+      if(tk.v==="i") return {n:"const",c:"i"};
+      if(tk.v==="e") return {n:"const",c:"e"};
+      throw new Error("未定义的符号“"+tk.v+"”：变量只有 z，常量有 i、pi、e");
+    }
+    if(tk.t==="func"){
+      eat();
+      if(!peek()||peek().t!=="lp") throw new Error("函数 "+tk.f+" 后面需要括号，如 "+tk.f+"(z)");
+      eat();
+      const a=parseExpr();
+      if(!peek()||peek().t!=="rp") throw new Error("函数 "+tk.f+" 缺少右括号");
+      eat();
+      return {n:"fn",f:tk.f,a};
+    }
+    if(tk.t==="lp"){
+      eat(); const a=parseExpr();
+      if(!peek()||peek().t!=="rp") throw new Error("缺少右括号");
+      eat(); return a;
+    }
+    if(tk.t==="rp") throw new Error("运算符位置错误：括号内缺少内容");
+    throw new Error("运算符位置错误：“"+tk.v+"”不能出现在这里");
+  }
+  const ast=parseExpr();
+  if(p<toks.length){
+    const tk=toks[p];
+    throw new Error(tk.t==="rp"?"右括号多余：请检查括号配对":"表达式在“"+(tk.v||tk.f||"")+"”附近无法解析");
+  }
+  return ast;
+}
+
+function codegen(a){
+  switch(a.n){
+    case "num": return "["+a.v+",0]";
+    case "var": return "z";
+    case "const": return a.c==="i"?"[0,1]":a.c==="pi"?"[Math.PI,0]":"[Math.E,0]";
+    case "neg": return "C.neg("+codegen(a.a)+")";
+    case "bin":{
+      const x=codegen(a.a), y=codegen(a.b);
+      const m={"+":"add","-":"sub","*":"mul","/":"div","^":"pow"}[a.op];
+      return "C."+m+"("+x+","+y+")";
+    }
+    case "fn":{
+      const x=codegen(a.a);
+      const map={sin:"sin",cos:"cos",tan:"tan",sinh:"sinh",cosh:"cosh",tanh:"tanh",
+        exp:"exp",ln:"log",log:"log",sqrt:"sqrt",abs:"absC",arg:"argC",conj:"conj",
+        re:"re",im:"im",floor:"floorC",ceil:"ceilC",gamma:"gamma",zeta:"zeta"};
+      return "C."+map[a.f]+"("+x+")";
+    }
+  }
+  throw new Error("内部解析错误");
+}
+
+function compileExpr(src){
+  const ast=parse(tokenize(normalize(src)));
+  const code=codegen(ast);
+  // AST 仅含白名单节点，生成的代码只调用 C.* 与变量 z，无注入面
+  const fn=new Function("z","C","return ("+code+");");
+  return {fn:(z)=>fn(z,C), code};
+}
+if(typeof module!=="undefined") module.exports={normalize,tokenize,parse,codegen,compileExpr};
+window.CVZ={compileExpr};
+})();
+</script>
+
+<script id="app-state">
+"use strict";
+/* ===== 状态、持久化、分享、主题、帮助 ===== */
+const $=id=>document.getElementById(id);
+const DEF={expr:"(z^2-1)/(z^2+1)",cx:0,cy:0,span:3,scheme:"classic",axes:true,mark:true,theme:document.documentElement.dataset.theme==="dark"?"dark":"light"};
+let S=Object.assign({},DEF);
+let compiled=null; // 编译后的 f(z)
+
+function saveLocal(){ try{localStorage.setItem("cvz-state",JSON.stringify(S));}catch(e){} }
+function loadState(){
+  try{
+    const m=location.hash.match(/#d=([A-Za-z0-9+/=_-]+)/);
+    if(m){
+      const b=m[1].replace(/-/g,"+").replace(/_/g,"/");
+      const d=JSON.parse(decodeURIComponent(escape(atob(b))));
+      if(d&&typeof d.expr==="string"){ S=Object.assign({},DEF,d); return; }
+    }
+  }catch(e){}
+  try{
+    const d=JSON.parse(localStorage.getItem("cvz-state")||"null");
+    if(d&&typeof d.expr==="string") S=Object.assign({},DEF,d);
+  }catch(e){}
+}
+function shareURL(){
+  const d=JSON.stringify({expr:S.expr,cx:S.cx,cy:S.cy,span:S.span,scheme:S.scheme,axes:S.axes,mark:S.mark,theme:S.theme});
+  const b=btoa(unescape(encodeURIComponent(d))).replace(/\+/g,"-").replace(/\//g,"_");
+  return location.origin+location.pathname+"#d="+b;
+}
+function applyTheme(){
+  document.documentElement.dataset.theme=S.theme;
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.content=S.theme==="dark"?"#141619":"#f6f6f2";
+  const themeBtn=$("btnTheme");
+  if(themeBtn) themeBtn.setAttribute("aria-label",S.theme==="dark"?"切换浅色主题":"切换深色主题");
+  try{localStorage.setItem("cvz-theme",S.theme);}catch(e){}
+}
+
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._tm); t._tm=setTimeout(()=>t.classList.remove("show"),1800); }
+
+/* ===== 着色 ===== */
+function hsv2rgb(h,s,v){
+  h=(h-Math.floor(h))*6;
+  const i=Math.floor(h), f=h-i;
+  const p=v*(1-s), q=v*(1-s*f), t2=v*(1-s*(1-f));
+  let r,g,b;
+  switch(i%6){
+    case 0:r=v;g=t2;b=p;break; case 1:r=q;g=v;b=p;break; case 2:r=p;g=v;b=t2;break;
+    case 3:r=p;g=q;b=v;break; case 4:r=t2;g=p;b=v;break; default:r=v;g=p;b=q;
+  }
+  return [r*255|0,g*255|0,b*255|0];
+}
+function shadePixel(w,scheme){
+  const re=w[0], im=w[1];
+  if(re!==re||im!==im) return [16,16,18];
+  const m=Math.hypot(re,im);
+  if(m===Infinity||m>1e15) return [255,255,255];
+  let h=Math.atan2(im,re)/6.283185307179586; h-=Math.floor(h);
+  if(scheme==="phase") return hsv2rgb(h,1,1);
+  if(scheme==="bw"){ const v=(h*255)|0; return [v,v,v]; }
+  const lm=Math.log2(m+1e-300), lf=lm-Math.floor(lm);
+  if(scheme==="grid"){
+    const dl=Math.abs(lf-Math.round(lf));
+    const ah=h*12, ad=Math.abs(ah-Math.round(ah));
+    let v=0.95;
+    if(dl<0.05) v=0.42;
+    if(ad<0.05) v=Math.min(v,0.55);
+    return hsv2rgb(h,0.85,v);
+  }
+  const band=lf<0.5?lf*2:2-lf*2;
+  let v=0.60+0.40*band;
+  const ah=h*12, ad=Math.abs(ah-Math.round(ah));
+  if(ad<0.035) v*=0.76;
+  return hsv2rgb(h,0.88,v);
+}
+
+/* ===== 渲染引擎 ===== */
+const stage=$("stage"), cv=$("cv"), ctx=cv.getContext("2d");
+const tmp=document.createElement("canvas"), tctx=tmp.getContext("2d");
+let W=0,H=0,dpr=1;
+let renderToken=0, marks=[], heavy=false; // heavy：zeta/gamma 类重函数，降采样渲染
+const IMG_MAX=1536; // 单边像素上限，控制重函数耗时
+/* MessageChannel 调度：避免 setTimeout(0) 被浏览器节流，保证分带渲染及时推进 */
+const _chan=new MessageChannel(); let _bandCb=null;
+_chan.port1.onmessage=()=>{ const cb=_bandCb; _bandCb=null; if(cb) cb(); };
+function scheduleBand(cb){ _bandCb=cb; _chan.port2.postMessage(0); }
+
+function resize(){
+  const r=stage.getBoundingClientRect();
+  dpr=Math.min(window.devicePixelRatio||1,2);
+  W=Math.max(80,Math.round(r.width*dpr));
+  H=Math.max(80,Math.round(r.height*dpr));
+  const sc=Math.min(1,IMG_MAX/Math.max(W,H));
+  if(sc<1){ W=Math.round(W*sc); H=Math.round(H*sc); }
+  if(cv.width!==W||cv.height!==H){ cv.width=W; cv.height=H; }
+}
+function pxToZ(px,py){ // 设备像素 → 复平面坐标（等比例）
+  const x=S.cx+(px/W-0.5)*2*S.span;
+  const y=S.cy-(py/H-0.5)*2*S.span*(H/W);
+  return [x,y];
+}
+function zToPx(x,y){
+  const px=((x-S.cx)/(2*S.span)+0.5)*W;
+  const py=(0.5-(y-S.cy)/(2*S.span*(H/W)))*H;
+  return [px,py];
+}
+
+function render(quality){
+  if(!compiled) return;
+  const my=++renderToken;
+  resize();
+  const q=quality*(heavy?0.7:1);
+  const rw=Math.max(32,Math.round(W*q)), rh=Math.max(32,Math.round(H*q));
+  tmp.width=rw; tmp.height=rh;
+  const img=tctx.createImageData(rw,rh), buf=img.data;
+  const fn=compiled, scheme=S.scheme;
+  const t0=performance.now();
+  const bandRows=Math.max(1,Math.ceil(rh/24));
+  let py=0;
+  $("busy").style.display=quality>=1?"block":"none";
+  (function band(){
+    if(my!==renderToken) return;
+    const yEnd=Math.min(rh,py+bandRows);
+    for(let y=py;y<yEnd;y++){
+      const im=S.cy-(y/(rh-1)-0.5)*2*S.span*(H/W);
+      let o=y*rw*4;
+      for(let x=0;x<rw;x++){
+        const re=S.cx+(x/(rw-1)-0.5)*2*S.span;
+        const w=fn([re,im]);
+        const c=shadePixel(w,scheme);
+        buf[o]=c[0]; buf[o+1]=c[1]; buf[o+2]=c[2]; buf[o+3]=255; o+=4;
+      }
+    }
+    tctx.putImageData(img,0,0,0,py,rw,yEnd-py);
+    py=yEnd;
+    ctx.imageSmoothingEnabled=quality<1;
+    ctx.drawImage(tmp,0,0,rw,rh,0,0,W,H);
+    if(py<rh){ scheduleBand(band); return; }
+    // 本层完成
+    if(my!==renderToken) return;
+    if(quality>=1){
+      $("busy").style.display="none";
+      const ms=Math.round(performance.now()-t0);
+      $("renderInfo").textContent="渲染 "+ms+" ms · "+W+"×"+H;
+      drawOverlay();
+    }
+  })();
+}
+let fineTm=0, quickTm=0, lastQuick=0;
+const QUICK_FRAME_MS=40; // 交互预览最高约 25 FPS，避免指针事件挤占主线程
+function requestRender(quick){
+  if(quick){
+    clearTimeout(fineTm);
+    fineTm=setTimeout(()=>{
+      if(quickTm){ clearTimeout(quickTm); quickTm=0; }
+      render(1);
+    },180);
+    if(quickTm) return;
+    const wait=Math.max(0,QUICK_FRAME_MS-(performance.now()-lastQuick));
+    quickTm=setTimeout(()=>{
+      quickTm=0;
+      lastQuick=performance.now();
+      render(0.18);
+    },wait);
+  }else{
+    clearTimeout(fineTm);
+    if(quickTm){ clearTimeout(quickTm); quickTm=0; }
+    render(1);
+  }
+}
+</script>
+
+<script id="app-overlay">
+"use strict";
+/* ===== 坐标轴/网格叠加 + 零点极点检测标注 ===== */
+function niceStep(raw){ // 1/2/5×10^k
+  const p=Math.pow(10,Math.floor(Math.log10(raw)));
+  const m=raw/p;
+  return (m<1.5?1:m<3.5?2:m<7.5?5:10)*p;
+}
+function fmtTick(v){
+  if(Math.abs(v)<1e-12) return "0";
+  const a=Math.abs(v);
+  if(a>=1e5||a<1e-4) return v.toExponential(1);
+  return String(Math.round(v*1e6)/1e6);
+}
+function drawOverlay(){
+  if(S.axes){
+    const spanX=2*S.span, spanY=2*S.span*(H/W);
+    const step=niceStep(Math.max(spanX,spanY)/8);
+    ctx.save();
+    ctx.lineWidth=dpr*0.8;
+    ctx.font=(11*dpr)+"px ui-monospace,Consolas,monospace";
+    // 细网格
+    ctx.strokeStyle="rgba(128,128,128,0.28)";
+    const x0=S.cx-spanX/2, x1=S.cx+spanX/2, y0=S.cy-spanY/2, y1=S.cy+spanY/2;
+    for(let gx=Math.ceil(x0/step)*step; gx<=x1+1e-12; gx+=step){
+      const p=zToPx(gx,0)[0];
+      ctx.beginPath(); ctx.moveTo(p,0); ctx.lineTo(p,H); ctx.stroke();
+    }
+    for(let gy=Math.ceil(y0/step)*step; gy<=y1+1e-12; gy+=step){
+      const p=zToPx(0,gy)[1];
+      ctx.beginPath(); ctx.moveTo(0,p); ctx.lineTo(W,p); ctx.stroke();
+    }
+    // 主轴
+    ctx.strokeStyle="rgba(128,128,128,0.7)"; ctx.lineWidth=dpr*1.1;
+    if(y0<=0&&y1>=0){ const p=zToPx(0,0)[1]; ctx.beginPath(); ctx.moveTo(0,p); ctx.lineTo(W,p); ctx.stroke(); }
+    if(x0<=0&&x1>=0){ const p=zToPx(0,0)[0]; ctx.beginPath(); ctx.moveTo(p,0); ctx.lineTo(p,H); ctx.stroke(); }
+    // 刻度标签（画在轴上，轴不可见时贴边）
+    ctx.fillStyle="rgba(200,200,200,0.85)";
+    const axY=y0<=0&&y1>=0? zToPx(0,0)[1] : (y1<0? H-14*dpr : 6*dpr);
+    const axX=x0<=0&&x1>=0? zToPx(0,0)[0] : (x1<0? W-34*dpr : 6*dpr);
+    for(let gx=Math.ceil(x0/step)*step; gx<=x1+1e-12; gx+=step){
+      if(Math.abs(gx)<step*0.01) continue;
+      const p=zToPx(gx,0)[0];
+      ctx.fillText(fmtTick(gx), p+3*dpr, axY+12*dpr);
+    }
+    for(let gy=Math.ceil(y0/step)*step; gy<=y1+1e-12; gy+=step){
+      if(Math.abs(gy)<step*0.01) continue;
+      const p=zToPx(0,gy)[1];
+      ctx.fillText(fmtTick(gy)+"i", axX+4*dpr, p-3*dpr);
+    }
+    ctx.fillText("0", axX+4*dpr, axY+12*dpr);
+    ctx.restore();
+  }
+  if(S.mark&&compiled){
+    marks=detectSingularities();
+    drawMarks();
+  }else{
+    marks=[];
+    $("markLegend").style.display="none";
+  }
+}
+function drawMarks(){
+  $("markLegend").style.display=marks.length?"block":"none";
+  ctx.save();
+  ctx.font="bold "+(11*dpr)+"px sans-serif";
+  ctx.textAlign="center";
+  for(const m of marks){
+    const p=zToPx(m.x,m.y);
+    if(p[0]<-20||p[0]>W+20||p[1]<-20||p[1]>H+20) continue;
+    const zero=m.n>0;
+    ctx.beginPath();
+    ctx.arc(p[0],p[1],6*dpr,0,6.2832);
+    ctx.fillStyle=zero?"rgba(255,70,60,0.92)":"rgba(70,140,255,0.92)";
+    ctx.fill();
+    ctx.lineWidth=1.5*dpr; ctx.strokeStyle="rgba(255,255,255,0.9)"; ctx.stroke();
+    ctx.fillStyle="#fff";
+    ctx.fillText(zero?"0":"∞", p[0], p[1]+4*dpr);
+    const n=Math.abs(m.n);
+    if(n>1){
+      ctx.font="bold "+(9*dpr)+"px sans-serif";
+      ctx.fillText(String(n), p[0]+9*dpr, p[1]-6*dpr);
+      ctx.font="bold "+(11*dpr)+"px sans-serif";
+    }
+  }
+  ctx.restore();
+}
+/* 辐角原理：网格环绕数检测零点(+)与极点(−) */
+function detectSingularities(){
+  const N=64;
+  const spanX=2*S.span, spanY=2*S.span*(H/W);
+  // 格线错开非整数偏移：避免格点恰好落在对称轴上，导致 f 值正好落在负实轴、arg 差分恰为 ±π 的歧义折叠
+  const off=spanX/N;
+  const x0=S.cx-spanX/2+0.37*off, y1=S.cy+spanY/2-0.73*off;
+  const fn=compiled;
+  const ang=new Array(N+1);
+  for(let i=0;i<=N;i++) ang[i]=new Array(N+1);
+  for(let j=0;j<=N;j++){
+    const im=y1-(j/N)*spanY;
+    for(let i=0;i<=N;i++){
+      const re=x0+(i/N)*spanX;
+      const w=fn([re,im]);
+      const r=w[0], q=w[1];
+      if(r!==r||q!==q){ ang[i][j]=null; continue; }
+      let rr=r, qq=q;
+      const mm=Math.max(Math.abs(rr),Math.abs(qq));
+      if(mm>1e12){ rr/=mm; qq/=mm; } // 极点附近只保留方向
+      ang[i][j]=Math.atan2(qq,rr);
+    }
+  }
+  const out=[];
+  for(let j=0;j<N;j++){
+    for(let i=0;i<N;i++){
+      const a=ang[i][j], b=ang[i+1][j], c=ang[i+1][j+1], d=ang[i][j+1];
+      if(a==null||b==null||c==null||d==null) continue;
+      let sum=0;
+      const seq=[a,b,c,d,a];
+      for(let k=0;k<4;k++){
+        let dd=seq[k+1]-seq[k];
+        dd-=Math.round(dd/6.283185307179586)*6.283185307179586;
+        sum+=dd;
+      }
+      // cell 四角顺序 a→b→c→d 在数学平面上为顺时针（j 增大对应 Im 减小），取负使零点为正
+      const n=Math.round(-sum/6.283185307179586);
+      if(n!==0){
+        out.push({x:x0+((i+0.5)/N)*spanX, y:y1-((j+0.5)/N)*spanY, n});
+      }
+    }
+  }
+  // 合并邻近 cell：一个高阶零点会被若干相邻格各自贡献 +1，合并时环绕数相加才是总重数
+  const cell=spanX/N;
+  const merged=[];
+  for(const m of out){
+    const dup=merged.find(u=>Math.sign(u.n)===Math.sign(m.n)&&Math.hypot(u.x-m.x,u.y-m.y)<cell*2.0);
+    if(dup){
+      dup.n+=m.n;
+      dup.x=(dup.x+m.x)/2; dup.y=(dup.y+m.y)/2;
+    }
+    else merged.push(m);
+  }
+  return merged.slice(0,60);
+}
+</script>
+
+<script id="app-main">
+"use strict";
+/* ===== 交互、读数、UI 绑定、初始化 ===== */
+function cssPxToZ(cssX,cssY){
+  const r=stage.getBoundingClientRect();
+  const x=S.cx+(cssX/r.width-0.5)*2*S.span;
+  const y=S.cy-(cssY/r.height-0.5)*2*S.span*(r.height/r.width);
+  return [x,y];
+}
+function zoomAt(cssX,cssY,f){
+  const a=cssPxToZ(cssX,cssY);
+  S.cx=a[0]+(S.cx-a[0])*f;
+  S.cy=a[1]+(S.cy-a[1])*f;
+  S.span=Math.min(1e6,Math.max(1e-9,S.span*f));
+}
+function fnum(x){
+  if(x!==x) return "NaN";
+  if(!isFinite(x)) return x>0?"∞":"−∞";
+  const v=Math.round(x*1e6)/1e6;
+  return String(v);
+}
+function cstr(w){
+  const re=fnum(w[0]), im=Math.abs(w[1]);
+  return re+(w[1]<0?" − ":" + ")+fnum(im)+"i";
+}
+function updateReadout(cssX,cssY){
+  const z=cssPxToZ(cssX,cssY);
+  let txt="z = "+cstr(z);
+  if(compiled){
+    try{
+      const w=compiled(z);
+      txt+="\nf(z) = "+cstr(w);
+      const m=C.abs(w);
+      if(isFinite(m)) txt+="\n|f| = "+fnum(m)+"   arg = "+fnum(C.arg(w)*180/Math.PI)+"°";
+    }catch(e){}
+  }
+  $("readout").textContent=txt;
+}
+
+/* 指针：单指平移 / 双指捏合 / 悬停读数 */
+const ptrs=new Map();
+cv.addEventListener("pointerdown",e=>{
+  cv.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId,{x:e.offsetX,y:e.offsetY});
+});
+cv.addEventListener("pointermove",e=>{
+  const r=stage.getBoundingClientRect();
+  if(ptrs.size===0){ updateReadout(e.offsetX,e.offsetY); return; }
+  if(!ptrs.has(e.pointerId)) return;
+  const prev=ptrs.get(e.pointerId);
+  ptrs.set(e.pointerId,{x:e.offsetX,y:e.offsetY});
+  if(ptrs.size===1){
+    const scale=2*S.span/r.width;
+    S.cx-=(e.offsetX-prev.x)*scale;
+    S.cy+=(e.offsetY-prev.y)*scale;
+    requestRender(true);
+  }else if(ptrs.size===2){
+    const arr=[...ptrs.values()];
+    const old=arr.map((p,i)=>p); // 当前值（本指针已更新）
+    // 用事件前的另一指针 + 本指针 prev 重建上一帧
+    const others=arr.filter(p=>p!==ptrs.get(e.pointerId));
+    const pmid={x:(prev.x+others[0].x)/2, y:(prev.y+others[0].y)/2};
+    const cmid={x:(e.offsetX+others[0].x)/2, y:(e.offsetY+others[0].y)/2};
+    const pd=Math.hypot(prev.x-others[0].x,prev.y-others[0].y);
+    const cd=Math.hypot(e.offsetX-others[0].x,e.offsetY-others[0].y);
+    const scale=2*S.span/r.width;
+    S.cx-=(cmid.x-pmid.x)*scale; S.cy+=(cmid.y-pmid.y)*scale;
+    if(pd>0&&cd>0) zoomAt(cmid.x,cmid.y,pd/cd);
+    requestRender(true);
+  }
+});
+function endPtr(e){
+  if(ptrs.delete(e.pointerId)&&ptrs.size===0){ saveLocal(); requestRender(false); }
+}
+cv.addEventListener("pointerup",endPtr);
+cv.addEventListener("pointercancel",endPtr);
+cv.addEventListener("pointerleave",e=>{ if(ptrs.size===0) $("readout").textContent="z = —"; });
+cv.addEventListener("wheel",e=>{
+  e.preventDefault();
+  zoomAt(e.offsetX,e.offsetY,Math.exp(e.deltaY*0.0012));
+  saveLocal(); requestRender(true);
+},{passive:false});
+
+/* ===== 控件绑定 ===== */
+const EXAMPLES=[
+  ["z","z"],["z²−1","z^2-1"],["(z²−1)/(z²+1)","(z^2-1)/(z^2+1)"],["sin(z)","sin(z)"],
+  ["e^z","e^z"],["ln(z)","ln(z)"],["1/z","1/z"],["(z−i)/(z+i)","(z-i)/(z+i)"],
+  ["gamma(z)","gamma(z)"],["zeta(z)","zeta(z)"],["tan(z)","tan(z)"],["z^z","z^z"]
+];
+(function(){
+  const box=$("chips");
+  for(const [label,src] of EXAMPLES){
+    const b=document.createElement("button");
+    b.className="chip"; b.textContent=label;
+    b.onclick=()=>{ $("expr").value=src; applyExpr(); };
+    box.appendChild(b);
+  }
+})();
+function applyExpr(){
+  const src=$("expr").value;
+  try{
+    const r=window.CVZ.compileExpr(src);
+    compiled=r.fn;
+    heavy=/zeta|gamma/.test(src);
+    S.expr=src.trim();
+    $("expr").classList.remove("err");
+    $("exprMsg").className=""; $("exprMsg").id="exprMsg"; $("exprMsg").classList.add("ok");
+    $("exprMsg").textContent="✓ 已编译，绘制中…";
+    if(/zeta|gamma/.test(src)) toast("该函数计算量较大，渲染可能较慢");
+    saveLocal();
+    requestRender();
+  }catch(e){
+    $("expr").classList.add("err");
+    $("exprMsg").classList.remove("ok");
+    $("exprMsg").textContent="✕ "+e.message;
+  }
+}
+$("expr").addEventListener("keydown",e=>{ if(e.key==="Enter") applyExpr(); });
+$("expr").addEventListener("input",()=>{
+  // 即时校验但不重绘
+  try{ window.CVZ.compileExpr($("expr").value); $("expr").classList.remove("err");
+    $("exprMsg").classList.add("ok"); $("exprMsg").textContent="✓ 语法正确（Enter 重绘）";
+  }catch(e){ $("expr").classList.add("err"); $("exprMsg").classList.remove("ok"); $("exprMsg").textContent="✕ "+e.message; }
+});
+document.querySelectorAll("#schemeSeg button").forEach(b=>{
+  b.onclick=()=>{
+    S.scheme=b.dataset.s;
+    document.querySelectorAll("#schemeSeg button").forEach(x=>x.classList.toggle("on",x===b));
+    saveLocal(); requestRender();
+  };
+});
+$("optAxes").onchange=e=>{ S.axes=e.target.checked; saveLocal(); requestRender(); };
+$("optMark").onchange=e=>{ S.mark=e.target.checked; saveLocal(); requestRender(); };
+function evalNum(s){
+  s=String(s).trim().replace(/[\uFF01-\uFF5E]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0xFEE0)).replace(/π/g,"pi");
+  if(!s) throw new Error("空值");
+  if(!/^[\d+\-*/().\seEpi]+$/.test(s)) throw new Error("只能输入数字与 + - * / ( ) pi e");
+  s=s.replace(/\bpi\b/g,"(Math.PI)").replace(/\be\b/g,"(Math.E)");
+  const v=Function("\"use strict\";return ("+s+")")();
+  if(typeof v!=="number"||!isFinite(v)) throw new Error("结果不是有限数");
+  return v;
+}
+$("btnApply").onclick=()=>{
+  try{
+    S.cx=evalNum($("cx").value); S.cy=evalNum($("cy").value);
+    const sp=Math.abs(evalNum($("span").value));
+    if(sp<=0) throw new Error("半宽必须为正数");
+    S.span=sp;
+    saveLocal(); requestRender();
+  }catch(e){ toast("范围无效："+e.message); }
+};
+$("btnReset").onclick=()=>{ S.cx=0; S.cy=0; S.span=3; syncUI(); saveLocal(); requestRender(); };
+function exportPNG(){
+  cv.toBlob(b=>{
+    if(!b){ toast("导出失败"); return; }
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(b);
+    a.download="复变函数_"+S.expr.replace(/[^\w\u4e00-\u9fa5+-]/g,"_").slice(0,40)+".png";
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    toast("已导出 PNG");
+  });
+}
+$("btnPng").onclick=exportPNG;
+$("fabPng").onclick=exportPNG;
+$("fabIn").onclick=()=>{ const r=stage.getBoundingClientRect(); zoomAt(r.width/2,r.height/2,1/1.7); saveLocal(); requestRender(); };
+$("fabOut").onclick=()=>{ const r=stage.getBoundingClientRect(); zoomAt(r.width/2,r.height/2,1.7); saveLocal(); requestRender(); };
+$("btnTheme").onclick=()=>{ S.theme=S.theme==="dark"?"light":"dark"; applyTheme(); saveLocal(); requestRender(); };
+$("btnShare").onclick=async()=>{
+  const url=shareURL();
+  try{ history.replaceState(null,"","#d="+url.split("#d=")[1]); }catch(e){}
+  try{ await navigator.clipboard.writeText(url); toast("分享链接已复制"); }
+  catch(e){ prompt("复制分享链接：",url); }
+};
+/* 帮助弹窗 */
+const helpDlg=$("helpDlg");
+$("btnHelp").onclick=()=>helpDlg.showModal();
+$("btnCloseHelp").onclick=()=>helpDlg.close();
+$("btnStart").onclick=()=>helpDlg.close();
+$("btnExample").onclick=()=>{ $("expr").value="(z^2-1)/(z^2+1)"; applyExpr(); helpDlg.close(); toast("示例已运行"); };
+helpDlg.addEventListener("close",()=>{ try{ if($("noHint").checked) localStorage.setItem("cvz-nohint","1"); else localStorage.removeItem("cvz-nohint"); }catch(e){} });
+helpDlg.addEventListener("click",e=>{ if(e.target===helpDlg) helpDlg.close(); });
+document.addEventListener("click",e=>{
+  const switcher=document.querySelector(".tool-switcher");
+  if(switcher&&switcher.open&&!switcher.contains(e.target)) switcher.open=false;
+});
+
+/* ===== 初始化 ===== */
+function syncUI(){
+  $("expr").value=S.expr;
+  $("cx").value=S.cx; $("cy").value=S.cy; $("span").value=S.span;
+  $("optAxes").checked=S.axes; $("optMark").checked=S.mark;
+  document.querySelectorAll("#schemeSeg button").forEach(x=>x.classList.toggle("on",x.dataset.s===S.scheme));
+}
+loadState();
+applyTheme();
+syncUI();
+applyExpr();
+try{ if(!localStorage.getItem("cvz-nohint")) helpDlg.showModal(); }catch(e){ helpDlg.showModal(); }
+new ResizeObserver(()=>requestRender()).observe(stage);
+</script>
+</body>
+</html>

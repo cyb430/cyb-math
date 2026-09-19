@@ -1,0 +1,343 @@
+{
+  "capturedAt": "2026-09-07T16:14:41.499Z",
+  "main": {
+    "url": "https://cyb-math.pages.dev/",
+    "status": 200,
+    "title": "CYB 的数学工具箱",
+    "length": 15312,
+    "contentType": "text/html; charset=utf-8",
+    "server": "cloudflare"
+  },
+  "sites": [
+    {
+      "url": "https://math-tools-pro.pages.dev",
+      "status": 200,
+      "ok": true,
+      "finalUrl": "https://math-tools-pro.pages.dev/",
+      "title": "Math Empire — 数学帝国工具箱",
+      "description": "",
+      "length": 18894636,
+      "contentType": "text/html; charset=utf-8",
+      "server": "cloudflare"
+    },
+    {
+      "url": "https://math-plotter.pages.dev",
+      "status": 200,
+      "ok": true,
+      "finalUrl": "https://math-plotter.pages.dev/",
+      "title": "函数图像绘制器 v3.1",
+      "description": "",
+      "length": 144155,
+      "contentType": "text/html; charset=utf-8",
+      "server": "cloudflare"
+    },
+    {
+      "url": "https://math-equation.pages.dev",
+      "status": 200,
+      "ok": true,
+      "finalUrl": "https://math-equation.pages.dev/",
+      "title": "方程求解器 Equation Solver Pro",
+      "description": "",
+      "length": 80445,
+      "contentType": "text/html; charset=utf-8",
+      "server": "cloudflare"
+    },
+    {
+      "url": "https://math-geometry.pages.dev",
+      "status": 200,
+      "ok": true,
+      "finalUrl": "https://math-geometry.pages.dev/",
+      "title": "几何画板 5.06 迷你增强版 - 未命名1",
+      "description": "",
+      "length": 295198,
+      "contentType": "text/html; charset=utf-8",
+      "server": "cloudflare"
+    },
+    {
+      "url": "https://math-algebra.pages.dev",
+      "status": 200,
+      "ok": true,
+      "finalUrl": "https://math-algebra.pages.dev/",
+      "title": "代数式化简器 v1.3",
+      "description": "",
+      "length": 2712145,
+      "contentType": "text/html; charset=utf-8",
+      "server": "cloudflare"
+    },
+    {
+      "url": "https://math-3d.pages.dev",
+      "status": 200,
+      "ok": true,
+      "finalUrl": "https://math-3d.pages.dev/",
+      "title": "三维数学绘图器",
+      "description": "",
+      "length": 762241,
+      "contentType": "text/html; charset=utf-8",
+      "server": "cloudflare"
+    },
+    {
+      "url": "https://math-theory.pages.dev",
+      "status": 200,
+      "ok": true,
+      "finalUrl": "https://math-theory.pages.dev/",
+      "title": "数论工具箱 — Number Theory Toolbox",
+      "description": "",
+      "length": 145132,
+      "contentType": "text/html; charset=utf-8",
+      "server": "cloudflare"
+    },
+    {
+      "url": "https://math-sequence.pages.dev",
+      "status": 200,
+      "ok": true,
+      "finalUrl": "https://math-sequence.pages.dev/",
+      "title": "数列工具 — Sequence Tools",
+      "description": "",
+      "length": 74100,
+      "contentType": "text/html; charset=utf-8",
+      "server": "cloudflare"
+    },
+    {
+      "url": "https://math-latex.pages.dev",
+      "status": 200,
+      "ok": true,
+      "finalUrl": "https://math-latex.pages.dev/",
+      "title": "LaTeX 公式编辑器 — math-latex",
+      "description": "",
+      "length": 744198,
+      "contentType": "text/html; charset=utf-8",
+      "server": "cloudflare"
+    },
+    {
+      "url": "https://math-fourier.pages.dev",
+      "status": 200,
+      "ok": true,
+      "finalUrl": "https://math-fourier.pages.dev/",
+      "title": "傅里叶级数可视化 — math-fourier",
+      "description": "",
+      "length": 87952,
+      "contentType": "text/html; charset=utf-8",
+      "server": "cloudflare"
+    }
+  ],
+  "cards": [
+    {
+      "url": "https://math-tools-pro.pages.dev",
+      "text": "∑ 数学实用工具 计算、统计、分形、物理模拟等一体化工具集 math-tools-pro.pages.dev →"
+    },
+    {
+      "url": "https://math-plotter.pages.dev",
+      "text": "ƒ 数学函数绘图 函数图像绘制，支持隐函数、不等式与求和求积 math-plotter.pages.dev →"
+    },
+    {
+      "url": "https://math-equation.pages.dev",
+      "text": "√ 数学方程求解 方程与方程组求解，逐步展示计算过程 math-equation.pages.dev →"
+    },
+    {
+      "url": "https://math-geometry.pages.dev",
+      "text": "△ 数学几何画板 动态几何作图，点线面圆自由拖拽探索 math-geometry.pages.dev →"
+    },
+    {
+      "url": "https://math-algebra.pages.dev",
+      "text": "𝑥 数学代数计算 代数运算与化简，因式分解、展开与多项式计算 math-algebra.pages.dev →"
+    },
+    {
+      "url": "https://math-3d.pages.dev",
+      "text": "∰ 数学3D绘图 三维曲面与空间图形绘制，旋转缩放自由探索 math-3d.pages.dev →"
+    },
+    {
+      "url": "https://math-theory.pages.dev",
+      "text": "ℤ 数学数论工具 质数判定与分解、同余方程、中国剩余定理、佩尔方程等 math-theory.pages.dev →"
+    },
+    {
+      "url": "https://math-sequence.pages.dev",
+      "text": "aₙ 数学数列工具 数列计算与探索，通项、求和与递推分析 math-sequence.pages.dev →"
+    },
+    {
+      "url": "https://math-latex.pages.dev",
+      "text": "TeX LaTeX 公式编辑器 所见即所得编辑数学公式，一键导出 PNG/SVG 图片 math-latex.pages.dev →"
+    },
+    {
+      "url": "https://math-fourier.pages.dev",
+      "text": "∿ 傅里叶级数可视化 圆环动画绘制任意路径，吉布斯现象与波形合成演示 math-fourier.pages.dev →"
+    }
+  ],
+  "headerChecks": [
+    {
+      "url": "https://cyb-math.pages.dev/",
+      "status": 200,
+      "headers": {
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-content-type-options": "nosniff",
+        "x-frame-options": null,
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": null,
+        "cross-origin-opener-policy": null,
+        "cross-origin-embedder-policy": null,
+        "cache-control": "public, max-age=0, must-revalidate",
+        "etag": null
+      }
+    },
+    {
+      "url": "https://math-tools-pro.pages.dev",
+      "status": 200,
+      "headers": {
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-content-type-options": "nosniff",
+        "x-frame-options": null,
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": null,
+        "cross-origin-opener-policy": null,
+        "cross-origin-embedder-policy": null,
+        "cache-control": "public, max-age=0, must-revalidate",
+        "etag": null
+      }
+    },
+    {
+      "url": "https://math-plotter.pages.dev",
+      "status": 200,
+      "headers": {
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-content-type-options": "nosniff",
+        "x-frame-options": null,
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": null,
+        "cross-origin-opener-policy": null,
+        "cross-origin-embedder-policy": null,
+        "cache-control": "public, max-age=0, must-revalidate",
+        "etag": null
+      }
+    },
+    {
+      "url": "https://math-equation.pages.dev",
+      "status": 200,
+      "headers": {
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-content-type-options": "nosniff",
+        "x-frame-options": null,
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": null,
+        "cross-origin-opener-policy": null,
+        "cross-origin-embedder-policy": null,
+        "cache-control": "public, max-age=0, must-revalidate",
+        "etag": null
+      }
+    },
+    {
+      "url": "https://math-geometry.pages.dev",
+      "status": 200,
+      "headers": {
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-content-type-options": "nosniff",
+        "x-frame-options": null,
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": null,
+        "cross-origin-opener-policy": null,
+        "cross-origin-embedder-policy": null,
+        "cache-control": "public, max-age=0, must-revalidate",
+        "etag": null
+      }
+    },
+    {
+      "url": "https://math-algebra.pages.dev",
+      "status": 200,
+      "headers": {
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-content-type-options": "nosniff",
+        "x-frame-options": null,
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": null,
+        "cross-origin-opener-policy": null,
+        "cross-origin-embedder-policy": null,
+        "cache-control": "public, max-age=0, must-revalidate",
+        "etag": null
+      }
+    },
+    {
+      "url": "https://math-3d.pages.dev",
+      "status": 200,
+      "headers": {
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-content-type-options": "nosniff",
+        "x-frame-options": null,
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": null,
+        "cross-origin-opener-policy": null,
+        "cross-origin-embedder-policy": null,
+        "cache-control": "public, max-age=0, must-revalidate",
+        "etag": null
+      }
+    },
+    {
+      "url": "https://math-theory.pages.dev",
+      "status": 200,
+      "headers": {
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-content-type-options": "nosniff",
+        "x-frame-options": null,
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": null,
+        "cross-origin-opener-policy": null,
+        "cross-origin-embedder-policy": null,
+        "cache-control": "public, max-age=0, must-revalidate",
+        "etag": null
+      }
+    },
+    {
+      "url": "https://math-sequence.pages.dev",
+      "status": 200,
+      "headers": {
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-content-type-options": "nosniff",
+        "x-frame-options": null,
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": null,
+        "cross-origin-opener-policy": null,
+        "cross-origin-embedder-policy": null,
+        "cache-control": "public, max-age=0, must-revalidate",
+        "etag": null
+      }
+    },
+    {
+      "url": "https://math-latex.pages.dev",
+      "status": 200,
+      "headers": {
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-content-type-options": "nosniff",
+        "x-frame-options": null,
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": null,
+        "cross-origin-opener-policy": null,
+        "cross-origin-embedder-policy": null,
+        "cache-control": "public, max-age=0, must-revalidate",
+        "etag": null
+      }
+    },
+    {
+      "url": "https://math-fourier.pages.dev",
+      "status": 200,
+      "headers": {
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-content-type-options": "nosniff",
+        "x-frame-options": null,
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": null,
+        "cross-origin-opener-policy": null,
+        "cross-origin-embedder-policy": null,
+        "cache-control": "public, max-age=0, must-revalidate",
+        "etag": null
+      }
+    }
+  ]
+}
