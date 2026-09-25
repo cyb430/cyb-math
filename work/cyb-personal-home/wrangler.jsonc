@@ -1,0 +1,19 @@
+{
+  "$schema": "../cyb-math-download/node_modules/wrangler/config-schema.json",
+  "name": "cyb-personal-home",
+  "compatibility_date": "2026-09-21",
+  "workers_dev": true,
+  "routes": [
+    { "pattern": "home.cyb-math.cn", "custom_domain": true },
+    { "pattern": "about.cyb-math.cn", "custom_domain": true }
+  ],
+  "assets": {
+    "directory": "./public",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.1
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "cyb-math-android",
+  "version": "1.0.4",
+  "description": "CYB Math 完整离线 Android 版",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "postinstall": "node scripts/patch-terminal.cjs",
+    "prepare:web": "node scripts/build-web.mjs",
+    "audit": "node scripts/audit-web.mjs",
+    "test": "npm run prepare:web && npm run audit",
+    "sync": "npm run prepare:web && cap sync android",
+    "build:debug": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-android.ps1 Debug",
+    "build:release": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-android.ps1 Release"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/core": "8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2"
+  },
+  "overrides": {
+    "uuid": "11.1.1"
+  }
+}

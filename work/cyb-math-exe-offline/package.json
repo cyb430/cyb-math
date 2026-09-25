@@ -1,0 +1,68 @@
+{
+  "name": "cyb-math-desktop",
+  "version": "1.0.5",
+  "description": "CYB Math 离线桌面版",
+  "main": "main.cjs",
+  "author": "CYB Math",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "audit": "node audit-source.mjs && node test-static.mjs",
+    "test:electron": "electron test-electron.cjs",
+    "test": "npm run audit && npm run test:electron",
+    "build": "electron-builder --win nsis portable --x64",
+    "build:dir": "electron-builder --dir --win --x64"
+  },
+  "devDependencies": {
+    "electron": "44.4.3",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "cn.cyb-math.desktop",
+    "productName": "CYB Math",
+    "asar": true,
+    "files": [
+      "main.cjs",
+      "lib/**/*.cjs",
+      "assets/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "sites",
+        "to": "sites",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "electronDownload": {
+      "cache": "../../.electron-cache",
+      "mirror": "https://npmmirror.com/mirrors/electron/"
+    },
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "artifactName": "CYB-Math-${version}-${arch}-Setup.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "CYB Math",
+      "uninstallDisplayName": "CYB Math"
+    },
+    "portable": {
+      "artifactName": "CYB-Math-${version}-${arch}-Portable.${ext}"
+    }
+  }
+}

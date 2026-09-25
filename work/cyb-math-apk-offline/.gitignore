@@ -1,0 +1,10 @@
+node_modules/
+web/
+.npm-cache/
+.toolchain/
+android/.gradle/
+android/build/
+android/app/build/
+*.jks
+*.keystore
+private-signing/

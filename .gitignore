@@ -7,3 +7,19 @@ node_modules/
 .wrangler/
 .npm-cache/
 
+
+# Local builds and private signing material
+**/dist/
+**/build/
+.gradle/
+.android-home/
+.toolchain/
+private-signing/
+*.jks
+*.keystore
+.env
+.env.*
+.dev.vars*
+local.properties
+.electron-cache/
+**/public/releases/

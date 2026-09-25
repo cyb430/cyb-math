@@ -1,0 +1,33 @@
+{
+  "date": "2026-09-24",
+  "releases": [
+    {
+      "id": "windows-setup",
+      "fileName": "CYB-Math-1.0.5-x64-Setup.exe",
+      "version": "1.0.5",
+      "bytes": 118902991,
+      "sha256": "245F0F232BB1E6E78E0B978A2D2CD212C4113A81FD09343BF847814EFEE78C68"
+    },
+    {
+      "id": "windows-portable",
+      "fileName": "CYB-Math-1.0.5-x64-Portable.exe",
+      "version": "1.0.5",
+      "bytes": 118692448,
+      "sha256": "9B34CC91B0926A33BC399D17403A6584B648B025E7C8006DE9AEE316D1E84AF1"
+    },
+    {
+      "id": "android",
+      "fileName": "CYB-Math-Android-1.0.4.apk",
+      "version": "1.0.4",
+      "bytes": 12189646,
+      "sha256": "F1B403D5591A2383630642CD69969422C04B259EA127524B70BB7C9C30391D07"
+    },
+    {
+      "id": "source",
+      "fileName": "CYB-Math-Source-2026-09-24.zip",
+      "version": "2026-09-24",
+      "bytes": 36928656,
+      "sha256": "C1BD9506C4A8FC66E28028DE1B32208125BFF79664016B235FC953D8705277D2"
+    }
+  ]
+}

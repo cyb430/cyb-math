@@ -1,0 +1,16 @@
+{
+  "appId": "cn.cybmath.app",
+  "appName": "CYB Math",
+  "webDir": "web",
+  "backgroundColor": "#f7f9fc",
+  "server": {
+    "hostname": "localhost",
+    "androidScheme": "https",
+    "cleartext": false
+  },
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  }
+}

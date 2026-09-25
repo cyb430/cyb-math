@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="CYB 的个人主页与 CYB Math 项目：面向中学生和数学竞赛学习者的免费数学工具集。">
+  <meta name="theme-color" content="#071427">
+  <title>CYB｜个人主页</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23071427'/%3E%3Cpath d='M42 17a20 20 0 1 0 0 30' fill='none' stroke='%236ee7ff' stroke-width='7' stroke-linecap='round'/%3E%3Ccircle cx='44' cy='18' r='4' fill='%23a78bfa'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #06111f;
+      --surface: rgba(12, 30, 51, .72);
+      --surface-strong: #0d2239;
+      --text: #eef8ff;
+      --muted: #99afc3;
+      --line: rgba(153, 213, 255, .18);
+      --cyan: #6ee7ff;
+      --violet: #a78bfa;
+      --shadow: 0 24px 80px rgba(0, 0, 0, .32);
+    }
+
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg: #eff8ff;
+      --surface: rgba(255, 255, 255, .78);
+      --surface-strong: #ffffff;
+      --text: #0b1c2e;
+      --muted: #50677b;
+      --line: rgba(12, 60, 92, .15);
+      --cyan: #007a99;
+      --violet: #6d3fc0;
+      --shadow: 0 24px 70px rgba(55, 104, 136, .15);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background:
+        radial-gradient(circle at 78% 10%, color-mix(in srgb, var(--violet) 18%, transparent) 0, transparent 28rem),
+        radial-gradient(circle at 5% 30%, color-mix(in srgb, var(--cyan) 14%, transparent) 0, transparent 24rem),
+        var(--bg);
+      color: var(--text);
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      font-size: 16px;
+      line-height: 1.65;
+      transition: color .25s ease, background-color .25s ease;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .45;
+      background-image:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(to bottom, black, transparent 72%);
+    }
+
+    a { color: inherit; }
+
+    .shell {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .topbar {
+      min-height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      text-decoration: none;
+      font-weight: 800;
+      letter-spacing: .08em;
+    }
+
+    .brand-mark {
+      width: 34px;
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: var(--surface);
+      color: var(--cyan);
+      box-shadow: inset 0 0 24px color-mix(in srgb, var(--cyan) 10%, transparent);
+    }
+
+    .nav { display: flex; align-items: center; gap: 10px; }
+
+    .nav-links { display: flex; gap: 8px; }
+
+    .nav-links a,
+    .icon-button {
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      color: var(--muted);
+      background: transparent;
+      font: inherit;
+      font-size: .9rem;
+      text-decoration: none;
+      cursor: pointer;
+      transition: .2s ease;
+    }
+
+    .nav-links a { padding: 0 14px; }
+    .icon-button { width: 42px; padding: 0; border-color: var(--line); background: var(--surface); }
+    .nav-links a:hover, .icon-button:hover { color: var(--text); border-color: var(--line); background: var(--surface); transform: translateY(-1px); }
+    a:focus-visible, button:focus-visible { outline: 3px solid color-mix(in srgb, var(--cyan) 55%, transparent); outline-offset: 3px; }
+
+    main { padding: 72px 0 88px; }
+
+    .hero {
+      min-height: 560px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr);
+      align-items: center;
+      gap: 64px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 20px;
+      color: var(--cyan);
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: .9rem;
+      letter-spacing: .06em;
+    }
+
+    .eyebrow::before { content: ""; width: 28px; height: 1px; background: currentColor; }
+
+    h1 {
+      margin: 0;
+      max-width: 760px;
+      font-size: clamp(3.8rem, 10vw, 7.4rem);
+      line-height: .92;
+      letter-spacing: -.065em;
+    }
+
+    .gradient-text {
+      background: linear-gradient(110deg, var(--cyan), #ffffff 48%, var(--violet));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    :root[data-theme="light"] .gradient-text { background-image: linear-gradient(110deg, #007a99, #17476b 50%, #6d3fc0); }
+
+    .lead {
+      max-width: 660px;
+      margin: 28px 0 0;
+      color: var(--muted);
+      font-size: clamp(1.05rem, 2vw, 1.22rem);
+    }
+
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+
+    .button {
+      min-height: 48px;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 0 20px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface);
+      text-decoration: none;
+      font-weight: 700;
+      transition: transform .2s ease, border-color .2s ease, background .2s ease;
+    }
+
+    .button.primary { color: #04121d; background: var(--cyan); border-color: transparent; }
+    .button:hover { transform: translateY(-2px); border-color: var(--cyan); }
+
+    .orbital-card {
+      position: relative;
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      isolation: isolate;
+    }
+
+    .orbital-card::before,
+    .orbital-card::after {
+      content: "";
+      position: absolute;
+      inset: 8%;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      animation: spin 18s linear infinite;
+    }
+
+    .orbital-card::after { inset: 21%; animation-direction: reverse; animation-duration: 12s; border-style: dashed; }
+
+    .monogram {
+      width: 52%;
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border: 1px solid color-mix(in srgb, var(--cyan) 45%, transparent);
+      border-radius: 28%;
+      background: linear-gradient(145deg, color-mix(in srgb, var(--cyan) 16%, var(--surface-strong)), var(--surface-strong));
+      box-shadow: var(--shadow), inset 0 0 60px color-mix(in srgb, var(--violet) 12%, transparent);
+      color: var(--cyan);
+      font: 800 clamp(2.7rem, 7vw, 5rem)/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+      letter-spacing: -.12em;
+      padding-right: .12em;
+    }
+
+    .symbol {
+      position: absolute;
+      color: var(--muted);
+      font: 600 1rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+    }
+    .symbol.one { top: 8%; left: 20%; }
+    .symbol.two { right: 3%; top: 45%; }
+    .symbol.three { bottom: 10%; left: 18%; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .section { padding-top: 110px; scroll-margin-top: 20px; }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: .7fr 1.3fr;
+      gap: 36px;
+      align-items: start;
+      margin-bottom: 32px;
+    }
+
+    .section-index { color: var(--cyan); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .88rem; }
+    h2 { margin: 0; font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.08; letter-spacing: -.045em; }
+    .section-copy { margin: 12px 0 0; color: var(--muted); max-width: 650px; }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .card {
+      min-height: 260px;
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: var(--surface);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 1px 0 rgba(255,255,255,.04) inset;
+      transition: transform .25s ease, border-color .25s ease;
+    }
+
+    .card:hover { transform: translateY(-5px); border-color: color-mix(in srgb, var(--cyan) 60%, transparent); }
+    .card-number { color: var(--muted); font: 600 .82rem/1 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .card h3 { margin: auto 0 8px; font-size: 1.5rem; }
+    .card p { margin: 0; color: var(--muted); font-size: .95rem; }
+    .card-link { margin-top: 18px; color: var(--cyan); text-decoration: none; font-weight: 700; }
+    .card-link:hover { text-decoration: underline; text-underline-offset: 5px; }
+
+    .project-panel {
+      padding: clamp(24px, 4vw, 42px);
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      background: linear-gradient(145deg, color-mix(in srgb, var(--cyan) 8%, var(--surface)), var(--surface));
+      box-shadow: var(--shadow);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 30px;
+    }
+
+    .metric {
+      min-height: 116px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--surface-strong) 74%, transparent);
+    }
+
+    .metric strong { display: block; color: var(--cyan); font-size: 1.45rem; letter-spacing: -.03em; }
+    .metric span { color: var(--muted); font-size: .9rem; }
+
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .tool-link {
+      min-height: 62px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      color: var(--text);
+      background: color-mix(in srgb, var(--surface-strong) 66%, transparent);
+      text-decoration: none;
+      font-weight: 700;
+      line-height: 1.3;
+      transition: .2s ease;
+    }
+
+    .tool-link span {
+      width: 34px;
+      flex: 0 0 34px;
+      color: var(--cyan);
+      font: 700 1rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+      text-align: center;
+    }
+
+    .tool-link:hover { transform: translateY(-2px); border-color: var(--cyan); }
+
+    .project-action { margin-top: 26px; display: flex; justify-content: flex-end; }
+
+    .contact-panel {
+      padding: clamp(28px, 6vw, 58px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 32px;
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--violet) 12%, var(--surface)), color-mix(in srgb, var(--cyan) 8%, var(--surface)));
+      box-shadow: var(--shadow);
+    }
+
+    .contact-panel h2 { font-size: clamp(1.8rem, 4vw, 3rem); }
+    .contact-panel p { margin: 10px 0 0; color: var(--muted); }
+    .email-link { white-space: nowrap; }
+
+    .quote-panel {
+      padding: clamp(28px, 6vw, 64px);
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--cyan) 8%, var(--surface)), color-mix(in srgb, var(--violet) 10%, var(--surface)));
+      box-shadow: var(--shadow);
+    }
+
+    .quote-panel p { margin: 0; max-width: 900px; font-size: clamp(1.45rem, 3.8vw, 2.75rem); line-height: 1.35; letter-spacing: -.035em; }
+    .quote-panel small { display: block; margin-top: 24px; color: var(--muted); font-size: .92rem; }
+
+    footer {
+      margin-top: 100px;
+      padding: 28px 0 44px;
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: .88rem;
+    }
+
+    .status { display: inline-flex; align-items: center; gap: 8px; }
+    .status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 14px var(--cyan); }
+
+    @media (max-width: 800px) {
+      .nav-links { display: none; }
+      main { padding-top: 36px; }
+      .hero { min-height: auto; grid-template-columns: 1fr; gap: 50px; }
+      .hero-copy { padding-top: 36px; }
+      .orbital-card { width: min(360px, 84vw); justify-self: center; }
+      .section { padding-top: 84px; }
+      .section-head { grid-template-columns: 1fr; gap: 10px; }
+      .cards { grid-template-columns: 1fr; }
+      .card { min-height: 220px; }
+      .tool-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .contact-panel { align-items: flex-start; flex-direction: column; }
+    }
+
+    @media (max-width: 520px) {
+      .shell { width: min(100% - 28px, 1120px); }
+      h1 { font-size: clamp(3.4rem, 22vw, 5rem); }
+      .lead { font-size: 1rem; }
+      .button { width: 100%; justify-content: center; }
+      .metrics, .tool-grid { grid-template-columns: 1fr; }
+      .project-action { justify-content: stretch; }
+      .email-link { white-space: normal; overflow-wrap: anywhere; }
+      footer { flex-direction: column; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+<style>html,body{overflow-x:clip}.hero-copy{min-width:0}</style><!-- CYB_I18N_START --><style>
+.cyb-language-switcher{display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;min-height:34px;margin-left:4px;color:inherit;font:600 12px/1 system-ui,"Microsoft YaHei",sans-serif}.cyb-language-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}.cyb-language-switcher select{width:64px;min-height:34px;padding:0 5px;border:1px solid rgba(128,145,170,.34);border-radius:9px;color:inherit;background:color-mix(in srgb,currentColor 5%,transparent);font:600 12px/1 system-ui,"Microsoft YaHei",sans-serif;cursor:pointer}.cyb-language-switcher select:focus-visible{outline:2px solid #5277d4;outline-offset:2px}.cyb-language-floating{position:fixed;z-index:2147483000;top:10px;right:10px;padding:4px;border-radius:11px;background:rgba(255,255,255,.9);box-shadow:0 4px 18px rgba(20,35,60,.16);color:#26354d}@media(max-width:430px){.cyb-language-switcher{margin-left:1px}.cyb-language-switcher select{width:52px;padding-inline:3px;font-size:11px}}
+</style><script>window.__CYB_I18N__={"dictionary":{"本地计算":{"en":"Runs locally","hant":"本地計算"},"输入默认不上传":{"en":"Your input stays on your device","hant":"輸入預設不上傳"},"数学实用工具":{"en":"Quick Math Tools","hant":"數學實用工具"},"复变函数可视化":{"en":"Complex Function Visualizer","hant":"複變函數視覺化"},"方程求解":{"en":"Equation Solver","hant":"方程求解"},"几何画板":{"en":"Geometry Workspace","hant":"幾何畫板"},"代数计算":{"en":"Algebra","hant":"代數計算"},"3D 绘图":{"en":"3D Plotter","hant":"3D 繪圖"},"数论工具":{"en":"Number Theory","hant":"數論工具"},"数列工具":{"en":"Sequence Tools","hant":"數列工具"},"傅里叶可视化":{"en":"Fourier Visualizer","hant":"傅立葉視覺化"},"线性代数":{"en":"Linear Algebra","hant":"線性代數"},"函数绘图":{"en":"Function Plotter","hant":"函數繪圖"},"关于":{"en":"About","hant":"關於"},"方向":{"en":"direction","hant":"方向"},"CYB 的个人主页与 CYB Math 项目：面向中学生和数学竞赛学习者的免费数学工具集。":{"en":"CYB's personal homepage with the CYB Math project: a free math toolset for middle school students and math competition learners.","hant":"CYB 的個人主頁與 CYB Math 專案：面向中學生和數學競賽學習者的免費數學工具集。"},"CYB｜个人主页":{"en":"CYB | Homepage","hant":"CYB｜個人主頁"},"返回首页":{"en":"Back to home","hant":"返回首頁"},"主导航":{"en":"Main navigation","hant":"主導航"},"联系":{"en":"Contact","hant":"聯絡"},"切换明暗主题":{"en":"Toggle light and dark theme","hant":"切換明暗主題"},"你好，":{"en":"Hello,","hant":"你好，"},"我是 CYB。":{"en":"I'm CYB.","hant":"我是 CYB。"},"一名热爱数学与编程的学生，也是 CYB Math 的持续构建者。我喜欢把学习中遇到的问题，转化为清晰、免费、打开就能使用的数学工具。":{"en":"I'm a student who loves mathematics and programming, and the person building CYB Math. I turn problems I meet while learning into clear, free tools that work as soon as you open them.","hant":"一名熱愛數學與程式設計的學生，也是 CYB Math 的持續構建者。我喜歡把學習中遇到的問題，轉化為清晰、免費、開啟就能使用的數學工具。"},"了解 CYB Math":{"en":"Explore CYB Math","hant":"瞭解 CYB Math"},"打开工具集":{"en":"Open the toolkit","hant":"開啟工具集"},"由数学符号围绕的 CYB 标志":{"en":"CYB logo surrounded by mathematical symbols","hant":"由數學符號圍繞的 CYB 標誌"},"把真实的学习需求，做成简单好用的工具。":{"en":"Turning real learning needs into simple, useful tools.","hant":"把真實的學習需求，做成簡單好用的工具。"},"我关注答案，也关注抵达答案的路径：为什么一个方法有效，怎样把过程表达清楚，以及技术如何让数学探索变得更直观、更高效。":{"en":"I care about the answer and the path that leads to it: why a method works, how to explain the process clearly, and how technology can make mathematical exploration more intuitive and efficient.","hant":"我關注答案，也關注抵達答案的路徑：為什麼一個方法有效，怎樣把過程表達清楚，以及技術如何讓數學探索變得更直觀、更高效。"},"把数学问题，交给合适的工具。":{"en":"The right tool for each mathematical problem.","hant":"把數學問題，交給合適的工具。"},"CYB Math 是面向中学生与数学竞赛学习者的免费工具集。十二个工具各自专注一件事，从计算、绘图和方程求解，到数论、线性代数与公式排版。":{"en":"CYB Math is a free toolkit for secondary-school students and math competition learners. Its twelve focused tools cover calculation, plotting, equation solving, number theory, linear algebra, and mathematical typesetting.","hant":"CYB Math 是面向中學生與數學競賽學習者的免費工具集。十二個工具各自專注一件事，從計算、繪圖和方程求解，到數論、線性代數與公式排版。"},"CYB Math 特点":{"en":"CYB Math Features","hant":"CYB Math 特點"},"12 款":{"en":"12 tools","hant":"12 款"},"在线数学工具":{"en":"Online math tools","hant":"線上數學工具"},"免费 · 无需登录":{"en":"Free · No sign-in","hant":"免費 · 無需登入"},"没有订阅与付费墙":{"en":"No subscriptions or paywalls","hant":"沒有訂閱與付費牆"},"CYB Math 工具列表":{"en":"CYB Math tool list","hant":"CYB Math 工具列表"},"公式编辑器":{"en":"Formula Editor","hant":"公式編輯器"},"进入 CYB Math":{"en":"Open CYB Math","hant":"進入 CYB Math"},"学习、构建与表达。":{"en":"Learn, build, and communicate.","hant":"學習、構建與表達。"},"数学探索":{"en":"Mathematical exploration","hant":"數學探索"},"关注竞赛问题、数论与几何。比起记住套路，我更想理解结构，以及一个好解法是怎样被发现的。":{"en":"I explore competition problems, number theory and geometry. I want to understand the underlying structure and how a good solution is discovered, beyond memorizing techniques.","hant":"關注競賽問題、數論與幾何。比起記住套路，我更想理解結構，以及一個好解法是怎樣被發現的。"},"数学工具开发":{"en":"Math tool development","hant":"數學工具開發"},"用 Python 和网页技术把学习需求变成工具，让计算、绘图和抽象概念的探索更加直观。":{"en":"I use Python and web technologies to build tools for learning, making calculations, plots and abstract concepts easier to explore.","hant":"用 Python 和網頁技術把學習需求變成工具，讓計算、繪圖和抽象概念的探索更加直觀。"},"LaTeX 与表达":{"en":"LaTeX and communication","hant":"LaTeX 與表達"},"研究清晰、专业的数学排版，用一致的结构记录题目、证明和思考，也让公式编辑与导出更方便。":{"en":"I explore clear mathematical typesetting, organize problems, proofs and ideas consistently, and make formulas easier to edit and export.","hant":"研究清晰、專業的數學排版，用一致的結構記錄題目、證明和思考，也讓公式編輯與匯出更方便。"},"打开公式编辑器 ↗":{"en":"Open equation editor ↗","hant":"開啟公式編輯器 ↗"},"有建议或想法，欢迎联系。":{"en":"Ideas or feedback? Get in touch.","hant":"有建議或想法，歡迎聯絡。"},"关于 CYB Math、数学工具或网站使用反馈，都可以通过邮箱告诉我。":{"en":"Email me with feedback about CYB Math, its tools, or the website.","hant":"關於 CYB Math、數學工具或網站使用反饋，都可以透過郵箱告訴我。"},"切换到深色主题":{"en":"Switch to dark theme","hant":"切換到深色主題"},"切换到浅色主题":{"en":"Switch to light theme","hant":"切換到淺色主題"}}};</script><script>(() => {
+  'use strict';
+  const supported = new Set(['zh-Hans','zh-Hant','en']);
+  const normalize = s => s.replace(/\s+/g,' ').trim();
+  const hasHan = s => /[\u3400-\u9fff]/.test(s);
+  const entries = window.__CYB_I18N__?.dictionary || {};
+  let stored; try { stored=localStorage.getItem('cyb-language'); } catch {}
+  let cookie; try {cookie=decodeURIComponent(document.cookie.match(/(?:^|;\s*)cyb-language=([^;]+)/)?.[1]||'')}catch{}
+  const query=new URLSearchParams(location.search).get('lang');
+  const language=[query,cookie,stored].find(l=>supported.has(l)) || (/^zh-(TW|HK|MO|Hant)/i.test(navigator.language)?'zh-Hant':/^en/i.test(navigator.language)?'en':'zh-Hans');
+  document.documentElement.lang=language==='zh-Hans'?'zh-CN':language;
+  function save(lang){try{localStorage.setItem('cyb-language',lang)}catch{}if(/(^|\.)cyb-math\.cn$/i.test(location.hostname))document.cookie=`cyb-language=${lang}; Domain=.cyb-math.cn; Path=/; Max-Age=31536000; SameSite=Lax; Secure`;}
+  const exact=new Map(),templates=[],first=new Map(),cache=new Map(),misses=new Set();
+  const escape=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  for(const [source,record] of Object.entries(entries)){
+    const key=normalize(source),value=language==='en'?record.en:record.hant;
+    if(!value)continue;
+    exact.set(key,value);
+    if(/ZXQ\d+QXZ/.test(key)){
+      const ids=[...key.matchAll(/ZXQ(\d+)QXZ/g)].map(m=>m[1]);
+      templates.push({re:new RegExp('^'+key.split(/ZXQ\d+QXZ/).map(escape).join('(.+?)')+'$'),ids,value,weight:key.replace(/ZXQ\d+QXZ/g,'').length});
+    }else if(hasHan(key)){
+      const bucket=first.get(key[0])||[];bucket.push([key,value]);first.set(key[0],bucket);
+    }
+  }
+  templates.sort((a,b)=>b.weight-a.weight);
+  for(const list of first.values())list.sort((a,b)=>b[0].length-a[0].length);
+  function translate(source){
+    if(typeof source!=='string'||language==='zh-Hans'||!hasHan(source))return source;
+    if(cache.has(source))return cache.get(source);
+    const key=normalize(source);let result=exact.get(key);
+    if(result===undefined&&/[\r\n]/.test(source.trim()))result=source.trim().split(/(\r?\n)/).map(part=>/[\r\n]/.test(part)?part:translate(part)).join('');
+    if(result===undefined){
+      for(const template of templates){const match=key.match(template.re);if(match){result=template.value.replace(/ZXQ(\d+)QXZ/g,(s,id)=>translate(match[template.ids.indexOf(id)+1]||s));break}}
+    }
+    if(result===undefined){
+      // Longest complete catalog fragments cover concatenated results without rewriting formulas.
+      let value='',changed=false;
+      for(let i=0;i<key.length;){let pair=(first.get(key[i])||[]).find(([from])=>key.startsWith(from,i));if(pair){value+=pair[1];i+=pair[0].length;changed=true}else value+=key[i++]}
+      result=changed?value:key;
+    }
+    if(language==='en'&&hasHan(result)&&misses.size<500)misses.add(key);
+    const out=source.match(/^\s*/)[0]+result+source.match(/\s*$/)[0];
+    if(cache.size>8000)cache.clear();cache.set(source,out);return out;
+  }
+  // Public API also lets original render functions localize text outside the DOM.
+  window.CYBI18n=Object.freeze({language,t:translate,version:'3.0.0',missing:()=>[...misses]});
+  for(const name of ['alert','confirm','prompt']){const native=window[name];window[name]=function(message,...rest){return native.call(window,translate(message),...rest)}}
+  for(const name of ['fillText','strokeText']){const proto=window.CanvasRenderingContext2D?.prototype,native=proto?.[name];if(native)proto[name]=function(text,...args){return native.call(this,this.canvas?.hasAttribute?.('data-cyb-i18n-ignore')?text:translate(text),...args)}}
+  const excluded='script,style,textarea,[contenteditable="true"],[data-cyb-i18n-ignore],.katex,.MathJax,mjx-container,math';
+  const lastText=new WeakMap(),lastAttributes=new WeakMap(),queue=new Set();let scheduled=false;
+  function ignored(node){const el=node.nodeType===1?node:node.parentElement;return !el||Boolean(el.closest(excluded))}
+  function textNode(node){if(ignored(node))return;const current=node.nodeValue||'';if(lastText.get(node)===current)return;const target=translate(current);lastText.set(node,target);if(target!==current){const option=node.parentElement?.closest('option');if(option&&!option.hasAttribute('value'))option.value=option.value;node.nodeValue=target}}
+  const attributes=['title','placeholder','aria-label','alt'];
+  function elementNode(el){
+    if(ignored(el))return;
+    let last=lastAttributes.get(el);if(!last){last={};lastAttributes.set(el,last)}
+    const names=el.matches('input[type=button],input[type=submit],input[type=reset]')?[...attributes,'value']:attributes;
+    for(const name of names){const value=el.getAttribute(name);if(value===null||last[name]===value)continue;const target=translate(value);last[name]=target;if(target!==value)el.setAttribute(name,target)}
+  }
+  function enqueue(node){if(language==='zh-Hans'||!node||ignored(node))return;queue.add(node);if(!scheduled){scheduled=true;setTimeout(flush,0)}}
+  function flush(){
+    scheduled=false;const start=performance.now();let n=0;
+    while(queue.size&&n++<180&&performance.now()-start<6){const node=queue.values().next().value;queue.delete(node);if(!node.isConnected||ignored(node))continue;
+      if(node.nodeType===3)textNode(node);
+      else if(node.nodeType===1){elementNode(node);if(node.tagName.toLowerCase()==='svg'){for(const text of node.querySelectorAll('text,title,desc'))queue.add(text)}else for(const child of node.childNodes)queue.add(child)}
+    }
+    if(queue.size){scheduled=true;setTimeout(flush,0)}
+  }
+  function start(){
+    save(language);
+    if(!document.getElementById('cyb-language-switcher')){
+      const label=document.createElement('label');label.id='cyb-language-switcher';label.className='cyb-language-switcher';label.dataset.cybI18nIgnore='';
+      label.innerHTML='<span class="cyb-language-label">Language</span><select aria-label="Language"><option value="zh-Hans">简体</option><option value="zh-Hant">繁體</option><option value="en">EN</option></select>';
+      const select=label.querySelector('select');select.value=language;select.addEventListener('change',()=>{save(select.value);const next=new URL(location.href);next.searchParams.set('lang',select.value);location.assign(next.href)});
+      const host=document.querySelector('.cyb-suite-nav,.top-actions,.nav,#topbar,header');if(host)host.append(label);else{label.classList.add('cyb-language-floating');document.body.append(label)}
+    }
+    if(language==='zh-Hans')return;
+    document.title=translate(document.title);
+    for(const meta of document.querySelectorAll('meta[name=description],meta[property="og:title"],meta[property="og:description"]'))meta.content=translate(meta.content);
+    enqueue(document.body);
+    new MutationObserver(records=>{for(const r of records){if(r.type==='characterData'){if(lastText.get(r.target)!==r.target.nodeValue)enqueue(r.target)}else if(r.type==='attributes'){if(lastAttributes.get(r.target)?.[r.attributeName]!==r.target.getAttribute(r.attributeName))enqueue(r.target)}else for(const node of r.addedNodes)enqueue(node)}}).observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:attributes});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+</script><!-- CYB_I18N_END -->
+</head>
+<body>
+  <header class="shell topbar">
+    <a class="brand" href="#top" aria-label="返回首页">
+      <span class="brand-mark" aria-hidden="true">C</span>
+      <span>CYB</span>
+    </a>
+    <div class="nav">
+      <nav class="nav-links" aria-label="主导航">
+        <a href="#about">关于</a>
+        <a href="#project">CYB Math</a>
+        <a href="#interests">方向</a>
+        <a href="#contact">联系</a>
+      </nav>
+      <button class="icon-button" id="themeToggle" type="button" aria-label="切换明暗主题" title="切换明暗主题">☼</button>
+    </div>
+  </header>
+
+  <main id="top" class="shell">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow">STUDENT · MATH LEARNER · TOOL MAKER</p>
+        <h1 id="hero-title">你好，<br><span class="gradient-text">我是 CYB。</span></h1>
+        <p class="lead">一名热爱数学与编程的学生，也是 CYB Math 的持续构建者。我喜欢把学习中遇到的问题，转化为清晰、免费、打开就能使用的数学工具。</p>
+        <div class="actions">
+          <a class="button primary" href="#project">了解 CYB Math <span aria-hidden="true">↓</span></a>
+          <a class="button" href="https://cyb-math.cn/" target="_blank" rel="noreferrer">打开工具集 <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+      <div class="orbital-card" aria-label="由数学符号围绕的 CYB 标志">
+        <span class="symbol one" aria-hidden="true">∑ n²</span>
+        <span class="symbol two" aria-hidden="true">{ x ∈ ℝ }</span>
+        <span class="symbol three" aria-hidden="true">\begin{proof}</span>
+        <div class="monogram" aria-hidden="true">CYB</div>
+      </div>
+    </section>
+
+    <section class="section" id="about" aria-labelledby="about-title">
+      <div class="section-head">
+        <span class="section-index">01 / ABOUT</span>
+        <div>
+          <h2 id="about-title">把真实的学习需求，做成简单好用的工具。</h2>
+          <p class="section-copy">我关注答案，也关注抵达答案的路径：为什么一个方法有效，怎样把过程表达清楚，以及技术如何让数学探索变得更直观、更高效。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="project" aria-labelledby="project-title">
+      <div class="section-head">
+        <span class="section-index">02 / CYB MATH</span>
+        <div>
+          <h2 id="project-title">把数学问题，交给合适的工具。</h2>
+          <p class="section-copy">CYB Math 是面向中学生与数学竞赛学习者的免费工具集。十二个工具各自专注一件事，从计算、绘图和方程求解，到数论、线性代数与公式排版。</p>
+        </div>
+      </div>
+      <div class="project-panel">
+        <div class="metrics" aria-label="CYB Math 特点">
+          <div class="metric"><strong>12 款</strong><span>在线数学工具</span></div>
+          <div class="metric"><strong>本地计算</strong><span>输入默认不上传</span></div>
+          <div class="metric"><strong>免费 · 无需登录</strong><span>没有订阅与付费墙</span></div>
+        </div>
+        <div class="tool-grid" aria-label="CYB Math 工具列表">
+          <a class="tool-link" href="https://tools.cyb-math.cn" target="_blank" rel="noreferrer"><span>∑</span>数学实用工具</a>
+          <a class="tool-link" href="https://plotter.cyb-math.cn" target="_blank" rel="noreferrer"><span>ƒ</span>函数绘图</a>
+          <a class="tool-link" href="https://complex.cyb-math.cn" target="_blank" rel="noreferrer"><span>ℂ</span>复变函数可视化</a>
+          <a class="tool-link" href="https://equation.cyb-math.cn" target="_blank" rel="noreferrer"><span>√</span>方程求解</a>
+          <a class="tool-link" href="https://geometry.cyb-math.cn" target="_blank" rel="noreferrer"><span>△</span>几何画板</a>
+          <a class="tool-link" href="https://algebra.cyb-math.cn" target="_blank" rel="noreferrer"><span>𝑥</span>代数计算</a>
+          <a class="tool-link" href="https://3d.cyb-math.cn" target="_blank" rel="noreferrer"><span>∰</span>3D 绘图</a>
+          <a class="tool-link" href="https://theory.cyb-math.cn" target="_blank" rel="noreferrer"><span>ℤ</span>数论工具</a>
+          <a class="tool-link" href="https://sequence.cyb-math.cn" target="_blank" rel="noreferrer"><span>aₙ</span>数列工具</a>
+          <a class="tool-link" href="https://linear.cyb-math.cn" target="_blank" rel="noreferrer"><span>A</span>线性代数</a>
+          <a class="tool-link" href="https://latex.cyb-math.cn" target="_blank" rel="noreferrer"><span>TeX</span>公式编辑器</a>
+          <a class="tool-link" href="https://fourier.cyb-math.cn" target="_blank" rel="noreferrer"><span>∿</span>傅里叶可视化</a>
+        </div>
+        <div class="project-action">
+          <a class="button primary" href="https://cyb-math.cn/" target="_blank" rel="noreferrer">进入 CYB Math <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="interests" aria-labelledby="interests-title">
+      <div class="section-head">
+        <span class="section-index">03 / FOCUS</span>
+        <div>
+          <h2 id="interests-title">学习、构建与表达。</h2>
+        </div>
+      </div>
+      <div class="cards">
+        <article class="card">
+          <span class="card-number">A / 01</span>
+          <h3>数学探索</h3>
+          <p>关注竞赛问题、数论与几何。比起记住套路，我更想理解结构，以及一个好解法是怎样被发现的。</p>
+        </article>
+        <article class="card">
+          <span class="card-number">B / 02</span>
+          <h3>数学工具开发</h3>
+          <p>用 Python 和网页技术把学习需求变成工具，让计算、绘图和抽象概念的探索更加直观。</p>
+        </article>
+        <article class="card">
+          <span class="card-number">C / 03</span>
+          <h3>LaTeX 与表达</h3>
+          <p>研究清晰、专业的数学排版，用一致的结构记录题目、证明和思考，也让公式编辑与导出更方便。</p>
+          <a class="card-link" href="https://latex.cyb-math.cn" target="_blank" rel="noreferrer">打开公式编辑器 ↗</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="contact" aria-labelledby="contact-title">
+      <div class="contact-panel">
+        <div>
+          <span class="section-index">04 / CONTACT</span>
+          <h2 id="contact-title">有建议或想法，欢迎联系。</h2>
+          <p>关于 CYB Math、数学工具或网站使用反馈，都可以通过邮箱告诉我。</p>
+        </div>
+        <a class="button primary email-link" href="mailto:cybcyb666@qq.com">cybcyb666@qq.com</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="shell">
+    <span>© <span id="year"></span> CYB</span>
+    <a href="mailto:cybcyb666@qq.com">cybcyb666@qq.com</a>
+  </footer>
+
+  <script>
+    const root = document.documentElement;
+    const button = document.getElementById('themeToggle');
+    const storedTheme = localStorage.getItem('cyb-theme');
+    const preferredLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+
+    function applyTheme(theme) {
+      root.dataset.theme = theme;
+      button.textContent = theme === 'light' ? '☾' : '☼';
+      button.title = theme === 'light' ? '切换到深色主题' : '切换到浅色主题';
+    }
+
+    applyTheme(storedTheme || (preferredLight ? 'light' : 'dark'));
+    button.addEventListener('click', () => {
+      const next = root.dataset.theme === 'light' ? 'dark' : 'light';
+      applyTheme(next);
+      localStorage.setItem('cyb-theme', next);
+    });
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

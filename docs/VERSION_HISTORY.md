@@ -30,3 +30,7 @@ git switch -c feature/from-v4 v4-complex
 git switch main
 ```
 
+
+## 2026-09-24 三语生产版
+
+本次 main 更新包含三语网页、Windows 1.0.5、Android 1.0.4、个人主页及下载中心源码。详见 [发布说明](releases/2026-09-24.md)。
