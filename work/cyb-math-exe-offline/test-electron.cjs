@@ -88,7 +88,10 @@ async function main() {
       const loadingLabel = await window.webContents.executeJavaScript(
         `document.querySelector('#cyb-desktop-loading .cyb-loading-name')?.textContent || document.documentElement.dataset.cybDesktopLoadingShown`,
       );
-      assert.equal(loadingLabel, '几何画板', 'Geometry loading feedback did not render');
+      assert.ok(
+        ['几何画板', '幾何畫板', 'Geometry Sketchpad'].includes(loadingLabel),
+        `Geometry loading feedback did not render in the active locale: ${loadingLabel}`,
+      );
     }
     pageResults.push({ appHost, ...result });
   }
