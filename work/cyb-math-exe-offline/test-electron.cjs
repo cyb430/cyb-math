@@ -145,7 +145,7 @@ async function main() {
   })()`);
   assert.equal(inequality.replace(/−/g, '-'), '(-∞, -2) ∪ [1, +∞)');
 
-  await window.loadURL('cyb-math://complex/');
+  await window.loadURL('cyb-math://complex/?lang=zh-Hans');
   await waitFor(window, `document.getElementById('renderInfo')?.textContent.startsWith('渲染')`, 30000);
   const complex = await window.webContents.executeJavaScript(`({
     width: cv.width,
