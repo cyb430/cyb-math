@@ -1,0 +1,15 @@
+{
+  "name": "cyb-math-release",
+  "version": "2026.9.24",
+  "private": true,
+  "description": "CYB Math quality gates and release automation",
+  "scripts": {
+    "test": "npm run release:verify && npm run test:math",
+    "test:math": "npm --prefix work/cyb-math-exe-offline run test:math",
+    "release:sync": "node scripts/release/sync.mjs",
+    "release:verify": "node scripts/release/verify.mjs",
+    "release:verify:artifacts": "node scripts/release/verify.mjs --require-artifacts",
+    "release:prepare": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release/prepare-release.ps1",
+    "release:publish": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release/publish.ps1"
+  }
+}

@@ -1,0 +1,44 @@
+name: Quality checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  regression:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            work/cyb-math-exe-offline/package-lock.json
+            work/cyb-math-apk-offline/package-lock.json
+            work/cyb-math-download/package-lock.json
+      - name: Verify one source of truth
+        run: node scripts/release/verify.mjs
+      - name: Install desktop test runtime
+        run: npm ci --prefix work/cyb-math-exe-offline
+      - name: Run mathematical regression bank
+        run: npm run test:math
+      - name: Test desktop shell
+        run: npm test --prefix work/cyb-math-exe-offline
+      - name: Test Android web bundle
+        run: |
+          npm ci --prefix work/cyb-math-apk-offline
+          npm test --prefix work/cyb-math-apk-offline
+      - name: Type-check download center
+        working-directory: work/cyb-math-download
+        run: |
+          npm ci
+          npm exec -- tsc --noEmit
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: math-regression-report
+          path: test-results/math-regression.json
+          if-no-files-found: ignore

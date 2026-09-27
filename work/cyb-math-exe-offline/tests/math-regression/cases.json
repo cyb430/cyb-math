@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "description": "CYB Math mathematical correctness regression bank. Every tool has a typical, boundary and invalid-input case.",
+  "cases": [
+    { "id": "tools-typical-factorial", "site": "math-tools-pro", "category": "typical", "title": "Calculator combines square root and factorial", "operation": "toolsCalculator", "input": "sqrt(2)^2+factorial(5)", "expect": { "equals": "122" } },
+    { "id": "tools-boundary-zero-factorial", "site": "math-tools-pro", "category": "boundary", "title": "Calculator evaluates zero factorial", "operation": "toolsCalculator", "input": "0!", "expect": { "equals": "1" } },
+    { "id": "tools-invalid-expression", "site": "math-tools-pro", "category": "invalid", "title": "Calculator rejects an incomplete expression", "operation": "toolsCalculatorError", "input": "sqrt(", "expect": { "truthy": true } },
+
+    { "id": "plotter-typical-rational-inequality", "site": "math-plotter", "category": "typical", "title": "Rational inequality excludes its pole", "operation": "plotterInequality", "input": "(x-1)/(x+2)>=0", "expect": { "equals": "(-∞, -2) ∪ [1, +∞)" } },
+    { "id": "plotter-boundary-singleton", "site": "math-plotter", "category": "boundary", "title": "Quadratic inequality has one-point solution", "operation": "plotterInequality", "input": "x^2<=0", "expect": { "equals": "{0}" } },
+    { "id": "plotter-invalid-html", "site": "math-plotter", "category": "invalid", "title": "Invalid inequality is rejected without HTML injection", "operation": "plotterInvalid", "input": "<img src=x onerror=alert(1)>0", "expect": { "truthy": true } },
+
+    { "id": "complex-typical-polynomial", "site": "math-complex", "category": "typical", "title": "z squared minus one at z=2", "operation": "complexEvaluate", "input": { "expression": "z^2-1", "z": [2, 0] }, "expect": { "deepEquals": [3, 0] } },
+    { "id": "complex-boundary-origin", "site": "math-complex", "category": "boundary", "title": "z squared at the origin", "operation": "complexEvaluate", "input": { "expression": "z^2", "z": [0, 0] }, "expect": { "deepEquals": [0, 0] } },
+    { "id": "complex-invalid-expression", "site": "math-complex", "category": "invalid", "title": "Parser rejects an incomplete complex expression", "operation": "complexInvalid", "input": "z+", "expect": { "match": "Incomplete|不完整|未完成" } },
+
+    { "id": "equation-typical-root", "site": "math-equation", "category": "typical", "title": "Bisection finds square root of two", "operation": "equationRoot", "input": { "expression": "x^2-2", "a": "0", "b": "2" }, "expect": { "approx": 1.4142135623730951, "tolerance": 1e-7 } },
+    { "id": "equation-boundary-double-root", "site": "math-equation", "category": "boundary", "title": "Analytic solver handles a repeated root", "operation": "equationAnalytic", "input": "x^2-2*x+1=0", "expect": { "match": "x.*1|1.*重根|double" } },
+    { "id": "equation-invalid-bracket", "site": "math-equation", "category": "invalid", "title": "Bisection rejects a same-sign interval", "operation": "equationInvalidBracket", "input": { "expression": "x^2+1", "a": "-1", "b": "1" }, "expect": { "match": "同号|same sign" } },
+
+    { "id": "geometry-typical-midpoint", "site": "math-geometry", "category": "typical", "title": "Midpoint construction is exact", "operation": "geometryMidpoint", "expect": { "deepEquals": [150, 200] } },
+    { "id": "geometry-boundary-tangent-circles", "site": "math-geometry", "category": "boundary", "title": "Tangent circles return one intersection", "operation": "geometryCircleIntersections", "input": { "c1": { "x": 0, "y": 0 }, "r1": 1, "c2": { "x": 2, "y": 0 }, "r2": 1 }, "expect": { "equals": 1 } },
+    { "id": "geometry-invalid-function-range", "site": "math-geometry", "category": "invalid", "title": "Function plot rejects a reversed interval", "operation": "geometryInvalidRange", "expect": { "truthy": true } },
+
+    { "id": "algebra-typical-expand", "site": "math-algebra", "category": "typical", "title": "Expands a perfect square", "operation": "algebra", "input": { "expression": "(x+1)^2", "mode": "expand" }, "expect": { "match": "x\\^\\{?2|x\\^2" } },
+    { "id": "algebra-boundary-removable-limit", "site": "math-algebra", "category": "boundary", "title": "Limit at a removable singularity equals one", "operation": "algebra", "input": { "expression": "sin(x)/x", "mode": "limit", "extras": { "point": "0" } }, "expect": { "match": "1$|= 1" } },
+    { "id": "algebra-invalid-syntax", "site": "math-algebra", "category": "invalid", "title": "Symbolic engine rejects unbalanced parentheses", "operation": "algebra", "input": { "expression": "x+(", "mode": "simplify" }, "expect": { "error": true } },
+
+    { "id": "linear-typical-determinant", "site": "math-linear", "category": "typical", "title": "Two by two determinant", "operation": "linearMatrix", "input": { "matrix": "1 2\n3 4", "op": "det" }, "expect": { "match": "det\\(A\\)\\s*=\\s*[-−]2" } },
+    { "id": "linear-boundary-zero-rank", "site": "math-linear", "category": "boundary", "title": "Zero matrix has rank zero", "operation": "linearMatrix", "input": { "matrix": "0 0\n0 0", "op": "rank" }, "expect": { "match": "rank\\(A\\)\\s*=\\s*0" } },
+    { "id": "linear-invalid-ragged", "site": "math-linear", "category": "invalid", "title": "Rejects a ragged matrix", "operation": "linearMatrix", "input": { "matrix": "1 2\n3", "op": "det" }, "expect": { "match": "列数|columns|欄數" } },
+
+    { "id": "3d-typical-point-plane", "site": "math-3d", "category": "typical", "title": "Point-to-plane distance", "operation": "threeDistance", "expect": { "equals": 3 } },
+    { "id": "3d-boundary-zero-vector-angle", "site": "math-3d", "category": "boundary", "title": "Zero-vector angle is undefined", "operation": "threeZeroVector", "expect": { "truthy": true } },
+    { "id": "3d-invalid-expression", "site": "math-3d", "category": "invalid", "title": "Surface parser rejects incomplete sine", "operation": "threeInvalidExpression", "expect": { "truthy": true } },
+
+    { "id": "theory-typical-gcd", "site": "math-theory", "category": "typical", "title": "Greatest common divisor", "operation": "theoryGcd", "input": { "a": "240", "b": "46" }, "expect": { "match": "gcd\\(240, 46\\) = 2" } },
+    { "id": "theory-boundary-no-congruence", "site": "math-theory", "category": "boundary", "title": "Linear congruence with no solution", "operation": "theoryCongruence", "input": { "a": "6", "b": "5", "m": "9" }, "expect": { "match": "无解|no solution|無解" } },
+    { "id": "theory-invalid-integer", "site": "math-theory", "category": "invalid", "title": "Number-theory input rejects non-integers", "operation": "theoryInvalid", "input": "abc", "expect": { "match": "整数|integer|整數" } },
+
+    { "id": "sequence-typical-fibonacci", "site": "math-sequence", "category": "typical", "title": "Fibonacci term fifteen", "operation": "sequenceExample", "input": "fib", "expect": { "equals": "610" } },
+    { "id": "sequence-boundary-big-integer", "site": "math-sequence", "category": "boundary", "title": "Exact 31-digit integer remains exact", "operation": "sequenceExample", "input": "big", "expect": { "equals": "1267650600228229401496703205375" } },
+    { "id": "sequence-invalid-division-zero", "site": "math-sequence", "category": "invalid", "title": "Division by zero is surfaced per cell", "operation": "sequenceDivisionZero", "expect": { "match": "除以零|除数为 0|Division by zero|除數為 0" } },
+
+    { "id": "latex-typical-fraction", "site": "math-latex", "category": "typical", "title": "Renders a fraction", "operation": "latexRender", "input": "A fraction: $\\frac{1}{2}$", "expect": { "equals": "\\frac{1}{2}" } },
+    { "id": "latex-boundary-empty", "site": "math-latex", "category": "boundary", "title": "Empty editor remains a valid idle state", "operation": "latexEmpty", "expect": { "truthy": true } },
+    { "id": "latex-invalid-command", "site": "math-latex", "category": "invalid", "title": "Unknown LaTeX command shows an error", "operation": "latexInvalid", "input": "\\badcommand{x}", "expect": { "truthy": true } },
+
+    { "id": "fourier-typical-square-harmonic", "site": "math-fourier", "category": "typical", "title": "Square-wave first harmonic is four over pi", "operation": "fourierFirstHarmonic", "expect": { "approx": 1.2732395447351628, "tolerance": 1e-5 } },
+    { "id": "fourier-boundary-jump-value", "site": "math-fourier", "category": "boundary", "title": "Square wave defines its half-period jump", "operation": "fourierJump", "expect": { "equals": -1 } },
+    { "id": "fourier-invalid-svg-arc", "site": "math-fourier", "category": "invalid", "title": "Unsupported SVG arc command is rejected", "operation": "fourierInvalidSvg", "expect": { "match": "A/a|Arc|圆弧|圓弧" } }
+  ]
+}

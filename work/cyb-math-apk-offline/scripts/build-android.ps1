@@ -27,17 +27,19 @@ $env:Path = "$(Join-Path $javaHome 'bin');$(Join-Path $sdkRoot 'platform-tools')
 $env:npm_config_cache = Join-Path $projectRoot '.npm-cache'
 
 if ($Configuration -eq 'Release') {
-  $signingRoot = Join-Path $projectRoot 'private-signing'
-  $keystorePath = Join-Path $signingRoot 'cyb-math-release.jks'
-  $passwordPath = Join-Path $signingRoot 'keystore-password.txt'
-  if (-not ((Test-Path -LiteralPath $keystorePath) -and (Test-Path -LiteralPath $passwordPath))) {
-    & (Join-Path $PSScriptRoot 'create-signing.ps1')
+  if (-not ($env:CYB_ANDROID_KEYSTORE -and $env:CYB_ANDROID_KEYSTORE_PASSWORD)) {
+    $signingRoot = Join-Path $projectRoot 'private-signing'
+    $keystorePath = Join-Path $signingRoot 'cyb-math-release.jks'
+    $passwordPath = Join-Path $signingRoot 'keystore-password.txt'
+    if (-not ((Test-Path -LiteralPath $keystorePath) -and (Test-Path -LiteralPath $passwordPath))) {
+      & (Join-Path $PSScriptRoot 'create-signing.ps1')
+    }
+    $password = (Get-Content -LiteralPath $passwordPath -Raw).Trim()
+    $env:CYB_ANDROID_KEYSTORE = $keystorePath
+    $env:CYB_ANDROID_KEYSTORE_PASSWORD = $password
+    $env:CYB_ANDROID_KEY_ALIAS = 'cyb-math'
+    $env:CYB_ANDROID_KEY_PASSWORD = $password
   }
-  $password = (Get-Content -LiteralPath $passwordPath -Raw).Trim()
-  $env:CYB_ANDROID_KEYSTORE = $keystorePath
-  $env:CYB_ANDROID_KEYSTORE_PASSWORD = $password
-  $env:CYB_ANDROID_KEY_ALIAS = 'cyb-math'
-  $env:CYB_ANDROID_KEY_PASSWORD = $password
 }
 
 Push-Location $projectRoot

@@ -23,3 +23,5 @@ private-signing/
 local.properties
 .electron-cache/
 **/public/releases/
+test-results/
+release-output/

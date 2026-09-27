@@ -10,6 +10,7 @@
     "start": "electron .",
     "audit": "node audit-source.mjs && node test-static.mjs",
     "test:electron": "electron test-electron.cjs",
+    "test:math": "electron tests/math-regression/runner.cjs",
     "test": "npm run audit && npm run test:electron",
     "build": "electron-builder --win nsis portable --x64",
     "build:dir": "electron-builder --dir --win --x64"

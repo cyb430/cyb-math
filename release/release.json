@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "tag": "v2026.09.24",
+  "name": "CYB Math 2026-09-24",
+  "date": "2026-09-24",
+  "targetCommitish": "main",
+  "github": {
+    "owner": "cyb430",
+    "repository": "cyb-math"
+  },
+  "windows": {
+    "version": "1.0.5"
+  },
+  "android": {
+    "version": "1.0.4",
+    "versionCode": 5
+  },
+  "baidu": {
+    "url": "https://pan.baidu.com/s/1HOlhpnb_63O-GX17Z-R_SQ?pwd=math",
+    "code": "math"
+  },
+  "artifacts": [
+    {
+      "id": "windows-setup",
+      "fileName": "CYB-Math-1.0.5-x64-Setup.exe",
+      "version": "1.0.5",
+      "bytes": 118902991,
+      "sha256": "245F0F232BB1E6E78E0B978A2D2CD212C4113A81FD09343BF847814EFEE78C68"
+    },
+    {
+      "id": "windows-portable",
+      "fileName": "CYB-Math-1.0.5-x64-Portable.exe",
+      "version": "1.0.5",
+      "bytes": 118692448,
+      "sha256": "9B34CC91B0926A33BC399D17403A6584B648B025E7C8006DE9AEE316D1E84AF1"
+    },
+    {
+      "id": "android",
+      "fileName": "CYB-Math-Android-1.0.4.apk",
+      "version": "1.0.4",
+      "bytes": 12189646,
+      "sha256": "F1B403D5591A2383630642CD69969422C04B259EA127524B70BB7C9C30391D07"
+    },
+    {
+      "id": "source",
+      "fileName": "CYB-Math-Source-2026-09-24.zip",
+      "version": "2026-09-24",
+      "bytes": 36928656,
+      "sha256": "C1BD9506C4A8FC66E28028DE1B32208125BFF79664016B235FC953D8705277D2"
+    }
+  ],
+  "sites": [
+    { "directory": "cyb-math", "project": "cyb-math", "domain": "cyb-math.cn" },
+    { "directory": "math-tools-pro", "project": "math-tools-pro", "domain": "tools.cyb-math.cn" },
+    { "directory": "math-plotter", "project": "math-plotter", "domain": "plotter.cyb-math.cn" },
+    { "directory": "math-complex", "project": "math-complex", "domain": "complex.cyb-math.cn" },
+    { "directory": "math-equation", "project": "math-equation", "domain": "equation.cyb-math.cn" },
+    { "directory": "math-geometry", "project": "math-geometry", "domain": "geometry.cyb-math.cn" },
+    { "directory": "math-algebra", "project": "math-algebra", "domain": "algebra.cyb-math.cn" },
+    { "directory": "math-linear", "project": "math-linear", "domain": "linear.cyb-math.cn" },
+    { "directory": "math-3d", "project": "math-3d", "domain": "3d.cyb-math.cn" },
+    { "directory": "math-theory", "project": "math-theory", "domain": "theory.cyb-math.cn" },
+    { "directory": "math-sequence", "project": "math-sequence", "domain": "sequence.cyb-math.cn" },
+    { "directory": "math-latex", "project": "math-latex", "domain": "latex.cyb-math.cn" },
+    { "directory": "math-fourier", "project": "math-fourier", "domain": "fourier.cyb-math.cn" }
+  ]
+}

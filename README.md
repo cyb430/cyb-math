@@ -62,3 +62,13 @@ Windows：进入 `work/cyb-math-exe-offline`，运行 `npm ci`、`npm test`、`n
 Android：进入 `work/cyb-math-apk-offline`，运行 `npm ci`、`npm test`。准备 Android SDK 和 Java 后运行构建脚本。正式签名须自行准备私钥；仓库不含原发行版的签名材料。
 
 下载中心：进入 `work/cyb-math-download`，运行 `npm ci`。将发行文件放在仓库根目录的 `outputs/`（或设置 `CYB_RELEASE_ROOT`），运行 `npm run assets` 生成分片，然后 `npm run check`。部署需要自己的 Cloudflare 授权。
+
+## 正确性回归与发布
+
+- `npm test`：在真实 Electron 页面中执行 12 个数学工具的 36 个回归用例，覆盖典型题、边界题和错误输入。
+- `release/release.json`：网站、应用版本、安装包、下载地址和 SHA-256 的单一发布清单。
+- `npm run release:verify`：检查三端版本、13 个站点、下载页和回归题库是否同步。
+- `npm run release:prepare`：构建应用、执行测试并准备发行文件。
+- GitHub Actions 中的 `Quality` 会在推送和合并请求时自动复验；`Publish release` 可一次完成应用构建、正式 Release 和可选的 Cloudflare 部署。
+
+完整步骤及所需密钥见 `docs/RELEASE_PROCESS.md`。
