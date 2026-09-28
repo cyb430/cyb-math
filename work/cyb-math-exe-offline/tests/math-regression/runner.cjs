@@ -309,6 +309,15 @@ async function main() {
         return matrixResult.innerText;
       })()`);
     },
+    linearFit(testCase) {
+      return evaluate(`(() => {
+        document.querySelector('[data-tab="fit"]').click();
+        fitMode.value = ${JSON.stringify(testCase.input.mode || 'line')};
+        fitInput.value = ${JSON.stringify(testCase.input.data)};
+        fitCalc.click();
+        return fitResult.innerText;
+      })()`);
+    },
   };
 
   const results = [];

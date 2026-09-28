@@ -7,8 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..')).Path
 if (-not $ReleaseRoot) {
-  $localRoot = (Resolve-Path -LiteralPath (Join-Path $repositoryRoot '..\..')).Path
-  $ReleaseRoot = Join-Path $localRoot 'outputs'
+  $ReleaseRoot = Join-Path $repositoryRoot 'outputs'
 }
 $env:CYB_RELEASE_ROOT = (Resolve-Path -LiteralPath $ReleaseRoot).Path
 $release = Get-Content -LiteralPath (Join-Path $repositoryRoot 'release\release.json') -Raw | ConvertFrom-Json
@@ -20,6 +19,7 @@ try {
 
   if (-not $SkipCloudflare) {
     npm ci --prefix work/cyb-math-download
+    if ($LASTEXITCODE -ne 0) { throw 'Download-center dependency installation failed' }
     $wrangler = Join-Path $repositoryRoot 'work\cyb-math-download\node_modules\.bin\wrangler.cmd'
     foreach ($site in $release.sites) {
       Write-Output "Deploying $($site.project) -> $($site.domain)"
@@ -31,7 +31,9 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Personal-home deployment failed' }
 
     npm run assets --prefix work/cyb-math-download
+    if ($LASTEXITCODE -ne 0) { throw 'Download asset preparation failed' }
     npm run check --prefix work/cyb-math-download
+    if ($LASTEXITCODE -ne 0) { throw 'Download-center validation failed' }
     npm run deploy --prefix work/cyb-math-download
     if ($LASTEXITCODE -ne 0) { throw 'Download-center deployment failed' }
   }

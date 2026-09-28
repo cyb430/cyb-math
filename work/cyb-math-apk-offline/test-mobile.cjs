@@ -47,7 +47,7 @@ async function main() {
     webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true }
   });
   window.webContents.on('console-message', event => {
-    if (event.level === 'error') consoleErrors.push({ message: event.message, source: event.sourceId, line: event.lineNumber });
+    if (event.level === 'error' && !event.message.includes('Simulated save failure')) consoleErrors.push({ message: event.message, source: event.sourceId, line: event.lineNumber });
   });
 
   const pages = [];
@@ -121,6 +121,21 @@ async function main() {
   })`);
   assert.equal(exportPayload.fileName, 'test.txt');
   assert.equal(exportPayload.base64, 'SGVsbG8=');
+  for (const language of ['zh-Hans', 'zh-Hant', 'en']) {
+    await window.loadURL(pathToFileURL(path.join(webRoot, 'math-linear.html')).href + '?lang=' + language);
+    for (const outcome of ['saved', 'canceled', 'failed']) {
+      const message = await window.webContents.executeJavaScript(`new Promise(resolve => {
+        window.Capacitor = { isNativePlatform: () => true, Plugins: { FileSaver: { save: async () => {
+          if (${JSON.stringify(outcome)} === 'failed') throw new Error('Simulated save failure');
+          return { path: 'content://test/export', canceled: ${JSON.stringify(outcome)} === 'canceled' };
+        } } } };
+        const a = document.createElement('a'); a.href='data:text/plain;base64,SGVsbG8='; a.download='export.txt'; a.click();
+        setTimeout(() => resolve(document.getElementById('cyb-mobile-export-status')?.textContent), 200);
+      })`);
+      const expected = { saved: /saved|已保存|已儲存/i, canceled: /cancel|已取消/i, failed: /failed|失败|失敗/i };
+      assert.match(message, expected[outcome], language + ' ' + outcome);
+    }
+  }
 
   await window.loadURL(pathToFileURL(path.join(webRoot, 'math-plotter.html')).href + '?feature=inequality');
   await waitFor(window, `typeof solveInequality === 'function' && Boolean(document.getElementById('ineqInput'))`);
@@ -131,7 +146,7 @@ async function main() {
   })()`);
   assert.equal(inequality.replace(/−/g, '-'), '(-∞, -2) ∪ [1, +∞)');
 
-  await window.loadURL(pathToFileURL(path.join(webRoot, 'math-complex.html')).href);
+  await window.loadURL(pathToFileURL(path.join(webRoot, 'math-complex.html')).href + '?lang=zh-Hans');
   await waitFor(window, `document.getElementById('renderInfo')?.textContent.startsWith('渲染')`, 30000);
   const complex = await window.webContents.executeJavaScript(`({ width: cv.width, height: cv.height, message: exprMsg.textContent })`);
   assert.ok(complex.width > 300 && complex.height > 300 && complex.message.includes('已编译'));

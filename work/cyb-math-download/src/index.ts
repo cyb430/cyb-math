@@ -72,15 +72,15 @@ const RELEASE_COPY = Object.freeze({
   },
 });
 
-const RELEASE_DATE = '2026-09-24';
+const RELEASE_DATE = '2026-09-28';
 const CHUNK_BYTES = 16 * 1024 * 1024;
 
 const RELEASES: readonly Release[] = Object.freeze([
   {
     id: 'windows-setup',
-    fileName: 'CYB-Math-1.0.5-x64-Setup.exe',
+    fileName: 'CYB-Math-1.0.6-x64-Setup.exe',
     title: 'Windows 安装版',
-    version: '1.0.5',
+    version: '1.0.6',
     platform: 'Windows 10 / 11 · x64',
     description: '可选择安装目录，并创建桌面与开始菜单快捷方式。',
     size: '113.4 MiB',
@@ -92,9 +92,9 @@ const RELEASES: readonly Release[] = Object.freeze([
   },
   {
     id: 'windows-portable',
-    fileName: 'CYB-Math-1.0.5-x64-Portable.exe',
+    fileName: 'CYB-Math-1.0.6-x64-Portable.exe',
     title: 'Windows 便携版',
-    version: '1.0.5',
+    version: '1.0.6',
     platform: 'Windows 10 / 11 · x64',
     description: '无需安装，下载后直接运行，适合 U 盘或临时使用。',
     size: '113.2 MiB',
@@ -105,9 +105,9 @@ const RELEASES: readonly Release[] = Object.freeze([
   },
   {
     id: 'android',
-    fileName: 'CYB-Math-Android-1.0.4.apk',
+    fileName: 'CYB-Math-Android-1.0.5.apk',
     title: 'Android 版',
-    version: '1.0.4',
+    version: '1.0.5',
     platform: 'Android 7.0 及以上',
     description: '完全离线运行，不申请网络权限；首次安装需允许安装未知应用。',
     size: '11.6 MiB',
@@ -118,9 +118,9 @@ const RELEASES: readonly Release[] = Object.freeze([
   },
   {
     id: 'source',
-    fileName: 'CYB-Math-Source-2026-09-24.zip',
+    fileName: 'CYB-Math-Source-2026-09-28.zip',
     title: '项目源码',
-    version: '2026-09-24',
+    version: '2026-09-28',
     platform: '网页 + Windows + Android 工程',
     description: '包含 13 个工具站、个人主页及双端离线外壳源码；不含签名私钥、密码和构建缓存。',
     size: '35.2 MiB',
@@ -161,11 +161,11 @@ function releaseCard(release: Release, locale: Locale): string {
       </div>
       <p>${escapeHtml(copy[2])}</p>
       <div class="meta"><span>${escapeHtml(text.version)} ${escapeHtml(release.version)}</span><span>${escapeHtml(release.size)}</span></div>
-      <a class="download-button" href="/files/${encodeURIComponent(release.fileName)}">${escapeHtml(text.download)}</a>
+      <a class="download-button" href="/files/${encodeURIComponent(release.fileName)}" aria-label="${escapeHtml(text.download + ' · ' + copy[0])}">${escapeHtml(text.download)} ↓</a>
       <details>
         <summary>${escapeHtml(text.fileInfo)}</summary>
         <div class="file-name">${escapeHtml(release.fileName)}</div>
-        <code>${release.sha256}</code>
+        <code tabindex="0" aria-label="SHA-256">${release.sha256}</code>
         <button class="copy" type="button" data-copy="${release.sha256}">${escapeHtml(text.copyHash)}</button>
       </details>
     </article>`;
@@ -195,7 +195,7 @@ function renderPage(env: Env, locale: Locale): string {
     :root { color-scheme: light; --ink:#17243a; --muted:#60708a; --line:#dce4ef; --paper:#fff; --wash:#f5f8fc; --blue:#356fca; --green:#218568; --amber:#a96818; }
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
-    body { margin:0; color:var(--ink); background:linear-gradient(180deg,#eef5ff 0,#f8fafc 280px,#f5f7fa 100%); font:15px/1.65 "Microsoft YaHei UI","Microsoft YaHei",system-ui,sans-serif; }
+    body { margin:0; color:var(--ink); background:var(--wash); font:15px/1.65 "Microsoft YaHei UI","Microsoft YaHei",system-ui,sans-serif; }
     a { color:inherit; }
     .shell { width:min(1080px,calc(100% - 32px)); margin:0 auto; }
     header { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:25px 0; }
@@ -205,14 +205,14 @@ function renderPage(env: Env, locale: Locale): string {
     .mark { display:grid; place-items:center; width:34px; height:34px; border-radius:11px; color:white; background:#356fca; box-shadow:0 7px 18px rgba(53,111,202,.23); font:700 17px/1 Georgia,serif; }
     .back { color:#4e607b; text-decoration:none; font-size:14px; }
     .back:hover { color:#234b87; }
-    .hero { padding:54px 0 40px; }
+    .hero { padding:18px 0 24px; }
     .kicker { color:#356fca; font-size:12px; font-weight:750; letter-spacing:.12em; text-transform:uppercase; }
-    h1 { max-width:800px; margin:10px 0 16px; font-size:clamp(32px,5vw,55px); line-height:1.13; letter-spacing:-.035em; }
+    h1 { max-width:800px; margin:10px 0 16px; font-size:32px; line-height:1.2; letter-spacing:0; }
     .lead { max-width:710px; margin:0; color:#50617d; font-size:17px; }
     .proof { display:flex; flex-wrap:wrap; gap:10px; margin-top:24px; }
     .proof span { padding:7px 11px; border:1px solid rgba(73,103,148,.15); border-radius:999px; color:#435773; background:rgba(255,255,255,.7); font-size:13px; }
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; padding:8px 0 34px; }
-    .release-card { position:relative; overflow:hidden; padding:24px; border:1px solid var(--line); border-radius:19px; background:rgba(255,255,255,.94); box-shadow:0 10px 28px rgba(40,61,94,.07); }
+    .release-card { position:relative; overflow:hidden; padding:24px; border:1px solid var(--line); border-radius:8px; background:var(--paper); }
     .release-card::before { content:""; position:absolute; inset:0 auto 0 0; width:4px; background:var(--blue); }
     .release-card.green::before { background:var(--green); }
     .release-card.amber::before { background:var(--amber); }
@@ -231,10 +231,14 @@ function renderPage(env: Env, locale: Locale): string {
     .file-name { margin-top:10px; overflow-wrap:anywhere; color:#394b68; }
     code { display:block; margin-top:7px; padding:9px 10px; overflow-wrap:anywhere; border-radius:9px; color:#40516d; background:#f2f5f9; font:11px/1.55 Consolas,monospace; }
     .copy { margin-top:8px; padding:5px 9px; border:1px solid #cfdae8; border-radius:8px; color:#4e607a; background:#fff; cursor:pointer; }
-    .mirror { display:flex; align-items:center; justify-content:space-between; gap:24px; margin:6px 0 34px; padding:22px 24px; border:1px solid #d9e3f0; border-radius:18px; background:#fff; }
+    .mirror { display:flex; align-items:center; justify-content:space-between; gap:24px; margin:6px 0 34px; padding:22px 0; border-block:1px solid #d9e3f0; }
     .mirror p { margin:7px 0 0; color:#5d6d85; }
     .mirror .secondary-button { flex:0 0 auto; margin:0; background:#3f6daa; }
-    .notice { margin:0 0 34px; padding:20px 22px; border:1px solid #e1e7ef; border-radius:16px; color:#56667e; background:rgba(255,255,255,.72); }
+    .notice { margin:0 0 34px; padding:20px 0; color:#56667e; }
+    button, a, select { letter-spacing:0; }
+    :where(button,a,select,summary,code):focus-visible { outline:2px solid var(--green); outline-offset:3px; }
+    code { user-select:all; }
+    .copy { min-height:36px; }
     .notice strong { color:#283b59; }
     footer { display:flex; justify-content:space-between; gap:18px; padding:25px 0 36px; border-top:1px solid #dde5ef; color:#718098; font-size:13px; }
     @media (max-width:720px) { .grid{grid-template-columns:1fr}.hero{padding-top:34px}.release-card p{min-height:0}.mirror,footer{align-items:flex-start;flex-direction:column}.mirror .secondary-button{width:100%}.head-actions{gap:7px}.back{font-size:0}.back::after{content:'⌂';font-size:18px} }
@@ -250,7 +254,7 @@ function renderPage(env: Env, locale: Locale): string {
     <main>
       <section class="hero">
         <div class="kicker">${escapeHtml(text.kicker)}</div>
-        <h1>${escapeHtml(text.heading).replace('\n', '<br>')}</h1>
+        <h1>CYB Math · ${escapeHtml(text.kicker)}</h1>
         <p class="lead">${escapeHtml(text.lead)}</p>
         <div class="proof">${text.proofs.map((proof) => `<span>${escapeHtml(proof)}</span>`).join('')}</div>
       </section>
@@ -278,7 +282,13 @@ function renderPage(env: Env, locale: Locale): string {
         await navigator.clipboard.writeText(button.dataset.copy);
         button.textContent = ${JSON.stringify(text.copied)};
         setTimeout(() => { button.textContent = ${JSON.stringify(text.copyHash)}; }, 1200);
-      } catch { button.textContent = ${JSON.stringify(text.manualCopy)}; }
+      } catch {
+        button.textContent = ${JSON.stringify(text.manualCopy)};
+        const code = button.parentElement.querySelector('code');
+        const range = document.createRange(); range.selectNodeContents(code);
+        const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range);
+        code.focus();
+      }
     });
   </script>
 </body>
@@ -379,7 +389,11 @@ function compositeStream(request: Request, env: Env, release: Release, range: By
 }
 
 function fileResponse(request: Request, env: Env, release: Release): Response {
-  const parsedRange = parseByteRange(request.headers.get('Range'), release.bytes);
+  const etag = `"sha256-${release.sha256}"`;
+  const validators = request.headers.get('If-None-Match')?.split(',').map(value => value.trim().replace(/^W\//, '')) || [];
+  if (validators.includes(etag) || validators.includes('*')) return withSecurityHeaders(new Response(null, { status: 304, headers: { ETag: etag, 'Cache-Control': 'public, max-age=86400, immutable' } }));
+  const ifRange = request.headers.get('If-Range');
+  const parsedRange = parseByteRange(ifRange && ifRange !== etag ? null : request.headers.get('Range'), release.bytes);
   if (parsedRange === 'invalid') {
     return withSecurityHeaders(new Response('Requested Range Not Satisfiable', {
       status: 416,
@@ -391,7 +405,7 @@ function fileResponse(request: Request, env: Env, release: Release): Response {
   const partial = parsedRange !== null;
   const headers = new Headers();
   headers.set('Content-Type', release.contentType);
-  headers.set('ETag', `"sha256-${release.sha256}"`);
+  headers.set('ETag', etag);
   headers.set('Accept-Ranges', 'bytes');
   headers.set('Content-Disposition', `attachment; filename="${release.fileName}"`);
   headers.set('Cache-Control', 'public, max-age=86400, immutable');

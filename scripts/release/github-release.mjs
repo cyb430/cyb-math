@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -7,6 +8,15 @@ const release = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'release/re
 const token = process.env.GITHUB_TOKEN;
 const releaseRoot = process.env.CYB_RELEASE_ROOT || path.join(repositoryRoot, 'outputs');
 if (!token) throw new Error('GITHUB_TOKEN is required');
+
+for (const artifact of release.artifacts) {
+  const file = path.join(releaseRoot, artifact.fileName);
+  const bytes = fs.readFileSync(file);
+  const hash = crypto.createHash('sha256').update(bytes).digest('hex').toUpperCase();
+  if (bytes.length !== artifact.bytes || hash !== artifact.sha256.toUpperCase()) {
+    throw new Error(`Release asset does not match the manifest: ${artifact.fileName}`);
+  }
+}
 
 const apiBase = `https://api.github.com/repos/${release.github.owner}/${release.github.repository}`;
 const headers = {
@@ -36,7 +46,7 @@ if (lookup.status === 404) {
       target_commitish: release.targetCommitish,
       name: release.name,
       body: fs.readFileSync(path.join(repositoryRoot, `release/notes-${release.date}.md`), 'utf8'),
-      draft: false,
+      draft: true,
       prerelease: false,
       generate_release_notes: false,
     }),
@@ -50,7 +60,7 @@ if (lookup.status === 404) {
     body: JSON.stringify({
       name: release.name,
       body: fs.readFileSync(path.join(repositoryRoot, `release/notes-${release.date}.md`), 'utf8'),
-      draft: false,
+      draft: current.draft,
       prerelease: false,
     }),
     headers: { 'Content-Type': 'application/json' },
@@ -62,7 +72,14 @@ for (const artifact of release.artifacts) {
   const file = path.join(releaseRoot, artifact.fileName);
   if (!fs.existsSync(file)) throw new Error(`Missing release asset: ${file}`);
   const existing = existingAssets.find((asset) => asset.name === artifact.fileName);
-  if (existing) await github(`${apiBase}/releases/assets/${existing.id}`, { method: 'DELETE' });
+  if (existing) {
+    if (existing.size === artifact.bytes && existing.digest?.toUpperCase() === `SHA256:${artifact.sha256}`) {
+      console.log(`Already uploaded ${artifact.fileName}`);
+      continue;
+    }
+    if (!current.draft) throw new Error(`Published asset already exists with different content: ${artifact.fileName}. Use a new release tag.`);
+    await github(`${apiBase}/releases/assets/${existing.id}`, { method: 'DELETE' });
+  }
   const extension = path.extname(file).toLowerCase();
   const contentType = extension === '.apk' ? 'application/vnd.android.package-archive'
     : extension === '.zip' ? 'application/zip'
@@ -74,5 +91,11 @@ for (const artifact of release.artifacts) {
   });
   console.log(`Uploaded ${artifact.fileName}`);
 }
+
+await github(`${apiBase}/releases/${current.id}`, {
+  method: 'PATCH',
+  body: JSON.stringify({ draft: false }),
+  headers: { 'Content-Type': 'application/json' },
+});
 
 console.log(JSON.stringify({ published: true, tag: release.tag, url: current.html_url, assets: release.artifacts.length }, null, 2));

@@ -22,6 +22,12 @@ private-signing/
 .dev.vars*
 local.properties
 .electron-cache/
+.builder-cache/
+.harmony-home/
+.hvigor/
+oh_modules/
+**/resources/rawfile/pages/
+outputs/
 **/public/releases/
 test-results/
 release-output/

@@ -1,13 +1,14 @@
 'use strict';
 
-const { app, BrowserWindow, protocol, session } = require('electron');
+const { app, BrowserWindow, protocol, session, screen, dialog, Menu } = require('electron');
+const native = require('./lib/native-app.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { registerOfflineProtocol } = require('./lib/protocol.cjs');
 const { SITE_BY_APP_HOST } = require('./lib/routes.cjs');
-const { attachNavigationPolicy } = require('./lib/window.cjs');
+const { attachNavigationPolicy, createWindow } = require('./lib/window.cjs');
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -24,6 +25,7 @@ app.setPath('userData', userData);
 app.disableHardwareAcceleration();
 app.commandLine.appendSwitch('disable-gpu');
 app.commandLine.appendSwitch('no-sandbox');
+app.on('window-all-closed', () => {});
 
 function sleep(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -178,8 +180,60 @@ async function main() {
   assert.deepEqual(remoteRequests, [], `Offline app attempted remote requests:\n${remoteRequests.join('\n')}`);
   assert.deepEqual(consoleErrors, [], `Renderer console errors:\n${JSON.stringify(consoleErrors, null, 2)}`);
 
-  console.log(JSON.stringify({ passed: true, pages: pageResults.length, languages: ['zh-Hans', 'zh-Hant', 'en'], pageResults }, null, 2));
   window.destroy();
+  const stateWindow = createWindow({ show: false });
+  await stateWindow.cybReady;
+  await stateWindow.loadURL('cyb-math://linear/?lang=en');
+  await stateWindow.webContents.executeJavaScript("matrixA.value = '7 2\\n3 4'; matrixA.dispatchEvent(new Event('input', {bubbles:true}))");
+  const savedProject = path.join(userData, 'test.cybmath.json');
+  const pdfFile = path.join(userData, 'test.pdf');
+  const originalSave = dialog.showSaveDialog, originalOpen = dialog.showOpenDialog, originalMessage = dialog.showMessageBox, originalFetch = global.fetch;
+  try {
+    dialog.showSaveDialog = async () => ({ canceled: true });
+    assert.equal(await native.saveProject(stateWindow), false);
+    dialog.showSaveDialog = async () => ({ canceled: false, filePath: savedProject });
+    assert.equal(await native.saveProject(stateWindow), true);
+    assert.equal(native.validateProject(fs.readFileSync(savedProject, 'utf8')).fields.find(field => field.id === 'matrixA').value, '7 2\n3 4');
+    await stateWindow.webContents.executeJavaScript("matrixA.value = '9'; matrixA.dispatchEvent(new Event('input', {bubbles:true}))");
+    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [savedProject] });
+    dialog.showMessageBox = async () => ({ response: 0 });
+    assert.equal(await native.openProject(stateWindow), false);
+    assert.equal(await stateWindow.webContents.executeJavaScript('matrixA.value'), '9');
+    dialog.showMessageBox = async () => ({ response: 1 });
+    assert.equal(await native.openProject(stateWindow), true);
+    await waitFor(stateWindow, "matrixA.value === '7 2\\n3 4'");
+    dialog.showSaveDialog = async () => ({ canceled: false, filePath: pdfFile });
+    await native.exportPDF(stateWindow);
+    assert.equal(fs.readFileSync(pdfFile).subarray(0, 5).toString(), '%PDF-');
+    const project = JSON.parse(fs.readFileSync(savedProject, 'utf8')); project.storage = [['unrelated-token', 'no']];
+    assert.throws(() => native.validateProject(JSON.stringify(project)));
+    assert.equal(native.newer('1.0.10', '1.0.9'), true);
+    assert.equal(native.newer('1.0.5', '1.1.0'), false);
+    const messages = [];
+    dialog.showMessageBox = async (_window, options) => { messages.push(options); return { response: 2 }; };
+    global.fetch = async () => ({ ok: true, json: async () => ({ tag_name: 'test', assets: [{ name: 'CYB-Math-99.0.0-x64-Setup.exe' }], draft: false, prerelease: false }) });
+    await native.checkUpdates(stateWindow, true);
+    assert.equal(messages.length, 1);
+    assert.match(messages[0].message, /99\.0\.0/);
+    const prefsPath = path.join(userData, 'app-preferences.json');
+    const prefs = JSON.parse(fs.readFileSync(prefsPath, 'utf8')); assert.equal(prefs.ignoredVersion, '99.0.0');
+    fs.writeFileSync(prefsPath, JSON.stringify({ ...prefs, lastUpdateCheck: 0 }));
+    await native.checkUpdates(stateWindow, false); assert.equal(messages.length, 1);
+    global.fetch = async () => { throw new Error('Offline test'); };
+    await native.checkUpdates(stateWindow, true); assert.equal(messages.length, 2);
+    assert.match(messages[1].message, /offline|離線|离线/i);
+    assert.ok(Menu.getApplicationMenu().items.some(item => item.submenu?.items.some(command => command.accelerator === 'CmdOrCtrl+S')));
+  } finally { dialog.showSaveDialog = originalSave; dialog.showOpenDialog = originalOpen; dialog.showMessageBox = originalMessage; global.fetch = originalFetch; }
+  const area = screen.getPrimaryDisplay().workArea;
+  stateWindow.setBounds({ x: area.x, y: area.y, width: Math.min(700, area.width), height: Math.min(500, area.height) });
+  await sleep(100);
+  const savedBounds = stateWindow.getNormalBounds();
+  await new Promise(resolve => { stateWindow.once('closed', resolve); stateWindow.close(); });
+  const reopened = createWindow({ show: false });
+  await reopened.cybReady;
+  assert.deepEqual(reopened.getBounds(), savedBounds, 'Window bounds were not restored');
+  reopened.destroy();
+  console.log(JSON.stringify({ passed: true, pages: pageResults.length, languages: ['zh-Hans', 'zh-Hant', 'en'], windowRestored: true, nativeProjectRoundTrip: true, nativePDF: true, updateScenarios: 3, pageResults }, null, 2));
   app.quit();
   try { fs.rmSync(userData, { recursive: true, force: true }); } catch {}
 }

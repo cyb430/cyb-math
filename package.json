@@ -1,15 +1,26 @@
 {
   "name": "cyb-math-release",
-  "version": "2026.9.24",
+  "version": "2026.9.28",
   "private": true,
   "description": "CYB Math quality gates and release automation",
   "scripts": {
     "test": "npm run release:verify && npm run test:math",
     "test:math": "npm --prefix work/cyb-math-exe-offline run test:math",
+    "test:ux": "node scripts/ux/test.mjs",
+    "test:platform": "node scripts/platform/run-tests.mjs",
+    "ux:audit": "node scripts/ux/audit.mjs",
+    "ux:sync": "node scripts/ux/sync.mjs",
+    "preview": "node scripts/ux/serve.mjs",
     "release:sync": "node scripts/release/sync.mjs",
     "release:verify": "node scripts/release/verify.mjs",
     "release:verify:artifacts": "node scripts/release/verify.mjs --require-artifacts",
     "release:prepare": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release/prepare-release.ps1",
     "release:publish": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release/publish.ps1"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "ml-matrix": "6.12.1",
+    "playwright": "^1.63.0",
+    "pngjs": "7.0.0"
   }
 }

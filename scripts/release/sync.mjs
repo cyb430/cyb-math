@@ -28,6 +28,8 @@ function updatePackageLock(relative, version) {
 }
 
 updatePackage('work/cyb-math-exe-offline/package.json', release.windows.version);
+updatePackage('package.json', release.date.split('-').map(Number).join('.'));
+updatePackageLock('package-lock.json', release.date.split('-').map(Number).join('.'));
 updatePackage('work/cyb-math-apk-offline/package.json', release.android.version);
 updatePackageLock('work/cyb-math-exe-offline/package-lock.json', release.windows.version);
 updatePackageLock('work/cyb-math-apk-offline/package-lock.json', release.android.version);
@@ -57,9 +59,7 @@ for (const artifact of release.artifacts) {
 }
 const windowsVersion = release.windows.version;
 const androidVersion = release.android.version;
-download = download.replace(/mirrorText: '包含 Windows[^']*安装版与便携版[^']*'/, `mirrorText: '包含 Windows ${windowsVersion} 安装版与便携版、Android ${androidVersion}，以及 ${release.date} 源码包，共 4 个文件。'`);
-download = download.replace(/mirrorText: '包含 Windows[^']*安裝版與免安裝版[^']*'/, `mirrorText: '包含 Windows ${windowsVersion} 安裝版與免安裝版、Android ${androidVersion}，以及 ${release.date} 原始碼壓縮檔，共 4 個檔案。'`);
-download = download.replace(/mirrorText: 'Includes four files:[^']+'/, `mirrorText: 'Includes four files: Windows ${windowsVersion} installer and portable app, Android ${androidVersion}, and the ${release.date} source archive.'`);
+// A new GitHub release does not update the independently maintained mirror.
 fs.writeFileSync(downloadPath, download);
 
 let readme = fs.readFileSync(path.join(repositoryRoot, 'README.md'), 'utf8');

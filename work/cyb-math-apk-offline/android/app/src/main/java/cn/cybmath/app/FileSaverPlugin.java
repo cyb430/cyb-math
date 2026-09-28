@@ -1,22 +1,16 @@
 package cn.cybmath.app;
 
-import android.content.ContentResolver;
-import android.content.ContentValues;
+import android.app.Activity;
+import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
-import android.os.Environment;
-import android.provider.MediaStore;
 import android.util.Base64;
-import android.widget.Toast;
-
+import androidx.activity.result.ActivityResult;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
-
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.OutputStream;
 
 @CapacitorPlugin(name = "FileSaver")
@@ -25,76 +19,50 @@ public class FileSaverPlugin extends Plugin {
 
     @PluginMethod
     public void save(PluginCall call) {
-        final String requestedName = call.getString("fileName", "CYB-Math-export");
-        final String mimeType = call.getString("mimeType", "application/octet-stream");
-        final String encoded = call.getString("base64");
-        if (encoded == null) {
-            call.reject("Missing export data");
+        String encoded = call.getString("base64");
+        if (encoded == null || encoded.length() > ((MAX_EXPORT_BYTES + 2L) / 3L) * 4L) {
+            call.reject("Missing export data or export exceeds 50 MB limit");
             return;
         }
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        String mimeType = call.getString("mimeType", "application/octet-stream").split(";", 2)[0].trim();
+        intent.setType(mimeType.contains("/") ? mimeType : "application/octet-stream");
+        intent.putExtra(Intent.EXTRA_TITLE, sanitizeFileName(call.getString("fileName", "CYB-Math-export")));
+        try {
+            startActivityForResult(call, intent, "documentCreated");
+        } catch (Exception error) {
+            call.reject("Unable to open save dialog", error);
+        }
+    }
 
+    @ActivityCallback
+    private void documentCreated(PluginCall call, ActivityResult result) {
+        if (call == null) return;
+        Intent data = result.getData();
+        if (result.getResultCode() != Activity.RESULT_OK || data == null || data.getData() == null) {
+            JSObject response = new JSObject();
+            response.put("canceled", true);
+            call.resolve(response);
+            return;
+        }
+        Uri uri = data.getData();
         execute(() -> {
             try {
-                byte[] bytes = Base64.decode(encoded, Base64.DEFAULT);
+                byte[] bytes = Base64.decode(call.getString("base64", ""), Base64.DEFAULT);
                 if (bytes.length > MAX_EXPORT_BYTES) throw new IllegalArgumentException("Export exceeds 50 MB limit");
-                String fileName = sanitizeFileName(requestedName);
-                String destination = saveBytes(fileName, mimeType, bytes);
-                JSObject result = new JSObject();
-                result.put("path", destination);
-                call.resolve(result);
-                getActivity().runOnUiThread(() -> Toast.makeText(getContext(), "已保存到下载目录：" + fileName, Toast.LENGTH_LONG).show());
+                try (OutputStream stream = getContext().getContentResolver().openOutputStream(uri, "w")) {
+                    if (stream == null) throw new IllegalStateException("Unable to open selected file");
+                    stream.write(bytes);
+                }
+                JSObject response = new JSObject();
+                response.put("path", uri.toString());
+                response.put("canceled", false);
+                call.resolve(response);
             } catch (Exception error) {
                 call.reject("Unable to save export", error);
-                getActivity().runOnUiThread(() -> Toast.makeText(getContext(), "导出失败，请重试", Toast.LENGTH_LONG).show());
             }
         });
-    }
-
-    private String saveBytes(String fileName, String mimeType, byte[] bytes) throws Exception {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            ContentResolver resolver = getContext().getContentResolver();
-            ContentValues values = new ContentValues();
-            values.put(MediaStore.Downloads.DISPLAY_NAME, fileName);
-            values.put(MediaStore.Downloads.MIME_TYPE, mimeType);
-            values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/CYB Math");
-            values.put(MediaStore.Downloads.IS_PENDING, 1);
-            Uri uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
-            if (uri == null) throw new IllegalStateException("Unable to create download");
-            try (OutputStream stream = resolver.openOutputStream(uri)) {
-                if (stream == null) throw new IllegalStateException("Unable to open download");
-                stream.write(bytes);
-            } catch (Exception error) {
-                resolver.delete(uri, null, null);
-                throw error;
-            }
-            values.clear();
-            values.put(MediaStore.Downloads.IS_PENDING, 0);
-            resolver.update(uri, values, null, null);
-            return uri.toString();
-        }
-
-        File base = getContext().getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
-        if (base == null) throw new IllegalStateException("Downloads directory is unavailable");
-        File directory = new File(base, "CYB Math");
-        if (!directory.exists() && !directory.mkdirs()) throw new IllegalStateException("Unable to create downloads directory");
-        File output = uniqueFile(directory, fileName);
-        try (FileOutputStream stream = new FileOutputStream(output)) {
-            stream.write(bytes);
-        }
-        return output.getAbsolutePath();
-    }
-
-    private static File uniqueFile(File directory, String name) {
-        File candidate = new File(directory, name);
-        if (!candidate.exists()) return candidate;
-        int dot = name.lastIndexOf('.');
-        String stem = dot > 0 ? name.substring(0, dot) : name;
-        String extension = dot > 0 ? name.substring(dot) : "";
-        for (int index = 2; index < 10_000; index++) {
-            candidate = new File(directory, stem + " (" + index + ")" + extension);
-            if (!candidate.exists()) return candidate;
-        }
-        throw new IllegalStateException("Unable to choose export filename");
     }
 
     private static String sanitizeFileName(String value) {

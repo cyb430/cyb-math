@@ -1,9 +1,11 @@
 'use strict';
 
-const { app, BrowserWindow, shell, ipcMain } = require('electron');
+const { app, BrowserWindow, shell, ipcMain, screen } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const { mapWebUrlToAppUrl } = require('./routes.cjs');
+const { restoreBounds } = require('./window-state.cjs');
+const { installMenu, rememberSession, restoreProject, checkUpdates } = require('./native-app.cjs');
 
 function isSafeExternalUrl(rawUrl) {
   try {
@@ -22,21 +24,24 @@ function attachNavigationPolicy(window, openExternal = (url) => shell.openExtern
   const rememberLanguage = (event, language) => {
     if (event.sender !== window.webContents || !LANGUAGES.has(language)) return;
     window.cybLanguage = language;
+    if (window.cybNativeMenus) installMenu(window);
     try { fs.mkdirSync(app.getPath('userData'), { recursive: true }); fs.writeFileSync(path.join(app.getPath('userData'), 'language.json'), JSON.stringify({ language })); } catch {}
   };
   ipcMain.on('cyb-language', rememberLanguage);
   window.once('closed', () => ipcMain.removeListener('cyb-language', rememberLanguage));
+  const navigate = async url => { await rememberSession(window); if (!window.isDestroyed()) await window.loadURL(withLanguage(url, window.cybLanguage)); };
   window.webContents.on('will-navigate', (event, targetUrl) => {
     if (targetUrl.startsWith('cyb-math://')) {
-      const localized = withLanguage(targetUrl, window.cybLanguage);
-      if (localized !== targetUrl) { event.preventDefault(); void window.loadURL(localized); }
+      if (targetUrl === window.webContents.getURL()) return;
+      event.preventDefault();
+      void navigate(targetUrl).catch(() => {});
       return;
     }
 
     const localUrl = mapWebUrlToAppUrl(targetUrl);
     event.preventDefault();
     if (localUrl) {
-      void window.loadURL(withLanguage(localUrl, window.cybLanguage));
+      void navigate(localUrl).catch(() => {});
     } else if (isSafeExternalUrl(targetUrl)) {
       void openExternal(targetUrl);
     }
@@ -44,7 +49,7 @@ function attachNavigationPolicy(window, openExternal = (url) => shell.openExtern
 
   window.webContents.setWindowOpenHandler(({ url }) => {
     const localUrl = mapWebUrlToAppUrl(url);
-    if (localUrl) void window.loadURL(withLanguage(localUrl, window.cybLanguage));
+    if (localUrl) void navigate(localUrl).catch(() => {});
     else if (isSafeExternalUrl(url)) void openExternal(url);
     return { action: 'deny' };
   });
@@ -62,15 +67,18 @@ function attachNavigationPolicy(window, openExternal = (url) => shell.openExtern
 }
 
 function createWindow({ show = true, openExternal } = {}) {
+  const statePath = path.join(app.getPath('userData'), 'window-state.json');
+  let saved;
+  try { saved = JSON.parse(fs.readFileSync(statePath, 'utf8')); } catch {}
+  const displays = [screen.getPrimaryDisplay(), ...screen.getAllDisplays().filter(display => display.id !== screen.getPrimaryDisplay().id)];
   const window = new BrowserWindow({
     title: 'CYB Math',
-    width: 1280,
-    height: 840,
-    minWidth: 900,
-    minHeight: 640,
+    ...restoreBounds(saved, displays),
+    minWidth: 640,
+    minHeight: 480,
     backgroundColor: '#f7f8fb',
     icon: path.join(__dirname, '..', 'assets', 'icon.png'),
-    autoHideMenuBar: true,
+    autoHideMenuBar: false,
     show: false,
     webPreferences: {
       contextIsolation: true,
@@ -83,8 +91,29 @@ function createWindow({ show = true, openExternal } = {}) {
   });
 
   attachNavigationPolicy(window, openExternal);
+  window.cybNativeMenus = true;
+  window.on('focus', () => installMenu(window));
+  installMenu(window);
+  if (saved?.maximized) window.maximize();
+  window.on('close', event => {
+    if (!window.cybClosing && !window.webContents.isDestroyed()) {
+      event.preventDefault();
+      void rememberSession(window).finally(() => { window.cybClosing = true; window.close(); });
+      return;
+    }
+    try {
+      fs.mkdirSync(app.getPath('userData'), { recursive: true });
+      fs.writeFileSync(statePath, JSON.stringify({ bounds: window.getNormalBounds(), maximized: window.isMaximized() }));
+    } catch {}
+  });
   if (show) window.once('ready-to-show', () => window.show());
-  void window.loadURL(withLanguage('cyb-math://main/', window.cybLanguage));
+  window.cybReady = window.loadURL(withLanguage('cyb-math://main/', window.cybLanguage)).then(async () => {
+    try {
+      const raw = fs.readFileSync(path.join(app.getPath('userData'), 'last-project.json'), 'utf8');
+      await restoreProject(window, raw);
+    } catch (_) {}
+    if (show && !window.isDestroyed()) void checkUpdates(window);
+  }).catch(error => { if (!window.isDestroyed()) console.error('Offline window could not open:', error.message); });
   return window;
 }
 

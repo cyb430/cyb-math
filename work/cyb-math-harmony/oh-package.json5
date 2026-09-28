@@ -1,0 +1,8 @@
+{
+  "name": "cyb-math-harmony",
+  "version": "1.0.0",
+  "description": "CYB Math native HarmonyOS NEXT application",
+  "modelVersion": "5.0.0",
+  "dependencies": {},
+  "devDependencies": {}
+}

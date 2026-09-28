@@ -118,14 +118,45 @@
   async function saveNativeDownload(anchor) {
     var href = anchor.href;
     var blob = await fetch(href).then(function (response) { return response.blob(); });
+    if (blob.size > 50 * 1024 * 1024) throw new Error('Export exceeds 50 MB limit');
     var base64 = await blobToBase64(blob);
     var plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.FileSaver;
     if (!plugin) throw new Error('Android file saver is unavailable');
-    return plugin.save({
+    var result = await plugin.save({
       fileName: anchor.download || 'CYB-Math-export',
       mimeType: blob.type || 'application/octet-stream',
       base64: base64
     });
+    exportMessage(result && result.canceled ? 'canceled' : 'saved');
+    return result;
+  }
+
+  function exportMessage(kind) {
+    var language = document.documentElement.lang;
+    var messages = /^en/i.test(language)
+      ? { saved: 'File saved', canceled: 'Save canceled', failed: 'Export failed. Please try again.' }
+      : /Hant|TW|HK/i.test(language)
+        ? { saved: '檔案已儲存', canceled: '已取消儲存', failed: '匯出失敗，請重試。' }
+        : { saved: '文件已保存', canceled: '已取消保存', failed: '导出失败，请重试。' };
+    var status = document.getElementById('cyb-mobile-export-status');
+    if (!status) {
+      status = document.createElement('div');
+      status.id = 'cyb-mobile-export-status';
+      status.setAttribute('role', 'status');
+      status.setAttribute('aria-live', 'polite');
+      status.setAttribute('data-cyb-i18n-ignore', '');
+      status.style.cssText = 'position:fixed;left:16px;right:16px;bottom:24px;z-index:2147483647;padding:12px 16px;border-radius:8px;background:#202228;color:#fff;font:14px/1.5 system-ui,sans-serif;pointer-events:none';
+      document.body.appendChild(status);
+    }
+    clearTimeout(exportMessage.timer);
+    status.textContent = messages[kind];
+    status.hidden = false;
+    exportMessage.timer = setTimeout(function () { status.hidden = true; }, 3500);
+  }
+
+  function exportFailed(error) {
+    console.error('CYB Math export failed', error);
+    exportMessage('failed');
   }
 
   var previousPreferredUrl = window.cybPreferredURL;
@@ -151,14 +182,71 @@
       if (!isNativeDownload(anchor)) return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      saveNativeDownload(anchor).catch(function (error) { console.error('CYB Math export failed', error); });
+      saveNativeDownload(anchor).catch(exportFailed);
     }, true);
+    activateNativeHost();
+  }
+
+  function activateNativeHost() {
+    var host = window.Capacitor && window.Capacitor.isNativePlatform?.() && window.Capacitor.Plugins?.AppHost;
+    if (!host) return;
+    document.documentElement.dataset.cybNativeHost = 'android';
+    var style = document.createElement('style');
+    style.textContent = '#cyb-suite-bar,html[data-cyb-site="cyb-math"] .topbar{display:none!important} body:has(#cyb-suite-bar){padding-top:0!important} input[type=text],textarea{scroll-margin-bottom:60px}';
+    document.head.appendChild(style);
+    function pageState() {
+      var file = location.pathname.split('/').pop() || 'index.html';
+      host.pageState({ file: file, language: document.documentElement.lang, dark: document.documentElement.dataset.theme === 'dark' || document.body.classList.contains('dark') }).then(function (response) {
+        if (response?.project) window.CYBSession.stage(response.project);
+      }).catch(exportFailed);
+    }
+    window.addEventListener('cyb-editor-state', function (event) { host.editorState(event.detail).catch(function () {}); });
+    document.addEventListener('change', function (event) { if (event.target.closest('#cyb-language-switcher')) setTimeout(pageState, 50); });
+    new MutationObserver(pageState).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'lang'] });
+    var share = function (data) { return host.share({ text: [data.title, data.text, data.url].filter(Boolean).join('\n') }); };
+    try { Object.defineProperty(navigator, 'share', { configurable: true, value: share }); } catch (_) {}
+    var siteToFile = Object.fromEntries(Object.keys(fileToWeb).map(function (file) { return [file === 'index.html' ? 'cyb-math' : file === 'math-geometry-theorems.html' ? 'math-geometry' : file.replace(/\.html$/, ''), file]; }));
+    window.CYBApp = {
+      saveProject: async function () {
+        try {
+          var raw = window.CYBSession.snapshot();
+          var blob = new Blob([raw], { type: 'application/json' });
+          var result = await window.Capacitor.Plugins.FileSaver.save({ fileName: 'CYB-Math.cybmath.json', mimeType: blob.type, base64: await blobToBase64(blob) });
+          exportMessage(result.canceled ? 'canceled' : 'saved');
+        } catch (error) { exportFailed(error); }
+      },
+      openProject: async function () {
+        try {
+          var result = await host.openProject();
+          if (result.canceled) return;
+          var data = window.CYBSession.validate(result.raw);
+          if (data.site === document.documentElement.dataset.cybSite) window.CYBSession.stage(result.raw);
+          else await host.handoff({ file: siteToFile[data.site], raw: result.raw });
+        } catch (error) { exportFailed(error); }
+      },
+      share: function () {
+        var button = document.querySelector('#cyb-suite-share, #shareBtn, #btn-share, #fabShare');
+        if (button) button.click();
+        else share({ title: document.title, url: officialPageUrl() }).catch(exportFailed);
+      },
+      closeOverlay: function () {
+        var overlay = Array.from(document.querySelectorAll('[role=dialog],.modal,.dialog-overlay,.overlay,#helpPanel,#helpModal,#help-modal,#welcomeOverlay')).find(function (el) { return !el.hidden && getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().height > 50; });
+        if (!overlay) return false;
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        if (!overlay.hidden && getComputedStyle(overlay).display !== 'none') {
+          var close = overlay.querySelector('button[id*="lose"],button[class*="close"],[data-close]');
+          if (close) close.click(); else return false;
+        }
+        return true;
+      }
+    };
+    setTimeout(pageState, 200);
   }
 
   var nativeAnchorClick = HTMLAnchorElement.prototype.click;
   HTMLAnchorElement.prototype.click = function () {
     if (!isNativeDownload(this)) return nativeAnchorClick.call(this);
-    saveNativeDownload(this).catch(function (error) { console.error('CYB Math export failed', error); });
+    saveNativeDownload(this).catch(exportFailed);
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', activate, { once: true });

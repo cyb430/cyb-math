@@ -15,6 +15,7 @@ const child = spawn(executable, [
   `--user-data-dir=${userData}`,
   '--disable-gpu',
   '--no-sandbox',
+  '--cyb-offline-test',
   '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost',
 ], {
   stdio: 'ignore',
@@ -110,10 +111,16 @@ try {
     return matrixResult.innerText;
   })()`);
   assert.match(determinant.replace(/-/g, '−'), /det\(A\)\s*=\s*−2/);
+  const fit = await evaluate(`(() => {
+    document.querySelector('[data-tab="fit"]').click();
+    fitMode.value = 'line'; fitInput.value = '0 1\\n1 3\\n2 5'; fitCalc.click();
+    return fitResult.innerText;
+  })()`);
+  assert.match(fit, /y = 2x \+ 1/);
 
   const httpRequests = requests.filter((url) => /^https?:/i.test(url));
   assert.deepEqual(httpRequests, [], `Packaged app made network requests:\n${httpRequests.join('\n')}`);
-  console.log(JSON.stringify({ passed: true, executable, home, loadingLabel, internalNavigation: true, determinant: '-2', httpRequests }, null, 2));
+  console.log(JSON.stringify({ passed: true, executable, home, loadingLabel, internalNavigation: true, determinant: '-2', leastSquares: 'y = 2x + 1', httpRequests }, null, 2));
 } finally {
   try {
     socket.send(JSON.stringify({ id: nextId, method: 'Browser.close' }));

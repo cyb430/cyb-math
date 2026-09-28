@@ -16,11 +16,17 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: |
+            package-lock.json
             work/cyb-math-exe-offline/package-lock.json
             work/cyb-math-apk-offline/package-lock.json
             work/cyb-math-download/package-lock.json
       - name: Verify one source of truth
         run: node scripts/release/verify.mjs
+      - name: Check user journeys
+        run: |
+          npm ci
+          npm run test:ux
+          npm run test:platform
       - name: Install desktop test runtime
         run: npm ci --prefix work/cyb-math-exe-offline
       - name: Run mathematical regression bank
@@ -36,9 +42,16 @@ jobs:
         run: |
           npm ci
           npm exec -- tsc --noEmit
+      - name: Check download HTTP behavior
+        run: node scripts/ux/test-download.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: math-regression-report
-          path: test-results/math-regression.json
+          path: |
+            test-results/math-regression.json
+            test-results/ux/journeys.json
+            test-results/ux/downloads.json
+            test-results/ux/platform.json
+            test-results/ux/harmony.json
           if-no-files-found: ignore
