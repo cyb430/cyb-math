@@ -40,7 +40,7 @@ try {
 
   if (-not $SkipGitHub) {
     if (-not $env:GITHUB_TOKEN) {
-      $credentialInput = "protocol=https`nhost=github.com`nusername=$($release.github.owner)`n`n"
+      $credentialInput = @('protocol=https', 'host=github.com', "username=$($release.github.owner)", '')
       $credential = $credentialInput | git credential fill
       $password = $credential | Where-Object { $_ -like 'password=*' } | Select-Object -First 1
       if ($password) { $env:GITHUB_TOKEN = $password.Substring('password='.Length) }
