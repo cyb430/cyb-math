@@ -127,10 +127,10 @@ for (const artifact of release.artifacts) {
   }
 }
 
-await github(`${apiBase}/releases/${current.id}`, {
+const published = await github(`${apiBase}/releases/${current.id}`, {
   method: 'PATCH',
   body: JSON.stringify({ draft: false }),
   headers: { 'Content-Type': 'application/json' },
 });
 
-console.log(JSON.stringify({ published: true, tag: release.tag, url: current.html_url, assets: release.artifacts.length }, null, 2));
+console.log(JSON.stringify({ published: true, tag: release.tag, url: published.html_url, assets: release.artifacts.length }, null, 2));
