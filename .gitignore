@@ -30,5 +30,6 @@ oh_modules/
 **/resources/rawfile/pages/
 outputs/
 **/public/releases/
+work/cyb-math-download/public/__chunks/
 test-results/
 release-output/
