@@ -24,6 +24,7 @@ local.properties
 .electron-cache/
 .builder-cache/
 .harmony-home/
+**/Microsoft/Windows/PowerShell/ModuleAnalysisCache
 .hvigor/
 oh_modules/
 **/resources/rawfile/pages/
