@@ -40,8 +40,17 @@ try {
 
   if (-not $SkipGitHub) {
     if (-not $env:GITHUB_TOKEN) {
-      $credentialInput = @('protocol=https', 'host=github.com', "username=$($release.github.owner)", '')
-      $credential = $credentialInput | git credential fill
+      $temporaryDirectory = Join-Path $repositoryRoot '.toolchain'
+      New-Item -ItemType Directory -Path $temporaryDirectory -Force | Out-Null
+      $credentialRequest = Join-Path $temporaryDirectory ("git-credential-$([Guid]::NewGuid().ToString('N')).txt")
+      try {
+        $request = "protocol=https`nhost=github.com`nusername=$($release.github.owner)`n`n"
+        [IO.File]::WriteAllText($credentialRequest, $request, (New-Object Text.UTF8Encoding($false)))
+        $credential = cmd.exe /d /c "git credential fill < `"$credentialRequest`""
+        if ($LASTEXITCODE -ne 0) { throw 'Git credential lookup failed' }
+      } finally {
+        Remove-Item -LiteralPath $credentialRequest -Force -ErrorAction SilentlyContinue
+      }
       $password = $credential | Where-Object { $_ -like 'password=*' } | Select-Object -First 1
       if ($password) { $env:GITHUB_TOKEN = $password.Substring('password='.Length) }
     }
