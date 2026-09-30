@@ -27,10 +27,20 @@ await check('Routes reject unsafe or unsupported requests',async()=>{
   assert.equal((await fetchLocal('/',{},'POST')).status,405);
 });
 await check('Three-language download page and truthful mirror metadata',async()=>{
+  const harmonyLabels={
+    'zh-Hans':['鸿蒙版 · 工程预览','尚未开放安装','已完成','待完成','查看 GitHub 最新源码'],
+    'zh-Hant':['鴻蒙版 · 工程預覽','尚未開放安裝','已完成','待完成','查看 GitHub 最新原始碼'],
+    en:['HarmonyOS NEXT · Engineering preview','Not yet installable','Complete','Pending','View latest source on GitHub'],
+  };
   for(const lang of ['zh-Hans','zh-Hant','en']){
     const response=await fetchLocal('/?lang='+lang,{},'GET'),html=await response.text();
     assert.equal(response.status,200);assert.ok(html.includes('2026-09-24'),'Old mirror date must not change without an actual mirror update');
     for(const item of release.artifacts)assert.ok(html.includes(item.fileName)&&html.includes(item.sha256));
+    for(const label of harmonyLabels[lang])assert.ok(html.includes(label),`${lang}: missing ${label}`);
+    assert.ok(html.includes('data-cyb-harmony-progress'));
+    assert.ok(html.includes('https://github.com/cyb430/cyb-math/tree/main/work/cyb-math-harmony'));
+    assert.equal((html.match(/class="release-card /g)||[]).length,4);
+    assert.ok(!html.includes('href="/files/CYB-Math-Harmony'),'Unsigned HAP must not be linked as a release');
     assert.ok(response.headers.get('Content-Security-Policy').includes("connect-src 'none'"));
   }
 });

@@ -22,8 +22,17 @@ const UI = Object.freeze({
     lead: 'Windows 与 Android 版均可离线使用；免费、无需登录。源码包同步提供，方便学习、检查与本地构建。',
     proofs: ['本地计算', '无需登录', '公开 SHA-256', 'Cloudflare 分发'], downloadsLabel: '下载项目',
     version: '版本', download: '下载', fileInfo: '文件信息与 SHA-256', copyHash: '复制校验值', copied: '已复制', manualCopy: '请手动复制',
-    mirrorKicker: '备用下载', mirrorTitle: '百度网盘下载', mirrorText: '包含 Windows 1.0.5 安装版与便携版、Android 1.0.4，以及 2026-09-24 源码包，共 4 个文件。',
-    openBaidu: '打开百度网盘', extractCode: '提取码', noticeLabel: '安装提示：',
+    mirrorKicker: '旧版备用下载', mirrorTitle: '百度网盘下载', mirrorText: '此备用链接记录的是较旧快照：Windows 1.0.5、Android 1.0.4 和 2026-09-24 源码包。当前版本请使用上方下载按钮。',
+    harmonyKicker: '开发进度', harmonyTitle: '鸿蒙版 · 工程预览', harmonyStatus: '尚未开放安装',
+    harmonyLead: 'HarmonyOS NEXT 原生工程已可构建，但尚无可供用户安装的签名包。以下是当前实际进度，不代表正式发布。',
+    harmonySteps: [
+      ['已完成', '原生应用界面', '工具导航、收藏、平板布局、数学符号按键及系统文件与分享入口。'],
+      ['已完成', '离线数学工具与工程构建', '13 个数学工具页面已集成，工程已生成未签名 HAP。'],
+      ['待完成', '签名与设备验收', '配置开发者签名，在鸿蒙真机上验证安装、性能和完整功能。'],
+      ['待完成', '正式发布', '完成发布签名、最终验收后提供安装包。'],
+    ],
+    harmonySource: '查看鸿蒙源码', harmonyWeb: '使用网页版',
+    latestSource: '查看 GitHub 最新源码', openBaidu: '打开百度网盘', extractCode: '提取码', noticeLabel: '安装提示：',
     notice: 'Windows 发行包目前没有商业代码签名证书，SmartScreen 可能显示“未知发布者”；Android 首次安装需要允许安装未知应用。请只使用本页或公开的百度网盘备用链接，并核对 SHA-256。数学结果仅供学习辅助，关键结果请自行复核。',
     released: '发布于', footer: '© CYB Math · 免费数学工具集', language: '语言', recommended: '推荐',
   },
@@ -33,8 +42,17 @@ const UI = Object.freeze({
     lead: 'Windows 與 Android 版本均可離線使用；免費、無須登入。同時提供原始碼，方便學習、檢查與在本機建置。',
     proofs: ['本機運算', '無須登入', '公開 SHA-256', 'Cloudflare 分發'], downloadsLabel: '下載項目',
     version: '版本', download: '下載', fileInfo: '檔案資訊與 SHA-256', copyHash: '複製校驗值', copied: '已複製', manualCopy: '請手動複製',
-    mirrorKicker: '備用下載', mirrorTitle: '百度網盤下載', mirrorText: '包含 Windows 1.0.5 安裝版與免安裝版、Android 1.0.4，以及 2026-09-24 原始碼壓縮檔，共 4 個檔案。',
-    openBaidu: '開啟百度網盤', extractCode: '提取碼', noticeLabel: '安裝提示：',
+    mirrorKicker: '舊版備用下載', mirrorTitle: '百度網盤下載', mirrorText: '此備用連結記錄的是較舊快照：Windows 1.0.5、Android 1.0.4 與 2026-09-24 原始碼壓縮檔。目前版本請使用上方下載按鈕。',
+    harmonyKicker: '開發進度', harmonyTitle: '鴻蒙版 · 工程預覽', harmonyStatus: '尚未開放安裝',
+    harmonyLead: 'HarmonyOS NEXT 原生專案已可建置，但尚無可供使用者安裝的簽章套件。以下為目前實際進度，並非正式發佈。',
+    harmonySteps: [
+      ['已完成', '原生應用程式介面', '工具導覽、收藏、平板配置、數學符號按鍵及系統檔案與分享入口。'],
+      ['已完成', '離線數學工具與專案建置', '13 個數學工具頁面已整合，專案已產生未簽章 HAP。'],
+      ['待完成', '簽章與裝置驗收', '設定開發者簽章，在鴻蒙實機上驗證安裝、效能與完整功能。'],
+      ['待完成', '正式發佈', '完成發佈簽章及最終驗收後提供安裝套件。'],
+    ],
+    harmonySource: '查看鴻蒙原始碼', harmonyWeb: '使用網頁版',
+    latestSource: '查看 GitHub 最新原始碼', openBaidu: '開啟百度網盤', extractCode: '提取碼', noticeLabel: '安裝提示：',
     notice: 'Windows 發行檔目前未使用商業程式碼簽章憑證，SmartScreen 可能顯示「未知的發行者」；Android 首次安裝時需允許安裝未知的應用程式。請只使用本頁或公開的百度網盤備用連結，並核對 SHA-256。數學結果僅供學習輔助，重要結果請自行驗證。',
     released: '發佈於', footer: '© CYB Math · 免費數學工具集', language: '語言', recommended: '推薦',
   },
@@ -44,8 +62,17 @@ const UI = Object.freeze({
     lead: 'The Windows and Android apps work fully offline. They are free and require no account. The source archive is also available for learning, review, and local builds.',
     proofs: ['Runs locally', 'No sign-in', 'Published SHA-256', 'Cloudflare delivery'], downloadsLabel: 'Downloads',
     version: 'Version', download: 'Download', fileInfo: 'File details and SHA-256', copyHash: 'Copy checksum', copied: 'Copied', manualCopy: 'Copy manually',
-    mirrorKicker: 'Alternative download', mirrorTitle: 'Baidu Netdisk download', mirrorText: 'Includes four files: Windows 1.0.5 installer and portable app, Android 1.0.4, and the 2026-09-24 source archive.',
-    openBaidu: 'Open Baidu Netdisk', extractCode: 'Code', noticeLabel: 'Before you install: ',
+    mirrorKicker: 'Older backup', mirrorTitle: 'Baidu Netdisk download', mirrorText: 'This backup lists an older snapshot: Windows 1.0.5, Android 1.0.4, and the 2026-09-24 source archive. Use the buttons above for the current release.',
+    harmonyKicker: 'Development progress', harmonyTitle: 'HarmonyOS NEXT · Engineering preview', harmonyStatus: 'Not yet installable',
+    harmonyLead: 'The native HarmonyOS NEXT project builds, but there is no signed package for users to install yet. This is the current development status, not a release.',
+    harmonySteps: [
+      ['Complete', 'Native app interface', 'Tool navigation, favorites, tablet layout, math-symbol keys, and system file and share entry points.'],
+      ['Complete', 'Offline math tools and build', 'All 13 math-tool pages are integrated and the project builds an unsigned HAP.'],
+      ['Pending', 'Signing and device validation', 'Configure developer signing and verify installation, performance, and features on a HarmonyOS device.'],
+      ['Pending', 'Public release', 'Provide an installable package after release signing and final validation.'],
+    ],
+    harmonySource: 'View HarmonyOS source', harmonyWeb: 'Use the web version',
+    latestSource: 'View latest source on GitHub', openBaidu: 'Open Baidu Netdisk', extractCode: 'Code', noticeLabel: 'Before you install: ',
     notice: 'The Windows builds are not signed with a commercial code-signing certificate, so SmartScreen may show “Unknown publisher.” Android may ask you to allow installation from this source the first time. Download only from this page or the published Baidu mirror, and verify the SHA-256 checksum. The math results are learning aids; verify important results independently.',
     released: 'Released', footer: '© CYB Math · Free math toolkit', language: 'Language', recommended: 'Recommended',
   },
@@ -56,19 +83,19 @@ const RELEASE_COPY = Object.freeze({
     'windows-setup': ['Windows 安装版', 'Windows 10 / 11 · x64', '可选择安装目录，并创建桌面与开始菜单快捷方式。'],
     'windows-portable': ['Windows 便携版', 'Windows 10 / 11 · x64', '无需安装，下载后直接运行，适合 U 盘或临时使用。'],
     android: ['Android 版', 'Android 7.0 及以上', '数学计算离线可用；仅升级检查使用网络。首次安装需允许安装未知应用。'],
-    source: ['项目源码', '网页 + Windows + Android + 鸿蒙工程', '包含 13 个工具站、个人主页和三端应用源码；鸿蒙正式签名包尚未提供。'],
+    source: ['项目源码 · 发布快照', '网页 + Windows + Android + 鸿蒙工程', '2026-09-28 发布快照；仓库 main 分支包含后续改动。鸿蒙正式签名包尚未提供。'],
   },
   'zh-Hant': {
     'windows-setup': ['Windows 安裝版', 'Windows 10 / 11 · x64', '可選擇安裝位置，並建立桌面與開始功能表捷徑。'],
     'windows-portable': ['Windows 免安裝版', 'Windows 10 / 11 · x64', '下載後即可直接執行，適合隨身碟或臨時使用。'],
     android: ['Android 版', 'Android 7.0 以上', '數學計算可離線使用；僅檢查更新時使用網路。首次安裝需允許未知來源。'],
-    source: ['專案原始碼', '網頁 + Windows + Android + 鴻蒙專案', '包含 13 個工具網站、個人首頁與三端應用程式原始碼；尚無鴻蒙正式簽章套件。'],
+    source: ['專案原始碼 · 發佈快照', '網頁 + Windows + Android + 鴻蒙專案', '2026-09-28 發佈快照；倉庫 main 分支包含後續變更。尚無鴻蒙正式簽章套件。'],
   },
   en: {
     'windows-setup': ['Windows installer', 'Windows 10 / 11 · x64', 'Choose an installation folder and add Desktop and Start menu shortcuts.'],
     'windows-portable': ['Windows portable', 'Windows 10 / 11 · x64', 'No installation required. Run it directly from a folder or USB drive.'],
     android: ['Android app', 'Android 7.0 or later', 'Math tools work offline; only update checks use the network. Android may ask for install permission.'],
-    source: ['Project source', 'Web + Windows + Android + HarmonyOS', 'Includes 13 tool sites, the personal homepage, and all three app projects. A signed HarmonyOS package is not available yet.'],
+    source: ['Project source · Release snapshot', 'Web + Windows + Android + HarmonyOS', 'Snapshot from the 2026-09-28 release. The main branch has newer changes. A signed HarmonyOS package is not available yet.'],
   },
 });
 
@@ -162,6 +189,7 @@ function releaseCard(release: Release, locale: Locale): string {
       <p>${escapeHtml(copy[2])}</p>
       <div class="meta"><span>${escapeHtml(text.version)} ${escapeHtml(release.version)}</span><span>${escapeHtml(release.size)}</span></div>
       <a class="download-button" href="/files/${encodeURIComponent(release.fileName)}" aria-label="${escapeHtml(text.download + ' · ' + copy[0])}">${escapeHtml(text.download)} ↓</a>
+      ${release.id === 'source' ? `<a class="latest-source" href="https://github.com/cyb430/cyb-math" target="_blank" rel="noopener noreferrer">${escapeHtml(text.latestSource)}</a>` : ''}
       <details>
         <summary>${escapeHtml(text.fileInfo)}</summary>
         <div class="file-name">${escapeHtml(release.fileName)}</div>
@@ -226,12 +254,26 @@ function renderPage(env: Env, locale: Locale): string {
     .green .download-button { background:#21775f; }
     .amber .download-button { background:#9a621c; }
     .download-button:hover,.secondary-button:hover { filter:brightness(.95); transform:translateY(-1px); }
+    .latest-source { display:inline-block; margin:12px 0 0 14px; color:#285ca8; font-size:13px; font-weight:650; text-underline-offset:3px; }
     details { margin-top:16px; padding-top:14px; border-top:1px solid #e7ecf3; color:#64738a; font-size:12px; }
     summary { cursor:pointer; }
     .file-name { margin-top:10px; overflow-wrap:anywhere; color:#394b68; }
     code { display:block; margin-top:7px; padding:9px 10px; overflow-wrap:anywhere; border-radius:9px; color:#40516d; background:#f2f5f9; font:11px/1.55 Consolas,monospace; }
     .copy { margin-top:8px; padding:5px 9px; border:1px solid #cfdae8; border-radius:8px; color:#4e607a; background:#fff; cursor:pointer; }
     .mirror { display:flex; align-items:center; justify-content:space-between; gap:24px; margin:6px 0 34px; padding:22px 0; border-block:1px solid #d9e3f0; }
+    .harmony-progress { margin:0 0 34px; padding:26px 0 30px; border-block:1px solid #d9e3f0; }
+    .harmony-head { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .harmony-head h2 { margin:3px 0 0; }
+    .harmony-status { color:#8b5316; font-size:13px; font-weight:700; }
+    .harmony-lead { max-width:780px; margin:10px 0 18px; color:#50617d; }
+    .harmony-steps { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 28px; margin:0; padding:0; list-style:none; }
+    .harmony-steps li { min-width:0; padding:13px 0; border-top:1px solid #e2e9f2; }
+    .harmony-step-state { display:block; color:#24755e; font-size:12px; font-weight:750; }
+    .harmony-steps li.pending .harmony-step-state { color:#956018; }
+    .harmony-step-title { display:block; margin-top:2px; font-weight:700; }
+    .harmony-step-copy { display:block; margin-top:3px; color:#5d6d85; font-size:13px; }
+    .harmony-actions { display:flex; flex-wrap:wrap; gap:18px; margin-top:15px; }
+    .harmony-actions a { color:#285ca8; font-weight:650; text-decoration-thickness:1px; text-underline-offset:3px; }
     .mirror p { margin:7px 0 0; color:#5d6d85; }
     .mirror .secondary-button { flex:0 0 auto; margin:0; background:#3f6daa; }
     .notice { margin:0 0 34px; padding:20px 0; color:#56667e; }
@@ -241,7 +283,7 @@ function renderPage(env: Env, locale: Locale): string {
     .copy { min-height:36px; }
     .notice strong { color:#283b59; }
     footer { display:flex; justify-content:space-between; gap:18px; padding:25px 0 36px; border-top:1px solid #dde5ef; color:#718098; font-size:13px; }
-    @media (max-width:720px) { .grid{grid-template-columns:1fr}.hero{padding-top:34px}.release-card p{min-height:0}.mirror,footer{align-items:flex-start;flex-direction:column}.mirror .secondary-button{width:100%}.head-actions{gap:7px}.back{font-size:0}.back::after{content:'⌂';font-size:18px} }
+    @media (max-width:720px) { .grid,.harmony-steps{grid-template-columns:1fr}.hero{padding-top:34px}.release-card p{min-height:0}.latest-source{display:block;margin:11px 0 0}.mirror,footer{align-items:flex-start;flex-direction:column}.mirror .secondary-button{width:100%}.head-actions{gap:7px}.back{font-size:0}.back::after{content:'⌂';font-size:18px} }
     @media (prefers-reduced-motion:reduce) { html{scroll-behavior:auto}.download-button,.secondary-button{transition:none} }
   </style>
 </head>
@@ -260,6 +302,13 @@ function renderPage(env: Env, locale: Locale): string {
       </section>
       <section class="grid" aria-label="${escapeHtml(text.downloadsLabel)}">
         ${RELEASES.map((release) => releaseCard(release, locale)).join('')}
+      </section>
+      <section class="harmony-progress" data-cyb-harmony-progress aria-labelledby="harmony-title">
+        <div class="kicker">${escapeHtml(text.harmonyKicker)}</div>
+        <div class="harmony-head"><h2 id="harmony-title">${escapeHtml(text.harmonyTitle)}</h2><span class="harmony-status">${escapeHtml(text.harmonyStatus)}</span></div>
+        <p class="harmony-lead">${escapeHtml(text.harmonyLead)}</p>
+        <ol class="harmony-steps">${text.harmonySteps.map((step, index) => `<li class="${index < 2 ? 'complete' : 'pending'}"><span class="harmony-step-state">${escapeHtml(step[0])}</span><strong class="harmony-step-title">${escapeHtml(step[1])}</strong><span class="harmony-step-copy">${escapeHtml(step[2])}</span></li>`).join('')}</ol>
+        <div class="harmony-actions"><a href="https://github.com/cyb430/cyb-math/tree/main/work/cyb-math-harmony" target="_blank" rel="noopener noreferrer">${escapeHtml(text.harmonySource)}</a><a href="https://cyb-math.cn/">${escapeHtml(text.harmonyWeb)}</a></div>
       </section>
       ${baiduMirror}
       <section class="notice">
